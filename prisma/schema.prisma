@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  isAdmin   Boolean  @default(false)
+  locked    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  predictions      MatchPrediction[]
+  extraPredictions ExtraPrediction?
+  comments         MatchComment[]
+}
+
+model MatchComment {
+  id          String   @id @default(cuid())
+  userId      String
+  matchNumber Int
+  message     String
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([matchNumber, createdAt])
+}
+
+model MatchPrediction {
+  id            String  @id @default(cuid())
+  userId        String
+  matchNumber   Int
+  homeScore     Int
+  awayScore     Int
+  advancingTeam String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, matchNumber])
+}
+
+model ExtraPrediction {
+  id                    String @id @default(cuid())
+  userId                String @unique
+  topScorer             String @default("")
+  belgianTopScorer      String @default("")
+  worldChampion         String @default("")
+  topScorerGoals        Int    @default(0)
+  topScorerFirstGoalMin Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model ActualResult {
+  id            String  @id @default(cuid())
+  matchNumber   Int     @unique
+  homeScore     Int
+  awayScore     Int
+  advancingTeam String?
+}

@@ -1,0 +1,226 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-gold: #d4af37;
+  --color-dark: #0b1026;
+  --color-darker: #060d1f;
+  --color-accent: #1b3a6b;
+  --color-pitch: #006847;
+  --color-pitch-light: #00843d;
+  --color-usa-red: #6b1520;
+  --color-mex-green: #004a2f;
+  --color-can-red: #5c1a1a;
+}
+
+body {
+  background: linear-gradient(135deg, rgba(0,40,104,0.85) 0%, rgba(6,13,31,0.95) 40%, rgba(6,13,31,0.95) 60%, rgba(107,21,32,0.85) 100%);
+  color: #e0e0e0;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+}
+
+/* Stars left */
+.stars-left,
+.stars-right {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 200px;
+  z-index: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.08);
+  font-size: 1.4rem;
+  letter-spacing: 0.6rem;
+  line-height: 2.4;
+  white-space: pre;
+  overflow: hidden;
+}
+
+.stars-left {
+  left: 0;
+}
+
+.stars-right {
+  right: 0;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.card-gold {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.2), inset 0 0 30px rgba(212, 175, 55, 0.03);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #006847 0%, #00843d 100%);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(0, 104, 71, 0.4);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 1rem;
+  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.score-input {
+  width: 3.5rem;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: white;
+  padding: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.score-input:focus {
+  outline: none;
+  border-color: #00843d;
+  box-shadow: 0 0 15px rgba(0, 132, 61, 0.4);
+}
+
+.score-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.qualify-1 {
+  border-left: 3px solid #00843d;
+}
+
+.qualify-3 {
+  border-left: 3px solid #e9c46a;
+}
+
+.tab-active {
+  background: linear-gradient(135deg, #002868 0%, #006847 100%) !important;
+  color: white !important;
+  box-shadow: 0 0 12px rgba(0, 104, 71, 0.3);
+}
+
+.trophy-text {
+  background: linear-gradient(135deg, #ffd700 0%, #ff6b35 50%, #ffd700 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  to { background-position: 200% center; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.match-row {
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+}
+.match-row:hover {
+  background: rgba(0, 132, 61, 0.06);
+  border-left-color: rgba(0, 132, 61, 0.4);
+}
+
+.deadline-text {
+  color: #888;
+  font-size: 0.8rem;
+}
+
+.deadline-text.locked {
+  color: #ef4444;
+}
+
+/* Belgian match day theme */
+.belgian-mode body,
+.belgian-mode {
+  background: linear-gradient(
+    180deg,
+    #1a1a1a 0%,
+    #1a1a1a 30%,
+    #3d2b00 50%,
+    #3d0000 70%,
+    #2a0000 100%
+  ) !important;
+}
+
+.belgian-mode .card {
+  border-color: rgba(255, 221, 0, 0.15);
+}
+
+.belgian-mode header {
+  background: rgba(10, 10, 10, 0.85) !important;
+  border-bottom-color: rgba(255, 221, 0, 0.2) !important;
+}
+
+.belgian-mode .trophy-text {
+  background: linear-gradient(135deg, #ffdd00 0%, #ff0000 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.belgian-mode .tab-active {
+  background: linear-gradient(135deg, #1a1a1a 0%, #3d2b00 50%, #3d0000 100%) !important;
+  border: 1px solid rgba(255, 221, 0, 0.3);
+}
+
+.belgian-banner {
+  background: linear-gradient(90deg, #1a1a1a 0%, #1a1a1a 30%, #3d2b00 45%, #ffdd00 50%, #3d2b00 55%, #3d0000 70%, #ff0000 80%, #3d0000 100%);
+  text-align: center;
+  padding: 0.5rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  font-size: 0.875rem;
+}
