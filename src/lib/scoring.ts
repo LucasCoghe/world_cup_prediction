@@ -88,29 +88,27 @@ export function calculatePoints(
     let matchPoints = 0;
     let reasons: string[] = [];
 
-    // Points for correct team in this round
-    let homeCorrect = false;
-    let awayCorrect = false;
+    const predTeams = new Set([predResolved.homeTeam, predResolved.awayTeam].filter(Boolean));
+    const actualTeams = new Set([actualResolved.homeTeam, actualResolved.awayTeam].filter(Boolean));
 
-    if (predResolved.homeTeam && predResolved.homeTeam === actualResolved.homeTeam) {
-      matchPoints += rp.team;
-      homeCorrect = true;
-      reasons.push(`Juiste ${km.round}-deelnemer (thuis)`);
-    }
-    if (predResolved.awayTeam && predResolved.awayTeam === actualResolved.awayTeam) {
-      matchPoints += rp.team;
-      awayCorrect = true;
-      reasons.push(`Juiste ${km.round}-deelnemer (uit)`);
+    let correctTeams = 0;
+    for (const t of predTeams) {
+      if (actualTeams.has(t)) {
+        correctTeams++;
+        matchPoints += rp.team;
+        reasons.push(`Juiste ${km.round}-deelnemer`);
+      }
     }
 
-    // Points for correct composition (both teams correct)
-    if (homeCorrect && awayCorrect) {
+    const bothCorrect = correctTeams === 2;
+
+    if (bothCorrect) {
       matchPoints += rp.composition;
       reasons.push('Juiste samenstelling');
     }
 
     // Score prediction points (only if composition is correct)
-    if (homeCorrect && awayCorrect) {
+    if (bothCorrect) {
       const pred = predMap.get(km.matchNumber);
       const actual = actualMap.get(km.matchNumber);
 

@@ -116,10 +116,11 @@ export default function GroupStage({ predictions }: Props) {
                         min="0"
                         max="20"
                         className="score-input"
-                        value={pred?.homeScore ?? ''}
+                        value={pred ? pred.homeScore : ''}
                         disabled={locked}
                         onChange={e => {
-                          const val = parseInt(e.target.value);
+                          const raw = e.target.value;
+                          const val = raw === '' ? 0 : parseInt(raw);
                           if (isNaN(val) || val < 0) return;
                           predictions.setScore(
                             match.matchNumber,
@@ -127,6 +128,7 @@ export default function GroupStage({ predictions }: Props) {
                             pred?.awayScore ?? 0
                           );
                         }}
+                        onFocus={e => e.target.select()}
                         placeholder="-"
                       />
                       <span className="text-gray-500 font-bold text-lg">-</span>
@@ -135,10 +137,11 @@ export default function GroupStage({ predictions }: Props) {
                         min="0"
                         max="20"
                         className="score-input"
-                        value={pred?.awayScore ?? ''}
+                        value={pred ? pred.awayScore : ''}
                         disabled={locked}
                         onChange={e => {
-                          const val = parseInt(e.target.value);
+                          const raw = e.target.value;
+                          const val = raw === '' ? 0 : parseInt(raw);
                           if (isNaN(val) || val < 0) return;
                           predictions.setScore(
                             match.matchNumber,
@@ -146,6 +149,7 @@ export default function GroupStage({ predictions }: Props) {
                             val
                           );
                         }}
+                        onFocus={e => e.target.select()}
                         placeholder="-"
                       />
                     </div>
