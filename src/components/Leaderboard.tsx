@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import UserPredictions from './UserPredictions';
+import HeadToHead from './HeadToHead';
 
 interface LeaderboardEntry {
   id: string;
@@ -24,6 +25,8 @@ export default function Leaderboard({ currentUserId }: Props) {
   const [completedMatchdays, setCompletedMatchdays] = useState(0);
   const [loading, setLoading] = useState(true);
   const [viewingUser, setViewingUser] = useState<string | null>(null);
+  const [h2hUsers, setH2hUsers] = useState<[string, string] | null>(null);
+  const [h2hSelect, setH2hSelect] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/leaderboard')
@@ -43,25 +46,41 @@ export default function Leaderboard({ currentUserId }: Props) {
     return <UserPredictions userId={viewingUser} onBack={() => setViewingUser(null)} />;
   }
 
+  if (h2hUsers) {
+    return <HeadToHead userA={h2hUsers[0]} userB={h2hUsers[1]} onBack={() => { setH2hUsers(null); setH2hSelect(null); }} />;
+  }
+
   const maxBeers = Math.max(...entries.map(e => e.beerCount), 0);
   const isLastPlace = (i: number) => i === entries.length - 1 && entries.length > 1;
+
+  function handleNameClick(userId: string) {
+    if (h2hSelect === null) {
+      setViewingUser(userId);
+    } else if (h2hSelect !== userId) {
+      setH2hUsers([h2hSelect, userId]);
+    }
+  }
 
   return (
     <div className="space-y-6 animate-in">
       <h2 className="text-2xl font-bold trophy-text">Klassement</h2>
 
-      {/* Beer banner */}
-      {completedMatchdays > 0 && entries.length > 1 && (
-        <div className="card bg-amber-950/40 border-amber-600/30">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">🍺</span>
-            <div>
-              <div className="text-amber-300 font-bold text-lg">Beer Counter</div>
-              <div className="text-amber-200/70 text-sm">
-                Na elke speeldag drinkt de laatste een pint! {completedMatchdays} speeldag{completedMatchdays !== 1 ? 'en' : ''} gespeeld.
-              </div>
+      {/* Head-to-head button */}
+      {entries.length >= 2 && (
+        <div className="flex gap-2">
+          {h2hSelect ? (
+            <div className="card bg-blue-950/40 border-blue-600/30 flex items-center gap-3 w-full">
+              <span className="text-blue-300 font-medium">Kies een tegenstander om te vergelijken</span>
+              <button onClick={() => setH2hSelect(null)} className="btn-secondary text-xs ml-auto">Annuleer</button>
             </div>
-          </div>
+          ) : (
+            <button
+              onClick={() => setH2hSelect(currentUserId)}
+              className="btn-secondary text-sm"
+            >
+              Head-to-Head vergelijken
+            </button>
+          )}
         </div>
       )}
 
@@ -74,6 +93,7 @@ export default function Leaderboard({ currentUserId }: Props) {
           {entries.map((entry, i) => {
             const isCurrentUser = entry.id === currentUserId;
             const isLast = isLastPlace(i);
+            const isH2hSelected = h2hSelect === entry.id;
             return (
               <div
                 key={entry.id}
@@ -81,7 +101,10 @@ export default function Leaderboard({ currentUserId }: Props) {
                   isCurrentUser ? 'card-gold' : ''
                 } ${i < 3 ? 'border-gold/30' : ''} ${
                   isLast ? 'border-amber-600/50 bg-amber-950/20' : ''
+                } ${isH2hSelected ? 'border-blue-500/50 bg-blue-950/20' : ''} ${
+                  h2hSelect && !isH2hSelected ? 'cursor-pointer hover:border-blue-500/30' : ''
                 }`}
+                onClick={h2hSelect && !isH2hSelected ? () => handleNameClick(entry.id) : undefined}
               >
                 {/* Position */}
                 <div className="text-center w-10">
@@ -93,8 +116,10 @@ export default function Leaderboard({ currentUserId }: Props) {
                 {/* Name */}
                 <div className="flex-1">
                   <button
-                    onClick={() => setViewingUser(entry.id)}
-                    className="text-lg font-semibold text-white hover:text-gold transition-colors text-left"
+                    onClick={(e) => { e.stopPropagation(); handleNameClick(entry.id); }}
+                    className={`text-lg font-semibold transition-colors text-left ${
+                      isH2hSelected ? 'text-blue-300' : 'text-white hover:text-gold'
+                    }`}
                   >
                     {entry.name}
                     {isCurrentUser && (
@@ -102,6 +127,9 @@ export default function Leaderboard({ currentUserId }: Props) {
                     )}
                     {isLast && (
                       <span className="text-sm text-amber-400 ml-2">schaamt u!</span>
+                    )}
+                    {isH2hSelected && (
+                      <span className="text-sm text-blue-400 ml-2">geselecteerd</span>
                     )}
                   </button>
                   <div className="text-sm text-gray-500">
@@ -121,17 +149,15 @@ export default function Leaderboard({ currentUserId }: Props) {
                   </div>
                 )}
 
-                {/* Beer count */}
-                {entry.beerCount > 0 && (
-                  <div className="flex items-center gap-1 bg-amber-900/40 px-3 py-1.5 rounded-lg border border-amber-600/30">
-                    <span className="text-lg">🍺</span>
-                    <span className={`font-bold text-lg ${
-                      entry.beerCount === maxBeers && maxBeers > 0 ? 'text-amber-300' : 'text-amber-400/80'
-                    }`}>
-                      {entry.beerCount}
-                    </span>
-                  </div>
-                )}
+                {/* Beer count - always visible */}
+                <div className="flex items-center gap-1 bg-amber-900/40 px-3 py-1.5 rounded-lg border border-amber-600/30">
+                  <span className="text-lg">🍺</span>
+                  <span className={`font-bold text-lg ${
+                    entry.beerCount === maxBeers && maxBeers > 0 ? 'text-amber-300' : 'text-amber-400/80'
+                  }`}>
+                    {entry.beerCount}
+                  </span>
+                </div>
 
                 {/* Points breakdown */}
                 <div className="hidden sm:flex gap-6 text-sm text-gray-400">
