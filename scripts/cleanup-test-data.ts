@@ -1,41 +1,38 @@
 // Run with: npx tsx scripts/cleanup-test-data.ts
-// Removes all test users, predictions, and results
+// Removes ALL non-admin users, their predictions, comments, and all actual results
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+config({ path: '.env' });
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const testEmails = [
-    'jansen@test.be',
-    'pansen@test.be',
-    'deansen@test.be',
-    'ansenjr@test.be',
-  ];
-
-  const testUsers = await prisma.user.findMany({
-    where: { email: { in: testEmails } },
-    select: { id: true, email: true },
+  const nonAdminUsers = await prisma.user.findMany({
+    where: { isAdmin: false },
+    select: { id: true, email: true, name: true },
   });
 
-  if (testUsers.length === 0) {
-    console.log('Geen testdata gevonden.');
-    return;
+  console.log(`Gevonden: ${nonAdminUsers.length} niet-admin gebruikers:`);
+  for (const u of nonAdminUsers) {
+    console.log(`  - ${u.name} (${u.email})`);
   }
 
-  const userIds = testUsers.map(u => u.id);
+  const userIds = nonAdminUsers.map(u => u.id);
 
-  // Delete in order (foreign keys)
+  const delComments = await prisma.matchComment.deleteMany({ where: { userId: { in: userIds } } });
   const delPreds = await prisma.matchPrediction.deleteMany({ where: { userId: { in: userIds } } });
   const delExtra = await prisma.extraPrediction.deleteMany({ where: { userId: { in: userIds } } });
   const delUsers = await prisma.user.deleteMany({ where: { id: { in: userIds } } });
   const delResults = await prisma.actualResult.deleteMany({});
 
-  console.log(`Verwijderd:`);
-  console.log(`  ${delUsers.count} testusers`);
+  console.log(`\nVerwijderd:`);
+  console.log(`  ${delUsers.count} gebruikers`);
   console.log(`  ${delPreds.count} voorspellingen`);
   console.log(`  ${delExtra.count} extra voorspellingen`);
+  console.log(`  ${delComments.count} comments`);
   console.log(`  ${delResults.count} resultaten`);
-  console.log('\nDatabase is schoon voor productie!');
+  console.log('\nDatabase is schoon! Alleen admin@wk2026.be blijft over.');
 }
 
 main()

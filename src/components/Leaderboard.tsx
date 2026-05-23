@@ -12,6 +12,7 @@ interface LeaderboardEntry {
   extraPoints: number;
   predictionsCount: number;
   beerCount: number;
+  hotStreak: number;
 }
 
 interface Props {
@@ -107,6 +108,18 @@ export default function Leaderboard({ currentUserId }: Props) {
                     {entry.predictionsCount} voorspellingen
                   </div>
                 </div>
+
+                {/* Hot streak */}
+                {entry.hotStreak >= 2 && (
+                  <div className="flex items-center gap-0.5 bg-orange-900/40 px-2.5 py-1.5 rounded-lg border border-orange-600/30">
+                    <span className="text-lg">🔥</span>
+                    <span className={`font-bold text-lg ${
+                      entry.hotStreak >= 5 ? 'text-orange-300' : 'text-orange-400/80'
+                    }`}>
+                      {entry.hotStreak}
+                    </span>
+                  </div>
+                )}
 
                 {/* Beer count */}
                 {entry.beerCount > 0 && (

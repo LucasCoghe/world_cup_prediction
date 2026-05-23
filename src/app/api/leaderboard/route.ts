@@ -93,24 +93,31 @@ export async function GET() {
 
   // === BESCHAMENDE REEKS: 3x op rij 0 punten = extra bier ===
   const playedMatchNumbers = [...resultMatchNumbers].sort((a, b) => a - b);
+  const hotStreaks = new Map<string, number>();
   for (const u of users) {
     const predMap = new Map<number, MatchScore>();
     for (const p of u.predictions) {
       predMap.set(p.matchNumber, { matchNumber: p.matchNumber, homeScore: p.homeScore, awayScore: p.awayScore });
     }
     let consecutiveZeros = 0;
+    let streak = 0;
     for (const matchNum of playedMatchNumbers) {
       const pred = predMap.get(matchNum);
       const actual = actualScores.find(a => a.matchNumber === matchNum);
       if (!pred || !actual) {
         consecutiveZeros++;
+        streak = 0;
       } else {
+        const predOutcome = Math.sign(pred.homeScore - pred.awayScore);
+        const actualOutcome = Math.sign(actual.homeScore - actual.awayScore);
+        streak = predOutcome === actualOutcome ? streak + 1 : 0;
         consecutiveZeros = calculateMatchPoints(pred, actual) === 0 ? consecutiveZeros + 1 : 0;
       }
       if (consecutiveZeros > 0 && consecutiveZeros % 3 === 0) {
         beerCounts.set(u.id, (beerCounts.get(u.id) || 0) + 1);
       }
     }
+    hotStreaks.set(u.id, streak);
   }
 
   const leaderboard = users.map(u => {
@@ -140,6 +147,7 @@ export async function GET() {
       extraPoints: scoring.extraPoints,
       predictionsCount: u.predictions.length,
       beerCount: beerCounts.get(u.id) || 0,
+      hotStreak: hotStreaks.get(u.id) || 0,
     };
   });
 
