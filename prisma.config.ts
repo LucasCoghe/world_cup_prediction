@@ -1,7 +1,11 @@
-import { config } from "dotenv";
-config({ path: ".env.local" });
-config({ path: ".env" });
 import { defineConfig } from "prisma/config";
+
+// Locally, load .env.local for database credentials
+if (!process.env.VERCEL) {
+  const { config } = require("dotenv");
+  config({ path: ".env.local" });
+  config({ path: ".env" });
+}
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
