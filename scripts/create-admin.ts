@@ -1,4 +1,7 @@
 // Run with: npx tsx scripts/create-admin.ts
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+config({ path: '.env' });
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
