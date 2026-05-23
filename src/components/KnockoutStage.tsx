@@ -109,15 +109,16 @@ export default function KnockoutStage({ predictions }: Props) {
                 {/* Score inputs */}
                 <div className="flex items-center gap-2">
                   <input
-                    type="number"
-                    min="0"
-                    max="20"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     className="score-input"
-                    value={pred?.homeScore ?? ''}
+                    value={pred ? String(pred.homeScore) : ''}
                     disabled={locked || !homeTeam || !awayTeam}
                     onChange={e => {
-                      const val = parseInt(e.target.value);
-                      if (isNaN(val) || val < 0) return;
+                      const raw = e.target.value.replace(/\D/g, '');
+                      const val = raw === '' ? 0 : parseInt(raw);
+                      if (val > 20) return;
                       predictions.setScore(
                         match.matchNumber,
                         val,
@@ -125,19 +126,21 @@ export default function KnockoutStage({ predictions }: Props) {
                         pred?.advancingTeam
                       );
                     }}
+                    onFocus={e => e.target.select()}
                     placeholder="-"
                   />
                   <span className="text-gray-500 font-bold text-lg">-</span>
                   <input
-                    type="number"
-                    min="0"
-                    max="20"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     className="score-input"
-                    value={pred?.awayScore ?? ''}
+                    value={pred ? String(pred.awayScore) : ''}
                     disabled={locked || !homeTeam || !awayTeam}
                     onChange={e => {
-                      const val = parseInt(e.target.value);
-                      if (isNaN(val) || val < 0) return;
+                      const raw = e.target.value.replace(/\D/g, '');
+                      const val = raw === '' ? 0 : parseInt(raw);
+                      if (val > 20) return;
                       predictions.setScore(
                         match.matchNumber,
                         pred?.homeScore ?? 0,
@@ -145,6 +148,7 @@ export default function KnockoutStage({ predictions }: Props) {
                         pred?.advancingTeam
                       );
                     }}
+                    onFocus={e => e.target.select()}
                     placeholder="-"
                   />
                 </div>

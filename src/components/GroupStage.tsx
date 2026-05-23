@@ -112,16 +112,16 @@ export default function GroupStage({ predictions }: Props) {
 
                     <div className="flex items-center gap-2">
                       <input
-                        type="number"
-                        min="0"
-                        max="20"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         className="score-input"
-                        value={pred ? pred.homeScore : ''}
+                        value={pred ? String(pred.homeScore) : ''}
                         disabled={locked}
                         onChange={e => {
-                          const raw = e.target.value;
+                          const raw = e.target.value.replace(/\D/g, '');
                           const val = raw === '' ? 0 : parseInt(raw);
-                          if (isNaN(val) || val < 0) return;
+                          if (val > 20) return;
                           predictions.setScore(
                             match.matchNumber,
                             val,
@@ -133,16 +133,16 @@ export default function GroupStage({ predictions }: Props) {
                       />
                       <span className="text-gray-500 font-bold text-lg">-</span>
                       <input
-                        type="number"
-                        min="0"
-                        max="20"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         className="score-input"
-                        value={pred ? pred.awayScore : ''}
+                        value={pred ? String(pred.awayScore) : ''}
                         disabled={locked}
                         onChange={e => {
-                          const raw = e.target.value;
+                          const raw = e.target.value.replace(/\D/g, '');
                           const val = raw === '' ? 0 : parseInt(raw);
-                          if (isNaN(val) || val < 0) return;
+                          if (val > 20) return;
                           predictions.setScore(
                             match.matchNumber,
                             pred?.homeScore ?? 0,
