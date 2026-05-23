@@ -10,10 +10,11 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  const matchNumber = parseInt(searchParams.get('match') || '0');
-  if (!matchNumber) {
+  const matchParam = searchParams.get('match');
+  if (matchParam === null) {
     return NextResponse.json({ error: 'Match nummer vereist' }, { status: 400 });
   }
+  const matchNumber = parseInt(matchParam);
 
   const comments = await prisma.matchComment.findMany({
     where: { matchNumber },
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
   }
 
   const { matchNumber, message } = await req.json();
-  if (!matchNumber || !message?.trim()) {
+  if (matchNumber === undefined || matchNumber === null || !message?.trim()) {
     return NextResponse.json({ error: 'Match en bericht vereist' }, { status: 400 });
   }
 
