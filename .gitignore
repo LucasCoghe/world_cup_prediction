@@ -46,9 +46,9 @@ next-env.d.ts
 *.db
 *.db-journal
 *.db-wal
-auth
-auth-wal
-dev.db
+/auth
+/auth-wal
+/dev.db
 
 .vercel
 .env*
