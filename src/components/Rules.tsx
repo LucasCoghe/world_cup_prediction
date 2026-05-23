@@ -41,19 +41,24 @@ export default function Rules() {
             </div>
           </div>
           <p className="text-sm text-gray-400 italic">
-            In de knockout gelden deze punten enkel als je de samenstelling (beide teams) correct hebt.
+            In de knockout gelden score-punten (uitkomst/exact) enkel als je de samenstelling (beide teams) correct hebt in dezelfde match.
           </p>
 
           <h4 className="font-semibold text-white mt-5">Knockout - Extra punten per ronde</h4>
+          <p className="text-sm text-gray-400 mb-2">
+            Team- en samenstellingspunten worden per <strong className="text-white">ronde</strong> bekeken, niet per match.
+            Als je een team juist hebt in de ronde maar op een andere plek in de bracket, krijg je toch punten.
+            Hetzelfde geldt voor de samenstelling: als twee teams die jij voorspelde tegen elkaar spelen ergens in dezelfde ronde, krijg je de bonus.
+          </p>
 
           <h4 className="font-semibold text-white mt-3">Ronde van 32 &amp; Achtste Finales</h4>
           <div className="grid gap-1">
             <div className="flex justify-between py-1.5 border-b border-white/5">
-              <span className="text-gray-300">Per correct voorspelde deelnemer</span>
+              <span className="text-gray-300">Per correct voorspeld team in de ronde</span>
               <span className="font-bold text-gold">2 punten</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/5">
-              <span className="text-gray-300">Juiste samenstelling (beide teams correct)</span>
+              <span className="text-gray-300">Juiste samenstelling (beide teams spelen tegen elkaar)</span>
               <span className="font-bold text-gold">+2 punten</span>
             </div>
           </div>
@@ -61,7 +66,7 @@ export default function Rules() {
           <h4 className="font-semibold text-white mt-5">Kwartfinales</h4>
           <div className="grid gap-1">
             <div className="flex justify-between py-1.5 border-b border-white/5">
-              <span className="text-gray-300">Per correct voorspelde deelnemer</span>
+              <span className="text-gray-300">Per correct voorspeld team in de ronde</span>
               <span className="font-bold text-gold">3 punten</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/5">
@@ -73,7 +78,7 @@ export default function Rules() {
           <h4 className="font-semibold text-white mt-5">Halve Finales &amp; Troostfinale</h4>
           <div className="grid gap-1">
             <div className="flex justify-between py-1.5 border-b border-white/5">
-              <span className="text-gray-300">Per correct voorspelde deelnemer</span>
+              <span className="text-gray-300">Per correct voorspeld team in de ronde</span>
               <span className="font-bold text-gold">4 punten</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/5">
@@ -85,7 +90,7 @@ export default function Rules() {
           <h4 className="font-semibold text-white mt-5">Finale</h4>
           <div className="grid gap-1">
             <div className="flex justify-between py-1.5 border-b border-white/5">
-              <span className="text-gray-300">Per correct voorspelde finalist</span>
+              <span className="text-gray-300">Per correct voorspeld team in de ronde</span>
               <span className="font-bold text-gold">5 punten</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/5">

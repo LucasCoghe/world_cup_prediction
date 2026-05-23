@@ -74,8 +74,31 @@ export function calculatePoints(
     F: { team: 5, composition: 5 },
   };
 
+  // Build sets of actual teams per round, and actual matchups per round
+  const actualTeamsPerRound = new Map<string, Set<string>>();
+  const actualMatchupsPerRound = new Map<string, Set<string>>();
   for (const km of knockoutStructure) {
-    // Only score knockout matches that have an actual result entered
+    const resolved = actualBracket.find(b => b.matchNumber === km.matchNumber);
+    if (!resolved) continue;
+    if (!actualTeamsPerRound.has(km.round)) {
+      actualTeamsPerRound.set(km.round, new Set());
+      actualMatchupsPerRound.set(km.round, new Set());
+    }
+    const roundTeams = actualTeamsPerRound.get(km.round)!;
+    const roundMatchups = actualMatchupsPerRound.get(km.round)!;
+    if (resolved.homeTeam) roundTeams.add(resolved.homeTeam);
+    if (resolved.awayTeam) roundTeams.add(resolved.awayTeam);
+    if (resolved.homeTeam && resolved.awayTeam) {
+      const key = [resolved.homeTeam, resolved.awayTeam].sort().join('-');
+      roundMatchups.add(key);
+    }
+  }
+
+  // Track which teams/matchups already scored to avoid double counting
+  const scoredTeams = new Map<string, Set<string>>();
+  const scoredMatchups = new Map<string, Set<string>>();
+
+  for (const km of knockoutStructure) {
     if (!actualMap.has(km.matchNumber)) continue;
 
     const predResolved = predBracket.find(b => b.matchNumber === km.matchNumber);
@@ -85,41 +108,49 @@ export function calculatePoints(
     const rp = roundPoints[km.round];
     if (!rp) continue;
 
+    const roundActualTeams = actualTeamsPerRound.get(km.round) || new Set();
+    const roundActualMatchups = actualMatchupsPerRound.get(km.round) || new Set();
+    if (!scoredTeams.has(km.round)) scoredTeams.set(km.round, new Set());
+    if (!scoredMatchups.has(km.round)) scoredMatchups.set(km.round, new Set());
+
     let matchPoints = 0;
     let reasons: string[] = [];
 
-    const predTeams = new Set([predResolved.homeTeam, predResolved.awayTeam].filter(Boolean));
-    const actualTeams = new Set([actualResolved.homeTeam, actualResolved.awayTeam].filter(Boolean));
-
-    let correctTeams = 0;
-    for (const t of predTeams) {
-      if (actualTeams.has(t)) {
-        correctTeams++;
+    // Team points: check if predicted teams are anywhere in this round
+    const predTeamsList = [predResolved.homeTeam, predResolved.awayTeam].filter(Boolean) as string[];
+    let correctTeamsInMatch = 0;
+    for (const t of predTeamsList) {
+      if (roundActualTeams.has(t) && !scoredTeams.get(km.round)!.has(t)) {
+        scoredTeams.get(km.round)!.add(t);
         matchPoints += rp.team;
+        correctTeamsInMatch++;
         reasons.push(`Juiste ${km.round}-deelnemer`);
       }
     }
 
-    const bothCorrect = correctTeams === 2;
+    // Composition: check if these two teams play each other anywhere in this round
+    if (predTeamsList.length === 2) {
+      const matchupKey = [...predTeamsList].sort().join('-');
+      if (roundActualMatchups.has(matchupKey) && !scoredMatchups.get(km.round)!.has(matchupKey)) {
+        scoredMatchups.get(km.round)!.add(matchupKey);
+        matchPoints += rp.composition;
+        reasons.push('Juiste samenstelling');
 
-    if (bothCorrect) {
-      matchPoints += rp.composition;
-      reasons.push('Juiste samenstelling');
-    }
-
-    // Score prediction points (only if composition is correct)
-    if (bothCorrect) {
-      const pred = predMap.get(km.matchNumber);
-      const actual = actualMap.get(km.matchNumber);
-
-      if (pred && actual) {
-        const predOutcome = Math.sign(pred.homeScore - pred.awayScore);
-        const actualOutcome = Math.sign(actual.homeScore - actual.awayScore);
-
-        if (predOutcome === actualOutcome) {
-          matchPoints += 1;
-          if (pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore) {
-            matchPoints += 2;
+        // Score prediction points only if composition correct AND same match
+        const actualTeamsInMatch = new Set([actualResolved.homeTeam, actualResolved.awayTeam].filter(Boolean));
+        const bothInThisMatch = predTeamsList.every(t => actualTeamsInMatch.has(t));
+        if (bothInThisMatch) {
+          const pred = predMap.get(km.matchNumber);
+          const actual = actualMap.get(km.matchNumber);
+          if (pred && actual) {
+            const predOutcome = Math.sign(pred.homeScore - pred.awayScore);
+            const actualOutcome = Math.sign(actual.homeScore - actual.awayScore);
+            if (predOutcome === actualOutcome) {
+              matchPoints += 1;
+              if (pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore) {
+                matchPoints += 2;
+              }
+            }
           }
         }
       }
