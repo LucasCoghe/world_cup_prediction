@@ -16,7 +16,8 @@ export default function Rules() {
             <strong className="text-white">Stap 2:</strong> De eindstanden worden automatisch berekend op basis van je voorspellingen.
           </p>
           <p>
-            <strong className="text-white">Stap 3:</strong> De knockout-bracket wordt automatisch ingevuld. Voorspel de uitslagen van de knockout-wedstrijden.
+            <strong className="text-white">Stap 3:</strong> De knockout-bracket wordt automatisch ingevuld. Voorspel de uitslagen van de knockout-wedstrijden 
+            voor de aanvang van de eerste wedstrijd.
           </p>
           <p>
             <strong className="text-white">Stap 4:</strong> Vul de extra vragen in (topschutter, etc.).
