@@ -178,7 +178,7 @@ export default function HeadToHead({ userA, userB, onBack }: Props) {
             )}
           </div>
         </div>
-        {ref?.actualHome !== null && ref?.actualAway !== null && (
+        {ref && ref.actualHome !== null && ref.actualAway !== null && (
           <div className="text-center text-xs text-gray-600 mt-1">
             Uitslag: {ref.actualHome}-{ref.actualAway}
           </div>
