@@ -8,6 +8,7 @@ import Leaderboard from './Leaderboard';
 import Schandpaal from './Schandpaal';
 import Rules from './Rules';
 import AdminPanel from './AdminPanel';
+import GroupChat from './GroupChat';
 import { usePredictions } from '@/hooks/usePredictions';
 import { groupMatches, knockoutStructure } from '@/lib/tournament';
 
@@ -22,6 +23,7 @@ const baseTabs = [
   { id: 'groups', label: 'Groepsfase' },
   { id: 'knockout', label: 'Knockout' },
   { id: 'extra', label: 'Extra' },
+  { id: 'chat', label: 'Chat' },
   { id: 'rules', label: 'Regels' },
 ];
 
@@ -109,6 +111,7 @@ export default function Dashboard({ user, onLogout }: Props) {
         {activeTab === 'groups' && <GroupStage predictions={predictions} />}
         {activeTab === 'knockout' && <KnockoutStage predictions={predictions} />}
         {activeTab === 'extra' && <ExtraQuestions predictions={predictions} />}
+        {activeTab === 'chat' && <GroupChat />}
         {activeTab === 'rules' && <Rules />}
         {activeTab === 'admin' && user.isAdmin && <AdminPanel />}
       </main>

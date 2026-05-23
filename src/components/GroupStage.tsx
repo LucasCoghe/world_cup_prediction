@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect } from 'react';
 import { groups, groupMatches, teams, formatDeadline, TOURNAMENT_DEADLINE } from '@/lib/tournament';
 import { calculateGroupStandings, getBestThirdPlaced } from '@/lib/standings';
 import type { PredictionsState } from '@/hooks/usePredictions';
-import MatchComments from './MatchComments';
 import FlagIcon from './FlagIcon';
 
 interface Props {
@@ -185,7 +184,6 @@ export default function GroupStage({ predictions }: Props) {
                         </div>
                       ))}
                     </div>
-                    <MatchComments matchNumber={match.matchNumber} />
                   </div>
                 )}
               </div>
