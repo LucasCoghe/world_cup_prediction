@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { groupMatches, knockoutStructure, teams, getRoundName } from '@/lib/tournament';
+import FlagIcon from './FlagIcon';
 
 interface UserInfo {
   id: string;
@@ -23,7 +24,9 @@ export default function AdminPanel() {
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [results, setResults] = useState<Result[]>([]);
   const [activeSection, setActiveSection] = useState<'users' | 'results'>('users');
-  const [resultInput, setResultInput] = useState({ matchNumber: 1, homeScore: 0, awayScore: 0 });
+  const [editingMatch, setEditingMatch] = useState<number | null>(null);
+  const [editHome, setEditHome] = useState('');
+  const [editAway, setEditAway] = useState('');
 
   useEffect(() => {
     fetch('/api/admin/users').then(r => r.json()).then(d => setUsers(d.users || []));
@@ -45,31 +48,34 @@ export default function AdminPanel() {
     setUsers(users.map(u => u.id === userId ? { ...u, locked } : u));
   }
 
-  async function saveResult() {
+  async function saveResult(matchNumber: number) {
+    const home = parseInt(editHome);
+    const away = parseInt(editAway);
+    if (isNaN(home) || isNaN(away) || home < 0 || away < 0) return;
+
     await fetch('/api/admin/results', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(resultInput),
+      body: JSON.stringify({ matchNumber, homeScore: home, awayScore: away }),
     });
     const res = await fetch('/api/admin/results').then(r => r.json());
     setResults(res.results || []);
+    setEditingMatch(null);
+    setEditHome('');
+    setEditAway('');
   }
 
-  const allMatches = [...groupMatches, ...knockoutStructure];
-
-  function getMatchInfo(matchNumber: number) {
-    const gm = groupMatches.find(m => m.matchNumber === matchNumber);
-    if (gm) {
-      const h = teams[gm.home];
-      const a = teams[gm.away];
-      return `${h?.flag} ${h?.name} vs ${a?.name} ${a?.flag} (Groep ${gm.group})`;
-    }
-    const km = knockoutStructure.find(m => m.matchNumber === matchNumber);
-    if (km) {
-      return `${km.homeSource} vs ${km.awaySource} (${getRoundName(km.round)})`;
-    }
-    return `Wedstrijd ${matchNumber}`;
+  function startEditing(matchNumber: number) {
+    const existing = results.find(r => r.matchNumber === matchNumber);
+    setEditingMatch(matchNumber);
+    setEditHome(existing ? String(existing.homeScore) : '');
+    setEditAway(existing ? String(existing.awayScore) : '');
   }
+
+  const resultMap = new Map(results.map(r => [r.matchNumber, r]));
+
+  const allGroupMatches = groupMatches;
+  const groups = [...new Set(allGroupMatches.map(m => m.group))].sort();
 
   return (
     <div className="space-y-6 animate-in">
@@ -86,7 +92,7 @@ export default function AdminPanel() {
           onClick={() => setActiveSection('results')}
           className={`px-4 py-2 rounded-lg text-sm ${activeSection === 'results' ? 'tab-active' : 'bg-white/5'}`}
         >
-          Uitslagen ({results.length})
+          Uitslagen ({results.length}/{groupMatches.length + knockoutStructure.length})
         </button>
       </div>
 
@@ -119,67 +125,157 @@ export default function AdminPanel() {
       )}
 
       {activeSection === 'results' && (
-        <div className="space-y-4">
-          <div className="card">
-            <h3 className="text-sm font-semibold text-gold mb-3">Resultaat invoeren</h3>
-            <div className="flex flex-wrap items-end gap-3">
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">Wedstrijd #</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="104"
-                  value={resultInput.matchNumber}
-                  onChange={e => setResultInput({ ...resultInput, matchNumber: parseInt(e.target.value) || 1 })}
-                  className="score-input w-20"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">Thuis</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={resultInput.homeScore}
-                  onChange={e => setResultInput({ ...resultInput, homeScore: parseInt(e.target.value) || 0 })}
-                  className="score-input"
-                />
-              </div>
-              <span className="text-gray-500 font-bold pb-2">-</span>
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">Uit</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={resultInput.awayScore}
-                  onChange={e => setResultInput({ ...resultInput, awayScore: parseInt(e.target.value) || 0 })}
-                  className="score-input"
-                />
-              </div>
-              <button onClick={saveResult} className="btn-primary text-sm">
-                Opslaan
-              </button>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              {getMatchInfo(resultInput.matchNumber)}
-            </p>
-          </div>
+        <div className="space-y-6">
+          {/* Group stage */}
+          {groups.map(group => (
+            <div key={group} className="card">
+              <h3 className="text-sm font-semibold text-gold mb-3">Groep {group}</h3>
+              <div className="space-y-2">
+                {allGroupMatches.filter(m => m.group === group).map(match => {
+                  const home = teams[match.home];
+                  const away = teams[match.away];
+                  const result = resultMap.get(match.matchNumber);
+                  const isEditing = editingMatch === match.matchNumber;
 
-          <div className="card">
-            <h3 className="text-sm font-semibold text-gold mb-3">Ingevoerde uitslagen</h3>
-            {results.length === 0 ? (
-              <p className="text-sm text-gray-500">Nog geen uitslagen ingevoerd.</p>
-            ) : (
-              <div className="space-y-1">
-                {results.map(r => (
-                  <div key={r.matchNumber} className="flex items-center gap-2 text-sm py-1 border-b border-white/5">
-                    <span className="text-gray-500 w-8">#{r.matchNumber}</span>
-                    <span className="flex-1 text-xs text-gray-400">{getMatchInfo(r.matchNumber)}</span>
-                    <span className="font-bold">{r.homeScore} - {r.awayScore}</span>
-                  </div>
-                ))}
+                  return (
+                    <div key={match.matchNumber} className={`flex items-center gap-2 py-2 px-3 rounded-lg ${result ? 'bg-green-950/20 border border-green-600/20' : 'bg-white/5'}`}>
+                      <span className="text-xs text-gray-500 w-8">#{match.matchNumber}</span>
+
+                      <div className="flex items-center gap-1.5 flex-1 justify-end">
+                        <span className="text-sm">{home?.name}</span>
+                        <FlagIcon teamCode={match.home} size={18} />
+                      </div>
+
+                      {isEditing ? (
+                        <div className="flex items-center gap-1 mx-2">
+                          <input
+                            type="number"
+                            min="0"
+                            value={editHome}
+                            onChange={e => setEditHome(e.target.value)}
+                            placeholder="-"
+                            className="score-input w-12 text-center"
+                            autoFocus
+                          />
+                          <span className="text-gray-500 font-bold">-</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={editAway}
+                            onChange={e => setEditAway(e.target.value)}
+                            placeholder="-"
+                            className="score-input w-12 text-center"
+                          />
+                        </div>
+                      ) : (
+                        <div className="mx-2 w-16 text-center">
+                          {result ? (
+                            <span className="font-bold text-green-400">{result.homeScore} - {result.awayScore}</span>
+                          ) : (
+                            <span className="text-gray-600">- : -</span>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-1.5 flex-1">
+                        <FlagIcon teamCode={match.away} size={18} />
+                        <span className="text-sm">{away?.name}</span>
+                      </div>
+
+                      {isEditing ? (
+                        <div className="flex gap-1">
+                          <button onClick={() => saveResult(match.matchNumber)} className="btn-primary text-xs px-2 py-1">OK</button>
+                          <button onClick={() => setEditingMatch(null)} className="btn-secondary text-xs px-2 py-1">X</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => startEditing(match.matchNumber)}
+                          className="btn-secondary text-xs px-2 py-1"
+                        >
+                          {result ? 'Wijzig' : 'Invullen'}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            )}
-          </div>
+            </div>
+          ))}
+
+          {/* Knockout stage */}
+          {(() => {
+            const rounds = [...new Set(knockoutStructure.map(m => m.round))];
+            return rounds.map(round => (
+              <div key={round} className="card">
+                <h3 className="text-sm font-semibold text-gold mb-3">{getRoundName(round)}</h3>
+                <div className="space-y-2">
+                  {knockoutStructure.filter(m => m.round === round).map(match => {
+                    const result = resultMap.get(match.matchNumber);
+                    const isEditing = editingMatch === match.matchNumber;
+
+                    return (
+                      <div key={match.matchNumber} className={`flex items-center gap-2 py-2 px-3 rounded-lg ${result ? 'bg-green-950/20 border border-green-600/20' : 'bg-white/5'}`}>
+                        <span className="text-xs text-gray-500 w-8">#{match.matchNumber}</span>
+
+                        <div className="flex items-center gap-1.5 flex-1 justify-end">
+                          <span className="text-sm text-gray-400">{match.homeSource}</span>
+                        </div>
+
+                        {isEditing ? (
+                          <div className="flex items-center gap-1 mx-2">
+                            <input
+                              type="number"
+                              min="0"
+                              value={editHome}
+                              onChange={e => setEditHome(e.target.value)}
+                              placeholder="-"
+                              className="score-input w-12 text-center"
+                              autoFocus
+                            />
+                            <span className="text-gray-500 font-bold">-</span>
+                            <input
+                              type="number"
+                              min="0"
+                              value={editAway}
+                              onChange={e => setEditAway(e.target.value)}
+                              placeholder="-"
+                              className="score-input w-12 text-center"
+                            />
+                          </div>
+                        ) : (
+                          <div className="mx-2 w-16 text-center">
+                            {result ? (
+                              <span className="font-bold text-green-400">{result.homeScore} - {result.awayScore}</span>
+                            ) : (
+                              <span className="text-gray-600">- : -</span>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-1.5 flex-1">
+                          <span className="text-sm text-gray-400">{match.awaySource}</span>
+                        </div>
+
+                        {isEditing ? (
+                          <div className="flex gap-1">
+                            <button onClick={() => saveResult(match.matchNumber)} className="btn-primary text-xs px-2 py-1">OK</button>
+                            <button onClick={() => setEditingMatch(null)} className="btn-secondary text-xs px-2 py-1">X</button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => startEditing(match.matchNumber)}
+                            className="btn-secondary text-xs px-2 py-1"
+                          >
+                            {result ? 'Wijzig' : 'Invullen'}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ));
+          })()}
         </div>
       )}
     </div>

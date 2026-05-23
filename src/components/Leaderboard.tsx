@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import UserPredictions from './UserPredictions';
 
 interface LeaderboardEntry {
   id: string;
@@ -21,6 +22,7 @@ export default function Leaderboard({ currentUserId }: Props) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [completedMatchdays, setCompletedMatchdays] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [viewingUser, setViewingUser] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/leaderboard')
@@ -36,6 +38,10 @@ export default function Leaderboard({ currentUserId }: Props) {
     return <div className="text-center text-gray-400 py-12 text-lg">Klassement laden...</div>;
   }
 
+  if (viewingUser) {
+    return <UserPredictions userId={viewingUser} onBack={() => setViewingUser(null)} />;
+  }
+
   const maxBeers = Math.max(...entries.map(e => e.beerCount), 0);
   const isLastPlace = (i: number) => i === entries.length - 1 && entries.length > 1;
 
@@ -49,7 +55,7 @@ export default function Leaderboard({ currentUserId }: Props) {
           <div className="flex items-center gap-3">
             <span className="text-3xl">🍺</span>
             <div>
-              <div className="text-amber-300 font-bold text-lg">Pintjesrekening</div>
+              <div className="text-amber-300 font-bold text-lg">Beer Counter</div>
               <div className="text-amber-200/70 text-sm">
                 Na elke speeldag drinkt de laatste een pint! {completedMatchdays} speeldag{completedMatchdays !== 1 ? 'en' : ''} gespeeld.
               </div>
@@ -85,7 +91,10 @@ export default function Leaderboard({ currentUserId }: Props) {
 
                 {/* Name */}
                 <div className="flex-1">
-                  <div className="text-lg font-semibold text-white">
+                  <button
+                    onClick={() => setViewingUser(entry.id)}
+                    className="text-lg font-semibold text-white hover:text-gold transition-colors text-left"
+                  >
                     {entry.name}
                     {isCurrentUser && (
                       <span className="text-sm text-gold ml-2">(jij)</span>
@@ -93,7 +102,7 @@ export default function Leaderboard({ currentUserId }: Props) {
                     {isLast && (
                       <span className="text-sm text-amber-400 ml-2">schaamt u!</span>
                     )}
-                  </div>
+                  </button>
                   <div className="text-sm text-gray-500">
                     {entry.predictionsCount} voorspellingen
                   </div>
