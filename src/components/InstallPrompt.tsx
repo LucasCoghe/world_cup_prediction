@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -50,7 +51,7 @@ export default function InstallPrompt() {
         Installeer app
       </button>
 
-      {showIOSGuide && (
+      {showIOSGuide && createPortal(
         <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 pb-6" onClick={() => setShowIOSGuide(false)}>
           <div
             className="w-full max-w-md mx-4 rounded-2xl p-6 border border-white/10"
@@ -79,7 +80,8 @@ export default function InstallPrompt() {
               Begrepen!
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
