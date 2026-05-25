@@ -105,14 +105,14 @@ export default function Leaderboard({ currentUserId }: Props) {
             return (
               <div
                 key={entry.id}
-                className={`card flex items-center gap-4 ${
+                className={`card flex items-center gap-4 cursor-pointer ${
                   isCurrentUser ? 'card-gold' : ''
                 } ${i < 3 ? 'border-gold/30' : ''} ${
                   isLast ? 'border-amber-600/50 bg-amber-950/20' : ''
                 } ${isH2hSelected ? 'border-blue-500/50 bg-blue-950/20' : ''} ${
-                  h2hSelect && !isH2hSelected ? 'cursor-pointer hover:border-blue-500/30' : ''
+                  h2hSelect && !isH2hSelected ? 'hover:border-blue-500/30' : 'hover:border-gold/30'
                 }`}
-                onClick={h2hSelect && !isH2hSelected ? () => handleNameClick(entry.id) : undefined}
+                onClick={() => handleNameClick(entry.id)}
               >
                 {/* Position */}
                 <div className="text-center w-10">
@@ -123,12 +123,9 @@ export default function Leaderboard({ currentUserId }: Props) {
 
                 {/* Name */}
                 <div className="flex-1">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleNameClick(entry.id); }}
-                    className={`text-lg font-semibold transition-colors text-left ${
-                      isH2hSelected ? 'text-blue-300' : 'text-white hover:text-gold'
-                    }`}
-                  >
+                  <div className={`text-lg font-semibold ${
+                    isH2hSelected ? 'text-blue-300' : 'text-white'
+                  }`}>
                     {entry.name}
                     {isCurrentUser && (
                       <span className="text-sm text-gold ml-2">(jij)</span>
@@ -139,7 +136,7 @@ export default function Leaderboard({ currentUserId }: Props) {
                     {isH2hSelected && (
                       <span className="text-sm text-blue-400 ml-2">geselecteerd</span>
                     )}
-                  </button>
+                  </div>
                   <div className="text-sm text-gray-500">
                     {entry.predictionsCount} voorspellingen
                   </div>
