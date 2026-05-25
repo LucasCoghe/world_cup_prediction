@@ -52,9 +52,9 @@ export default function InstallPrompt() {
       </button>
 
       {showIOSGuide && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 pb-6" onClick={() => setShowIOSGuide(false)}>
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60" style={{ padding: 'env(safe-area-inset-top, 0px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px) 16px' }} onClick={() => setShowIOSGuide(false)}>
           <div
-            className="w-full max-w-md mx-4 rounded-2xl p-6 border border-white/10"
+            className="w-full max-w-md rounded-2xl p-6 border border-white/10"
             style={{ background: 'linear-gradient(135deg, #0b1026 0%, #1b3a6b 100%)' }}
             onClick={e => e.stopPropagation()}
           >
