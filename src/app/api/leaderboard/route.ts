@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { calculatePoints, calculateMatchPoints } from '@/lib/scoring';
 import { MatchScore } from '@/lib/standings';
-import { groupMatches, knockoutStructure } from '@/lib/tournament';
+import { groupMatches, knockoutStructure, TOTAL_GROUP_MATCHES } from '@/lib/tournament';
 
 export async function GET() {
   const users = await prisma.user.findMany({
@@ -55,35 +55,36 @@ export async function GET() {
     .map(([date]) => date)
     .sort();
 
-  // For each completed date, calculate cumulative standings and find last place
+  // Beer counter: only for group phase matchdays (per-day points, not cumulative)
   const beerCounts = new Map<string, number>();
   for (const userId of users.map(u => u.id)) beerCounts.set(userId, 0);
 
-  for (const date of completedDates) {
-    // Get all results up to and including this date
-    const matchesUpToDate = new Set<number>();
-    for (const [d, nums] of matchesByDate) {
-      if (d <= date) nums.forEach(n => matchesUpToDate.add(n));
-    }
-    const resultsUpToDate = actualScores.filter(r => matchesUpToDate.has(r.matchNumber));
+  const groupDates = completedDates.filter(date => {
+    const matchNums = matchesByDate.get(date) || [];
+    return matchNums.every(n => n <= TOTAL_GROUP_MATCHES);
+  });
 
-    // Calculate points for each user at this point in time
+  for (const date of groupDates) {
+    const matchesOnDate = new Set(matchesByDate.get(date) || []);
+    const resultsOnDate = actualScores.filter(r => matchesOnDate.has(r.matchNumber));
+
     const standings = users.map(u => {
-      const predScores: MatchScore[] = u.predictions.map(p => ({
-        matchNumber: p.matchNumber,
-        homeScore: p.homeScore,
-        awayScore: p.awayScore,
-        advancingTeam: p.advancingTeam || undefined,
-      }));
-      const scoring = calculatePoints(predScores, resultsUpToDate);
-      return { id: u.id, points: scoring.totalPoints };
+      let dayPoints = 0;
+      for (const actual of resultsOnDate) {
+        const pred = u.predictions.find(p => p.matchNumber === actual.matchNumber);
+        if (pred) {
+          dayPoints += calculateMatchPoints(
+            { matchNumber: pred.matchNumber, homeScore: pred.homeScore, awayScore: pred.awayScore },
+            actual,
+          );
+        }
+      }
+      return { id: u.id, points: dayPoints };
     });
 
     if (standings.length < 2) continue;
 
-    // Find lowest score
     const minPoints = Math.min(...standings.map(s => s.points));
-    // Everyone with the lowest score drinks
     for (const s of standings) {
       if (s.points === minPoints) {
         beerCounts.set(s.id, (beerCounts.get(s.id) || 0) + 1);
@@ -91,8 +92,47 @@ export async function GET() {
     }
   }
 
-  // === BESCHAMENDE REEKS: 3x op rij 0 punten = extra bier ===
-  const playedMatchNumbers = [...resultMatchNumbers].sort((a, b) => a - b);
+  // Knockout rondebier: per volledige ronde, wie het minst scoort drinkt
+  const matchesByRound = new Map<string, number[]>();
+  for (const km of knockoutStructure) {
+    const list = matchesByRound.get(km.round) || [];
+    list.push(km.matchNumber);
+    matchesByRound.set(km.round, list);
+  }
+
+  for (const [round, matchNums] of matchesByRound) {
+    const allHaveResults = matchNums.every(n => resultMatchNumbers.has(n));
+    if (!allHaveResults) continue;
+
+    const resultsBeforeRound = actualScores.filter(r => !matchNums.includes(r.matchNumber));
+    const resultsIncludingRound = actualScores.filter(r =>
+      resultsBeforeRound.some(rb => rb.matchNumber === r.matchNumber) || matchNums.includes(r.matchNumber)
+    );
+
+    const standings = users.map(u => {
+      const preds: MatchScore[] = u.predictions.map(p => ({
+        matchNumber: p.matchNumber,
+        homeScore: p.homeScore,
+        awayScore: p.awayScore,
+        advancingTeam: p.advancingTeam || undefined,
+      }));
+      const pointsBefore = calculatePoints(preds, resultsBeforeRound).totalPoints;
+      const pointsAfter = calculatePoints(preds, resultsIncludingRound).totalPoints;
+      return { id: u.id, points: pointsAfter - pointsBefore };
+    });
+
+    if (standings.length < 2) continue;
+
+    const minPoints = Math.min(...standings.map(s => s.points));
+    for (const s of standings) {
+      if (s.points === minPoints) {
+        beerCounts.set(s.id, (beerCounts.get(s.id) || 0) + 1);
+      }
+    }
+  }
+
+  // === BESCHAMENDE REEKS: 3x op rij 0 punten = extra bier (alleen groepsfase) ===
+  const playedGroupMatches = [...resultMatchNumbers].filter(n => n <= TOTAL_GROUP_MATCHES).sort((a, b) => a - b);
   const hotStreaks = new Map<string, number>();
   for (const u of users) {
     const predMap = new Map<number, MatchScore>();
@@ -101,7 +141,7 @@ export async function GET() {
     }
     let consecutiveZeros = 0;
     let streak = 0;
-    for (const matchNum of playedMatchNumbers) {
+    for (const matchNum of playedGroupMatches) {
       const pred = predMap.get(matchNum);
       const actual = actualScores.find(a => a.matchNumber === matchNum);
       if (!pred || !actual) {

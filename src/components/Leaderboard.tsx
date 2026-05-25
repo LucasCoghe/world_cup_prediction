@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import UserPredictions from './UserPredictions';
 import HeadToHead from './HeadToHead';
+import BeerToast from './BeerToast';
 
 interface LeaderboardEntry {
   id: string;
@@ -52,6 +53,7 @@ export default function Leaderboard({ currentUserId }: Props) {
 
   const maxBeers = Math.max(...entries.map(e => e.beerCount), 0);
   const isLastPlace = (i: number) => i === entries.length - 1 && entries.length > 1;
+  const myBeerCount = entries.find(e => e.id === currentUserId)?.beerCount ?? 0;
 
   function handleNameClick(userId: string) {
     if (h2hSelect === null) {
@@ -63,6 +65,7 @@ export default function Leaderboard({ currentUserId }: Props) {
 
   return (
     <div className="space-y-6 animate-in">
+      <BeerToast currentBeerCount={myBeerCount} />
       <h2 className="text-2xl font-bold trophy-text">Klassement</h2>
 
       {/* Head-to-head button */}
