@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import InstallPrompt from './InstallPrompt';
 
 interface Props {
   onLogin: (user: { userId: string; name: string; isAdmin: boolean }) => void;
@@ -107,6 +108,10 @@ export default function AuthScreen({ onLogin }: Props) {
             {isLogin ? 'Registreer hier' : 'Log in'}
           </button>
         </p>
+
+        <div className="flex justify-center mt-4">
+          <InstallPrompt />
+        </div>
       </div>
     </div>
   );

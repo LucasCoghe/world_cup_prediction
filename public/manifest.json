@@ -1,0 +1,30 @@
+{
+  "name": "WK 2026 Pronostiek",
+  "short_name": "WK 2026",
+  "description": "Voorspel de uitslagen van het WK 2026 en win!",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060d1f",
+  "theme_color": "#002868",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

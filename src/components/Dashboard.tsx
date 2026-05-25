@@ -9,6 +9,7 @@ import Schandpaal from './Schandpaal';
 import Rules from './Rules';
 import AdminPanel from './AdminPanel';
 import GroupChat from './GroupChat';
+import InstallPrompt from './InstallPrompt';
 import { usePredictions } from '@/hooks/usePredictions';
 import { groupMatches, knockoutStructure } from '@/lib/tournament';
 
@@ -76,7 +77,8 @@ export default function Dashboard({ user, onLogout }: Props) {
       <header className="sticky top-0 z-50 backdrop-blur-lg border-b border-white/10" style={{ background: 'linear-gradient(90deg, rgba(0,40,104,0.85) 0%, rgba(6,13,31,0.95) 30%, rgba(6,13,31,0.95) 70%, rgba(107,21,32,0.85) 100%)' }}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <h1 className="text-xl font-bold trophy-text">WK 2026 Pronostiek</h1>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <InstallPrompt />
             <span className="text-base text-gray-400">
               {user.name} {user.isAdmin && '(admin)'}
             </span>

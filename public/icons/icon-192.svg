@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#002868"/>
+      <stop offset="100%" style="stop-color:#060d1f"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffd700"/>
+      <stop offset="100%" style="stop-color:#d4af37"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="32" fill="url(#bg)"/>
+  <!-- Trophy -->
+  <path d="M72 48h48v8c0 20-10 36-24 42-14-6-24-22-24-42V48z" fill="url(#gold)"/>
+  <path d="M52 48h20v8c-8 4-14 2-18-2l-2-6z" fill="url(#gold)" opacity="0.7"/>
+  <path d="M120 48h20l-2 6c-4 4-10 6-18 2V48z" fill="url(#gold)" opacity="0.7"/>
+  <rect x="88" y="90" width="16" height="16" rx="2" fill="url(#gold)"/>
+  <rect x="76" y="106" width="40" height="8" rx="3" fill="url(#gold)"/>
+  <!-- Ball -->
+  <circle cx="96" cy="140" r="20" fill="white" opacity="0.9"/>
+  <path d="M96 120l4 7h8l5 8-2 8h-6l-5 8-4-1-4 1-5-8h-6l-2-8 5-8h8z" fill="#333" opacity="0.3"/>
+  <!-- Text -->
+  <text x="96" y="172" text-anchor="middle" fill="white" font-family="system-ui,sans-serif" font-size="14" font-weight="700" opacity="0.8">WK 2026</text>
+</svg>

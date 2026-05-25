@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#002868"/>
+      <stop offset="100%" style="stop-color:#060d1f"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffd700"/>
+      <stop offset="100%" style="stop-color:#d4af37"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="80" fill="url(#bg)"/>
+  <!-- Trophy cup -->
+  <path d="M186 100h140v24c0 56-28 100-70 118-42-18-70-62-70-118V100z" fill="url(#gold)"/>
+  <!-- Left handle -->
+  <path d="M130 100h56v24c-24 10-40 6-52-6l-4-18z" fill="url(#gold)" opacity="0.7"/>
+  <!-- Right handle -->
+  <path d="M326 100h56l-4 18c-12 12-28 16-52 6V100z" fill="url(#gold)" opacity="0.7"/>
+  <!-- Trophy stem -->
+  <rect x="236" y="242" width="40" height="44" rx="4" fill="url(#gold)"/>
+  <!-- Trophy base -->
+  <rect x="200" y="286" width="112" height="24" rx="8" fill="url(#gold)"/>
+  <!-- Football -->
+  <circle cx="256" cy="380" r="52" fill="white" opacity="0.9"/>
+  <path d="M256 328l11 18h20l14 22-6 22h-16l-14 22-9-3-9 3-14-22h-16l-6-22 14-22h20z" fill="#333" opacity="0.25"/>
+  <!-- Text -->
+  <text x="256" y="466" text-anchor="middle" fill="white" font-family="system-ui,sans-serif" font-size="40" font-weight="700" opacity="0.8">WK 2026</text>
+</svg>
