@@ -55,10 +55,11 @@ export async function GET() {
     .map(([date]) => date)
     .sort();
 
-  // Beer counter: only for group phase matchdays (per-day points, not cumulative)
-  const beerCounts = new Map<string, number>();
-  for (const userId of users.map(u => u.id)) beerCounts.set(userId, 0);
+  // Beer counter with reasons
+  const beerReasons = new Map<string, string[]>();
+  for (const userId of users.map(u => u.id)) beerReasons.set(userId, []);
 
+  // Group phase: per matchday, lowest scorer drinks
   const groupDates = completedDates.filter(date => {
     const matchNums = matchesByDate.get(date) || [];
     return matchNums.every(n => n <= TOTAL_GROUP_MATCHES);
@@ -85,20 +86,26 @@ export async function GET() {
     if (standings.length < 2) continue;
 
     const minPoints = Math.min(...standings.map(s => s.points));
+    const formattedDate = new Date(date + 'T12:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' });
     for (const s of standings) {
       if (s.points === minPoints) {
-        beerCounts.set(s.id, (beerCounts.get(s.id) || 0) + 1);
+        beerReasons.get(s.id)!.push(`Laatste op ${formattedDate} (${s.points}pt)`);
       }
     }
   }
 
-  // Knockout rondebier: per volledige ronde, wie het minst scoort drinkt
+  // Knockout: per round, lowest scorer drinks
   const matchesByRound = new Map<string, number[]>();
   for (const km of knockoutStructure) {
     const list = matchesByRound.get(km.round) || [];
     list.push(km.matchNumber);
     matchesByRound.set(km.round, list);
   }
+
+  const roundLabels: Record<string, string> = {
+    R32: 'Ronde van 32', R16: 'Achtste finales', QF: 'Kwartfinales',
+    SF: 'Halve finales', '3P': 'Troostfinale', F: 'Finale',
+  };
 
   for (const [round, matchNums] of matchesByRound) {
     const allHaveResults = matchNums.every(n => resultMatchNumbers.has(n));
@@ -124,9 +131,10 @@ export async function GET() {
     if (standings.length < 2) continue;
 
     const minPoints = Math.min(...standings.map(s => s.points));
+    const label = roundLabels[round] || round;
     for (const s of standings) {
       if (s.points === minPoints) {
-        beerCounts.set(s.id, (beerCounts.get(s.id) || 0) + 1);
+        beerReasons.get(s.id)!.push(`Laatste in ${label} (${s.points}pt)`);
       }
     }
   }
@@ -154,7 +162,7 @@ export async function GET() {
         consecutiveZeros = calculateMatchPoints(pred, actual) === 0 ? consecutiveZeros + 1 : 0;
       }
       if (consecutiveZeros > 0 && consecutiveZeros % 3 === 0) {
-        beerCounts.set(u.id, (beerCounts.get(u.id) || 0) + 1);
+        beerReasons.get(u.id)!.push(`${consecutiveZeros}x op rij 0 punten`);
       }
     }
     hotStreaks.set(u.id, streak);
@@ -186,7 +194,8 @@ export async function GET() {
       knockoutPoints: scoring.knockoutPoints,
       extraPoints: scoring.extraPoints,
       predictionsCount: u.predictions.length,
-      beerCount: beerCounts.get(u.id) || 0,
+      beerCount: beerReasons.get(u.id)?.length || 0,
+      beerReasons: beerReasons.get(u.id) || [],
       hotStreak: hotStreaks.get(u.id) || 0,
     };
   });

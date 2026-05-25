@@ -14,6 +14,7 @@ interface LeaderboardEntry {
   extraPoints: number;
   predictionsCount: number;
   beerCount: number;
+  beerReasons: string[];
   hotStreak: number;
 }
 
@@ -53,7 +54,9 @@ export default function Leaderboard({ currentUserId }: Props) {
 
   const maxBeers = Math.max(...entries.map(e => e.beerCount), 0);
   const isLastPlace = (i: number) => i === entries.length - 1 && entries.length > 1;
-  const myBeerCount = entries.find(e => e.id === currentUserId)?.beerCount ?? 0;
+  const myEntry = entries.find(e => e.id === currentUserId);
+  const myBeerCount = myEntry?.beerCount ?? 0;
+  const myBeerReasons = myEntry?.beerReasons ?? [];
 
   function handleNameClick(userId: string) {
     if (h2hSelect === null) {
@@ -65,7 +68,7 @@ export default function Leaderboard({ currentUserId }: Props) {
 
   return (
     <div className="space-y-6 animate-in">
-      <BeerToast currentBeerCount={myBeerCount} />
+      <BeerToast currentBeerCount={myBeerCount} reasons={myBeerReasons} />
       <h2 className="text-2xl font-bold trophy-text">Klassement</h2>
 
       {/* Head-to-head button */}
