@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 interface BeerConfirmation {
   id: string;
@@ -63,8 +64,8 @@ export default function BeerModal({ userId, userName, currentUserId, reasons, on
     return confirmations.find(c => c.reason === reason);
   }
 
-  return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-gray-900 border border-amber-600/40 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-bold text-amber-300">🍺 {isMe ? 'Jouw' : `${userName}'s`} pintjes ({reasons.length})</h3>
@@ -72,7 +73,7 @@ export default function BeerModal({ userId, userName, currentUserId, reasons, on
         </div>
 
         {reasons.length === 0 ? (
-          <div className="text-gray-500 text-center py-4">{isMe ? 'Nog geen pintjes, proficiat!' : 'Staat nog droog...'}</div>
+          <div className="text-gray-500 text-center py-4">Staat nog droog...</div>
         ) : loading ? (
           <div className="text-gray-500 text-center py-4">Laden...</div>
         ) : (
@@ -125,6 +126,7 @@ export default function BeerModal({ userId, userName, currentUserId, reasons, on
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
