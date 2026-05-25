@@ -198,14 +198,26 @@ export default function Leaderboard({ currentUserId }: Props) {
       {beerModalUser && (() => {
         const modalEntry = entries.find(e => e.id === beerModalUser);
         if (!modalEntry) return null;
+        const isMe = beerModalUser === currentUserId;
         return (
-          <BeerModal
-            userId={modalEntry.id}
-            userName={modalEntry.name}
-            currentUserId={currentUserId}
-            reasons={modalEntry.beerReasons}
-            onClose={() => setBeerModalUser(null)}
-          />
+          <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setBeerModalUser(null)}>
+            <div className="bg-gray-900 border border-amber-600/40 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-amber-300">🍺 {isMe ? 'Jouw' : `${modalEntry.name}'s`} pintjes ({modalEntry.beerCount})</h3>
+                <button onClick={() => setBeerModalUser(null)} className="text-gray-500 hover:text-white text-xl">&times;</button>
+              </div>
+              <div className="space-y-2">
+                {modalEntry.beerReasons.length === 0 ? (
+                  <div className="text-gray-500 text-center py-4">{isMe ? 'Nog geen pintjes, proficiat!' : 'Staat nog droog...'}</div>
+                ) : modalEntry.beerReasons.map((reason, i) => (
+                  <div key={i} className="flex items-center gap-3 bg-amber-900/30 px-3 py-2 rounded-lg border border-amber-700/30">
+                    <span className="text-lg">🍺</span>
+                    <span className="text-amber-100 text-sm">{reason}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         );
       })()}
     </div>
