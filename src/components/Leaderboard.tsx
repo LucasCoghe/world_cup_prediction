@@ -29,6 +29,7 @@ export default function Leaderboard({ currentUserId }: Props) {
   const [viewingUser, setViewingUser] = useState<string | null>(null);
   const [h2hUsers, setH2hUsers] = useState<[string, string] | null>(null);
   const [h2hSelect, setH2hSelect] = useState<string | null>(null);
+  const [showBeerModal, setShowBeerModal] = useState(false);
 
   useEffect(() => {
     fetch('/api/leaderboard')
@@ -155,8 +156,13 @@ export default function Leaderboard({ currentUserId }: Props) {
                   </div>
                 )}
 
-                {/* Beer count - always visible */}
-                <div className="flex items-center gap-1 bg-amber-900/40 px-3 py-1.5 rounded-lg border border-amber-600/30">
+                {/* Beer count - clickable for own user */}
+                <div
+                  className={`flex items-center gap-1 bg-amber-900/40 px-3 py-1.5 rounded-lg border border-amber-600/30 ${
+                    isCurrentUser && entry.beerCount > 0 ? 'cursor-pointer hover:bg-amber-900/60' : ''
+                  }`}
+                  onClick={isCurrentUser && entry.beerCount > 0 ? (e) => { e.stopPropagation(); setShowBeerModal(true); } : undefined}
+                >
                   <span className="text-lg">🍺</span>
                   <span className={`font-bold text-lg ${
                     entry.beerCount === maxBeers && maxBeers > 0 ? 'text-amber-300' : 'text-amber-400/80'
@@ -189,6 +195,25 @@ export default function Leaderboard({ currentUserId }: Props) {
               </div>
             );
           })}
+        </div>
+      )}
+      {/* Beer reasons modal */}
+      {showBeerModal && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowBeerModal(false)}>
+          <div className="bg-gray-900 border border-amber-600/40 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-amber-300">🍺 Jouw pintjes ({myBeerCount})</h3>
+              <button onClick={() => setShowBeerModal(false)} className="text-gray-500 hover:text-white text-xl">&times;</button>
+            </div>
+            <div className="space-y-2">
+              {myBeerReasons.map((reason, i) => (
+                <div key={i} className="flex items-center gap-3 bg-amber-900/30 px-3 py-2 rounded-lg border border-amber-700/30">
+                  <span className="text-lg">🍺</span>
+                  <span className="text-amber-100 text-sm">{reason}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
