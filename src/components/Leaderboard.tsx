@@ -155,9 +155,10 @@ export default function Leaderboard({ currentUserId }: Props) {
                 )}
 
                 {/* Beer count - clickable for own user */}
-                <div
+                <button
+                  type="button"
                   className="flex items-center gap-1 bg-amber-900/40 px-3 py-1.5 rounded-lg border border-amber-600/30 cursor-pointer hover:bg-amber-900/60"
-                  onClick={(e) => { e.stopPropagation(); setBeerModalUser(entry.id); }}
+                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); setBeerModalUser(entry.id); }}
                 >
                   <span className="text-lg">🍺</span>
                   <span className={`font-bold text-lg ${
@@ -165,7 +166,7 @@ export default function Leaderboard({ currentUserId }: Props) {
                   }`}>
                     {entry.beerCount}
                   </span>
-                </div>
+                </button>
 
                 {/* Points breakdown */}
                 <div className="hidden sm:flex gap-6 text-sm text-gray-400">

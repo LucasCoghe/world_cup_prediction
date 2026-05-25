@@ -28,11 +28,15 @@ export default function BeerModal({ userId, userName, currentUserId, reasons, on
 
   const loadConfirmations = useCallback(() => {
     fetch('/api/beers')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
       .then(data => {
         setConfirmations((data.confirmations || []).filter((c: BeerConfirmation) => c.drinkerId === userId));
-        setLoading(false);
-      });
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [userId]);
 
   useEffect(() => { loadConfirmations(); }, [loadConfirmations]);
