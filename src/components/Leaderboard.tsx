@@ -37,12 +37,6 @@ export default function Leaderboard({ currentUserId }: Props) {
       .then(r => r.json())
       .then(data => {
         const lb = data.leaderboard || [];
-        if (new URLSearchParams(window.location.search).has('bier')) {
-          for (const e of lb) {
-            e.beerReasons = ['Laatste op 15 jun (0pt)', '3x op rij 0 punten'];
-            e.beerCount = e.beerReasons.length;
-          }
-        }
         setEntries(lb);
         setCompletedMatchdays(data.completedMatchdays || 0);
         setLoading(false);

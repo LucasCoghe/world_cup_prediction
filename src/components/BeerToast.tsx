@@ -29,17 +29,6 @@ export default function BeerToast({ currentBeerCount, reasons }: Props) {
   const shownFor = useRef<number | null>(null);
 
   useEffect(() => {
-    const forceTest = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('bier');
-
-    if (forceTest && shownFor.current !== -1) {
-      shownFor.current = -1;
-      setNewReasons(['Laatste op 15 jun (0pt)']);
-      setMessage(roasts[Math.floor(Math.random() * roasts.length)]);
-      setVisible(true);
-      const timer = setTimeout(() => setVisible(false), 6000);
-      return () => clearTimeout(timer);
-    }
-
     const stored = localStorage.getItem('lastBeerCount');
     const lastCount = stored ? parseInt(stored, 10) : 0;
 
