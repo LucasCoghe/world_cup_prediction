@@ -25,6 +25,8 @@ export async function GET() {
       extraPoints: 0,
       predictionsCount: u.predictions.length,
       beerCount: 0,
+      beerReasons: [] as string[],
+      hotStreak: 0,
     }));
     return NextResponse.json({ leaderboard });
   }
