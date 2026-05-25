@@ -159,9 +159,9 @@ export default function Leaderboard({ currentUserId }: Props) {
                 {/* Beer count - clickable for own user */}
                 <div
                   className={`flex items-center gap-1 bg-amber-900/40 px-3 py-1.5 rounded-lg border border-amber-600/30 ${
-                    isCurrentUser && entry.beerCount > 0 ? 'cursor-pointer hover:bg-amber-900/60' : ''
+                    isCurrentUser ? 'cursor-pointer hover:bg-amber-900/60' : ''
                   }`}
-                  onClick={isCurrentUser && entry.beerCount > 0 ? (e) => { e.stopPropagation(); setShowBeerModal(true); } : undefined}
+                  onClick={isCurrentUser ? (e) => { e.stopPropagation(); setShowBeerModal(true); } : undefined}
                 >
                   <span className="text-lg">🍺</span>
                   <span className={`font-bold text-lg ${
@@ -206,7 +206,9 @@ export default function Leaderboard({ currentUserId }: Props) {
               <button onClick={() => setShowBeerModal(false)} className="text-gray-500 hover:text-white text-xl">&times;</button>
             </div>
             <div className="space-y-2">
-              {myBeerReasons.map((reason, i) => (
+              {myBeerReasons.length === 0 ? (
+                <div className="text-gray-500 text-center py-4">Momenteel sta je nog droog...</div>
+              ) : myBeerReasons.map((reason, i) => (
                 <div key={i} className="flex items-center gap-3 bg-amber-900/30 px-3 py-2 rounded-lg border border-amber-700/30">
                   <span className="text-lg">🍺</span>
                   <span className="text-amber-100 text-sm">{reason}</span>
