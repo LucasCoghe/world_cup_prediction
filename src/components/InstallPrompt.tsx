@@ -62,7 +62,7 @@ export default function InstallPrompt() {
             <ol className="text-gray-300 space-y-3 text-sm">
               <li className="flex items-start gap-3">
                 <span className="text-xl">1.</span>
-                <span>Tik op het <strong className="text-white">Deel-icoon</strong> (vierkantje met pijl omhoog) onderaan Safari</span>
+                <span>Tik op het <strong className="text-white">Deel-icoon</strong> (vierkantje met pijl omhoog) onderaan Safari (...)</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-xl">2.</span>
