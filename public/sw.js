@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wk2026-v1';
+const CACHE_NAME = 'wk2026-v2';
 
 const PRECACHE_URLS = [
   '/',
@@ -23,6 +23,33 @@ self.addEventListener('activate', (event) => {
     )
   );
   self.clients.claim();
+});
+
+self.addEventListener('push', (event) => {
+  const data = event.data ? event.data.json() : {};
+  const title = data.title || 'WK 2026 Pronostiek';
+  const options = {
+    body: data.body || 'Je hebt een voorspelling te doen!',
+    icon: '/icons/icon-192x192.png',
+    badge: '/icons/icon-192x192.png',
+    data: { url: data.url || '/' },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window' }).then((clients) => {
+      for (const client of clients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    })
+  );
 });
 
 self.addEventListener('fetch', (event) => {

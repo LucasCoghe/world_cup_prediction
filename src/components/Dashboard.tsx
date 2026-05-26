@@ -10,6 +10,7 @@ import Rules from './Rules';
 import AdminPanel from './AdminPanel';
 import GroupChat from './GroupChat';
 import InstallPrompt from './InstallPrompt';
+import NotificationToggle from './NotificationToggle';
 import { usePredictions } from '@/hooks/usePredictions';
 import { groupMatches, knockoutStructure } from '@/lib/tournament';
 
@@ -100,6 +101,7 @@ export default function Dashboard({ user, onLogout }: Props) {
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <h1 className="text-xl font-bold trophy-text">WK 2026 Pronostiek</h1>
           <div className="flex items-center gap-3">
+            <NotificationToggle />
             <InstallPrompt />
             <span className="text-base text-gray-400">
               {user.name} {user.isAdmin && '(admin)'}

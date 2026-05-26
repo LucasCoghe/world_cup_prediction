@@ -17,11 +17,12 @@ model User {
   locked    Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  predictions      MatchPrediction[]
-  extraPredictions ExtraPrediction?
-  comments         MatchComment[]
-  beersDrunk       BeerConfirmation[] @relation("drinker")
-  beersWitnessed   BeerConfirmation[] @relation("witness")
+  predictions        MatchPrediction[]
+  extraPredictions   ExtraPrediction?
+  comments           MatchComment[]
+  pushSubscriptions  PushSubscription[]
+  beersDrunk         BeerConfirmation[] @relation("drinker")
+  beersWitnessed     BeerConfirmation[] @relation("witness")
 }
 
 model MatchComment {
@@ -68,6 +69,17 @@ model ActualResult {
   homeScore     Int
   awayScore     Int
   advancingTeam String?
+}
+
+model PushSubscription {
+  id        String @id @default(cuid())
+  userId    String
+  endpoint  String @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }
 
 model BeerConfirmation {

@@ -23,7 +23,8 @@ interface Result {
 export default function AdminPanel() {
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [results, setResults] = useState<Result[]>([]);
-  const [activeSection, setActiveSection] = useState<'users' | 'results'>('users');
+  const [activeSection, setActiveSection] = useState<'users' | 'results' | 'notify'>('users');
+  const [notifyStatus, setNotifyStatus] = useState('');
   const [editingMatch, setEditingMatch] = useState<number | null>(null);
   const [editHome, setEditHome] = useState('');
   const [editAway, setEditAway] = useState('');
@@ -93,6 +94,12 @@ export default function AdminPanel() {
           className={`px-4 py-2 rounded-lg text-sm ${activeSection === 'results' ? 'tab-active' : 'bg-white/5'}`}
         >
           Uitslagen ({results.length}/{groupMatches.length + knockoutStructure.length})
+        </button>
+        <button
+          onClick={() => setActiveSection('notify')}
+          className={`px-4 py-2 rounded-lg text-sm ${activeSection === 'notify' ? 'tab-active' : 'bg-white/5'}`}
+        >
+          Notificaties
         </button>
       </div>
 
@@ -276,6 +283,87 @@ export default function AdminPanel() {
               </div>
             ));
           })()}
+        </div>
+      )}
+      {activeSection === 'notify' && (
+        <div className="space-y-4">
+          <div className="card">
+            <h3 className="text-sm font-semibold text-gold mb-3">Deadline Reminders</h3>
+            <p className="text-sm text-gray-400 mb-3">
+              Stuur een herinnering naar deelnemers die nog geen voorspelling hebben ingevuld voor wedstrijden die binnen het uur beginnen.
+            </p>
+            <button
+              onClick={async () => {
+                setNotifyStatus('Verzenden...');
+                try {
+                  const res = await fetch('/api/push/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'deadline' }),
+                  });
+                  const data = await res.json();
+                  if (data.sent !== undefined) {
+                    setNotifyStatus(`${data.sent} notificatie(s) verstuurd${data.matches ? ` voor ${data.matches} wedstrijd(en)` : ''}.`);
+                  } else if (data.message) {
+                    setNotifyStatus(data.message);
+                  } else {
+                    setNotifyStatus('Geen notificaties verstuurd.');
+                  }
+                } catch {
+                  setNotifyStatus('Fout bij versturen.');
+                }
+              }}
+              className="btn-primary text-sm"
+            >
+              Stuur deadline reminders
+            </button>
+          </div>
+
+          <div className="card">
+            <h3 className="text-sm font-semibold text-gold mb-3">Custom Notificatie</h3>
+            <div className="space-y-2 mb-3">
+              <input
+                type="text"
+                id="notify-title"
+                placeholder="Titel (optioneel)"
+                className="score-input w-full px-3 py-2"
+              />
+              <input
+                type="text"
+                id="notify-body"
+                placeholder="Bericht"
+                className="score-input w-full px-3 py-2"
+              />
+            </div>
+            <button
+              onClick={async () => {
+                const title = (document.getElementById('notify-title') as HTMLInputElement).value;
+                const body = (document.getElementById('notify-body') as HTMLInputElement).value;
+                if (!body) { setNotifyStatus('Vul een bericht in.'); return; }
+                setNotifyStatus('Verzenden...');
+                try {
+                  const res = await fetch('/api/push/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'custom', title, body }),
+                  });
+                  const data = await res.json();
+                  setNotifyStatus(`${data.sent || 0} notificatie(s) verstuurd.`);
+                } catch {
+                  setNotifyStatus('Fout bij versturen.');
+                }
+              }}
+              className="btn-primary text-sm"
+            >
+              Verstuur naar iedereen
+            </button>
+          </div>
+
+          {notifyStatus && (
+            <div className="card bg-blue-950/20 border border-blue-600/20">
+              <p className="text-sm text-blue-300">{notifyStatus}</p>
+            </div>
+          )}
         </div>
       )}
     </div>
