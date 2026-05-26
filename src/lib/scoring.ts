@@ -20,7 +20,8 @@ export function calculatePoints(
   predictions: MatchScore[],
   actualResults: MatchScore[],
   extraPrediction?: { topScorer: string; belgianTopScorer: string; worldChampion: string; topScorerGoals: number; topScorerFirstGoalMin: number },
-  actualExtra?: { topScorer: string; belgianTopScorer: string; worldChampion: string; topScorerGoals: number; topScorerFirstGoalMin: number }
+  actualExtra?: { topScorer: string; belgianTopScorer: string; worldChampion: string; topScorerGoals: number; topScorerFirstGoalMin: number },
+  jokerMatches?: Set<number>
 ): ScoringResult {
   const breakdown: PointBreakdown[] = [];
   let groupPhasePoints = 0;
@@ -58,7 +59,17 @@ export function calculatePoints(
       }
     }
 
-    if (matchPoints > 0) {
+    const isJoker = jokerMatches?.has(i) ?? false;
+    if (isJoker) {
+      if (matchPoints > 0) {
+        matchPoints *= 2;
+        groupPhasePoints += matchPoints;
+        breakdown.push({ matchNumber: i, points: matchPoints, reason: (matchPoints === 6 ? 'Juiste uitslag' : 'Juiste uitkomst') + ' (Joker x2)' });
+      } else {
+        groupPhasePoints -= 1;
+        breakdown.push({ matchNumber: i, points: -1, reason: 'Joker fout (-1)' });
+      }
+    } else if (matchPoints > 0) {
       groupPhasePoints += matchPoints;
       breakdown.push({ matchNumber: i, points: matchPoints, reason: matchPoints === 3 ? 'Juiste uitslag' : 'Juiste uitkomst' });
     }
@@ -193,11 +204,12 @@ export function calculatePoints(
 // Calculate points for a single group match (used for per-match stats)
 export function calculateMatchPoints(
   pred: MatchScore,
-  actual: MatchScore
+  actual: MatchScore,
+  joker?: boolean
 ): number {
   const predOutcome = Math.sign(pred.homeScore - pred.awayScore);
   const actualOutcome = Math.sign(actual.homeScore - actual.awayScore);
-  if (predOutcome !== actualOutcome) return 0;
-  if (pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore) return 3;
-  return 1;
+  if (predOutcome !== actualOutcome) return joker ? -1 : 0;
+  const base = (pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore) ? 3 : 1;
+  return joker ? base * 2 : base;
 }

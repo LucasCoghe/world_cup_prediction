@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getUser } from '@/lib/auth';
-import { isMatchLocked } from '@/lib/tournament';
+import { isMatchLocked, TOTAL_GROUP_MATCHES } from '@/lib/tournament';
+
+const MAX_GROUP_JOKERS = 3;
 
 export async function GET() {
   const user = await getUser();
@@ -36,12 +38,29 @@ export async function POST(req: Request) {
   const skipped: number[] = [];
 
   if (predictions && Array.isArray(predictions)) {
+    // Count existing jokers for locked group matches (can't be changed)
+    const existingPreds = await prisma.matchPrediction.findMany({
+      where: { userId: user.userId, jokerUsed: true, matchNumber: { lte: TOTAL_GROUP_MATCHES } },
+      select: { matchNumber: true },
+    });
+    const lockedJokers = existingPreds.filter(p => isMatchLocked(p.matchNumber)).length;
+
+    // Count jokers in this batch for unlocked group matches
+    const newGroupJokers = predictions.filter(
+      (p: { matchNumber: number; jokerUsed?: boolean }) =>
+        p.jokerUsed && p.matchNumber <= TOTAL_GROUP_MATCHES && !isMatchLocked(p.matchNumber)
+    ).length;
+
+    if (lockedJokers + newGroupJokers > MAX_GROUP_JOKERS) {
+      return NextResponse.json({ error: `Je mag maximaal ${MAX_GROUP_JOKERS} jokers gebruiken in de groepsfase` }, { status: 400 });
+    }
+
     for (const pred of predictions) {
-      // Skip matches that have already started
       if (isMatchLocked(pred.matchNumber)) {
         skipped.push(pred.matchNumber);
         continue;
       }
+      const jokerUsed = pred.matchNumber <= TOTAL_GROUP_MATCHES ? (pred.jokerUsed ?? false) : false;
       await prisma.matchPrediction.upsert({
         where: {
           userId_matchNumber: {
@@ -53,6 +72,7 @@ export async function POST(req: Request) {
           homeScore: pred.homeScore,
           awayScore: pred.awayScore,
           advancingTeam: pred.advancingTeam || null,
+          jokerUsed,
         },
         create: {
           userId: user.userId,
@@ -60,6 +80,7 @@ export async function POST(req: Request) {
           homeScore: pred.homeScore,
           awayScore: pred.awayScore,
           advancingTeam: pred.advancingTeam || null,
+          jokerUsed,
         },
       });
     }

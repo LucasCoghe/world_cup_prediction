@@ -96,8 +96,9 @@ export async function GET() {
         // No prediction = 0 points, counts toward streak
         consecutiveZeros++;
       } else {
-        const pts = calculateMatchPoints(pred, actual);
-        if (pts === 0) {
+        const predRecord = user.predictions.find(p => p.matchNumber === matchNum);
+        const pts = calculateMatchPoints(pred, actual, predRecord?.jokerUsed);
+        if (pts <= 0) {
           consecutiveZeros++;
         } else {
           consecutiveZeros = 0;

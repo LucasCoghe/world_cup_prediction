@@ -62,6 +62,7 @@ export async function GET(
       homeScore: p.homeScore,
       awayScore: p.awayScore,
       advancingTeam: p.advancingTeam,
+      jokerUsed: p.jokerUsed,
       group: gm?.group || null,
       round: km?.round || null,
       home: gm?.home || km?.homeSource || '',

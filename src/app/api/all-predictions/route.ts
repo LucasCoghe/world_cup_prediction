@@ -34,11 +34,12 @@ export async function GET() {
       matchNumber: true,
       homeScore: true,
       awayScore: true,
+      jokerUsed: true,
     },
   });
 
   // Group predictions by match number
-  const byMatch: Record<number, { userName: string; homeScore: number; awayScore: number }[]> = {};
+  const byMatch: Record<number, { userName: string; homeScore: number; awayScore: number; jokerUsed: boolean }[]> = {};
   const userMap = new Map(users.map(u => [u.id, u.name]));
 
   for (const p of predictions) {
@@ -47,6 +48,7 @@ export async function GET() {
       userName: userMap.get(p.userId) || '?',
       homeScore: p.homeScore,
       awayScore: p.awayScore,
+      jokerUsed: p.jokerUsed,
     });
   }
 

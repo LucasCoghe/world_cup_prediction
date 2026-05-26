@@ -79,6 +79,7 @@ export async function GET() {
           dayPoints += calculateMatchPoints(
             { matchNumber: pred.matchNumber, homeScore: pred.homeScore, awayScore: pred.awayScore },
             actual,
+            pred.jokerUsed,
           );
         }
       }
@@ -161,7 +162,8 @@ export async function GET() {
         const predOutcome = Math.sign(pred.homeScore - pred.awayScore);
         const actualOutcome = Math.sign(actual.homeScore - actual.awayScore);
         streak = predOutcome === actualOutcome ? streak + 1 : 0;
-        consecutiveZeros = calculateMatchPoints(pred, actual) === 0 ? consecutiveZeros + 1 : 0;
+        const predRecord = u.predictions.find(p => p.matchNumber === matchNum);
+        consecutiveZeros = calculateMatchPoints(pred, actual, predRecord?.jokerUsed) <= 0 ? consecutiveZeros + 1 : 0;
       }
       if (consecutiveZeros > 0 && consecutiveZeros % 3 === 0) {
         beerReasons.get(u.id)!.push(`${consecutiveZeros}x op rij 0 punten`);
@@ -186,7 +188,8 @@ export async function GET() {
       topScorerFirstGoalMin: u.extraPredictions.topScorerFirstGoalMin,
     } : undefined;
 
-    const scoring = calculatePoints(predScores, actualScores, extra);
+    const jokerMatches = new Set(u.predictions.filter(p => p.jokerUsed).map(p => p.matchNumber));
+    const scoring = calculatePoints(predScores, actualScores, extra, undefined, jokerMatches);
 
     return {
       id: u.id,

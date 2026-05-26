@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { MatchScore } from '@/lib/standings';
+import { TOTAL_GROUP_MATCHES } from '@/lib/tournament';
+
+const MAX_GROUP_JOKERS = 3;
 
 interface ExtraPrediction {
   topScorer: string;
@@ -13,11 +16,14 @@ interface ExtraPrediction {
 
 export interface PredictionsState {
   scores: Map<number, MatchScore>;
+  jokers: Set<number>;
+  jokersRemaining: number;
   extra: ExtraPrediction;
   loaded: boolean;
   saving: boolean;
   lockedMatches: Set<number>;
   setScore: (matchNumber: number, homeScore: number, awayScore: number, advancingTeam?: string) => void;
+  toggleJoker: (matchNumber: number) => void;
   setExtra: (extra: Partial<ExtraPrediction>) => void;
   save: () => Promise<void>;
   getScoresArray: () => MatchScore[];
@@ -25,6 +31,7 @@ export interface PredictionsState {
 
 export function usePredictions(): PredictionsState {
   const [scores, setScores] = useState<Map<number, MatchScore>>(new Map());
+  const [jokers, setJokers] = useState<Set<number>>(new Set());
   const [extra, setExtraState] = useState<ExtraPrediction>({
     topScorer: '',
     belgianTopScorer: '',
@@ -57,6 +64,7 @@ export function usePredictions(): PredictionsState {
       .then(data => {
         if (data.predictions) {
           const map = new Map<number, MatchScore>();
+          const jokerSet = new Set<number>();
           for (const p of data.predictions) {
             map.set(p.matchNumber, {
               matchNumber: p.matchNumber,
@@ -64,8 +72,10 @@ export function usePredictions(): PredictionsState {
               awayScore: p.awayScore,
               advancingTeam: p.advancingTeam || undefined,
             });
+            if (p.jokerUsed) jokerSet.add(p.matchNumber);
           }
           setScores(map);
+          setJokers(jokerSet);
         }
         if (data.extra) {
           setExtraState({
@@ -83,7 +93,10 @@ export function usePredictions(): PredictionsState {
   const save = useCallback(async () => {
     setSaving(true);
     try {
-      const predictions = Array.from(scores.values());
+      const predictions = Array.from(scores.values()).map(p => ({
+        ...p,
+        jokerUsed: jokers.has(p.matchNumber),
+      }));
       await fetch('/api/predictions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -92,7 +105,7 @@ export function usePredictions(): PredictionsState {
     } finally {
       setSaving(false);
     }
-  }, [scores, extra]);
+  }, [scores, jokers, extra]);
 
   // Auto-save with debounce
   const debouncedSave = useCallback(() => {
@@ -111,6 +124,22 @@ export function usePredictions(): PredictionsState {
     debouncedSave();
   }, [debouncedSave]);
 
+  const toggleJoker = useCallback((matchNumber: number) => {
+    if (matchNumber > TOTAL_GROUP_MATCHES) return;
+    setJokers(prev => {
+      const next = new Set(prev);
+      if (next.has(matchNumber)) {
+        next.delete(matchNumber);
+      } else {
+        const unlocked = [...next].filter(m => !lockedMatches.has(m));
+        if (unlocked.length >= MAX_GROUP_JOKERS) return prev;
+        next.add(matchNumber);
+      }
+      return next;
+    });
+    debouncedSave();
+  }, [debouncedSave, lockedMatches]);
+
   const setExtra = useCallback((partial: Partial<ExtraPrediction>) => {
     setExtraState(prev => ({ ...prev, ...partial }));
     debouncedSave();
@@ -118,5 +147,7 @@ export function usePredictions(): PredictionsState {
 
   const getScoresArray = useCallback(() => Array.from(scores.values()), [scores]);
 
-  return { scores, extra, loaded, saving, lockedMatches, setScore, setExtra, save, getScoresArray };
+  const jokersRemaining = MAX_GROUP_JOKERS - [...jokers].filter(m => m <= TOTAL_GROUP_MATCHES).length;
+
+  return { scores, jokers, jokersRemaining, extra, loaded, saving, lockedMatches, setScore, toggleJoker, setExtra, save, getScoresArray };
 }

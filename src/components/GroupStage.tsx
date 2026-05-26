@@ -14,6 +14,7 @@ interface MatchPrediction {
   userName: string;
   homeScore: number;
   awayScore: number;
+  jokerUsed?: boolean;
 }
 
 const groupLabels = Object.keys(groups);
@@ -52,6 +53,9 @@ export default function GroupStage({ predictions }: Props) {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Groepsfase</h2>
         <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-400">
+            Jokers: <span className={`font-bold ${predictions.jokersRemaining === 0 ? 'text-red-400' : 'text-gold'}`}>{predictions.jokersRemaining}/3</span>
+          </span>
           {predictions.saving && <span className="text-sm text-gold">Opslaan...</span>}
           <button onClick={() => predictions.save()} className="btn-secondary">
             Opslaan
@@ -90,13 +94,18 @@ export default function GroupStage({ predictions }: Props) {
             const deadline = formatDeadline(m1.date, m1.time);
             const matchPreds = allPredictions[match.matchNumber];
             const isExpanded = expandedMatch === match.matchNumber;
+            const isJoker = predictions.jokers.has(match.matchNumber);
+            const canToggleJoker = !locked && (isJoker || predictions.jokersRemaining > 0);
 
             return (
               <div key={match.matchNumber}>
-                <div className={`match-row rounded-lg p-3 ${locked ? 'opacity-50' : ''}`}>
+                <div className={`match-row rounded-lg p-3 ${locked ? 'opacity-50' : ''} ${isJoker ? 'ring-2 ring-purple-500/60 bg-purple-950/20' : ''}`}>
                   {/* Deadline row */}
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-500">#{match.matchNumber}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500">#{match.matchNumber}</span>
+                      {isJoker && <span className="text-xs font-bold text-purple-400 bg-purple-500/20 px-1.5 py-0.5 rounded">JOKER</span>}
+                    </div>
                     <span className={`deadline-text ${locked ? 'locked' : ''}`}>
                       {locked ? `Afgesloten - ${deadline}` : `Deadline: ${deadline}`}
                     </span>
@@ -159,6 +168,26 @@ export default function GroupStage({ predictions }: Props) {
                     </div>
                   </div>
 
+                  {/* Joker toggle */}
+                  {!locked && (
+                    <div className="flex justify-center mt-2">
+                      <button
+                        onClick={() => predictions.toggleJoker(match.matchNumber)}
+                        disabled={!canToggleJoker}
+                        className={`text-xs px-3 py-1 rounded-full transition-all flex items-center gap-1 ${
+                          isJoker
+                            ? 'bg-purple-600 text-white hover:bg-purple-700'
+                            : canToggleJoker
+                              ? 'bg-white/10 text-gray-400 hover:bg-purple-500/20 hover:text-purple-300'
+                              : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                        }`}
+                      >
+                        <span>&#x1F0CF;</span>
+                        <span>{isJoker ? 'Joker verwijderen' : 'Joker inzetten'}</span>
+                      </button>
+                    </div>
+                  )}
+
                   {/* Show predictions toggle for locked matches or matches with predictions visible */}
                   {matchPreds && matchPreds.length > 0 && (
                     <button
@@ -177,7 +206,10 @@ export default function GroupStage({ predictions }: Props) {
                     <div className="grid gap-1">
                       {matchPreds.map((mp, i) => (
                         <div key={i} className="flex items-center justify-between text-sm py-1">
-                          <span className="text-gray-400">{mp.userName}</span>
+                          <span className="text-gray-400">
+                            {mp.userName}
+                            {mp.jokerUsed && <span className="ml-1 text-purple-400 font-bold text-xs">JOKER</span>}
+                          </span>
                           <span className="font-mono font-medium text-white">
                             {mp.homeScore} - {mp.awayScore}
                           </span>

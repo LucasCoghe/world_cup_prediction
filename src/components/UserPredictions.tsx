@@ -9,6 +9,7 @@ interface MatchPrediction {
   homeScore: number;
   awayScore: number;
   advancingTeam: string | null;
+  jokerUsed: boolean;
   group: string | null;
   round: string | null;
   home: string;
@@ -34,9 +35,17 @@ function getPointsForMatch(pred: MatchPrediction): { points: number; label: stri
   if (pred.actualHome === null || pred.actualAway === null) return null;
   const predOutcome = Math.sign(pred.homeScore - pred.awayScore);
   const actualOutcome = Math.sign(pred.actualHome - pred.actualAway);
-  if (predOutcome !== actualOutcome) return { points: 0, label: '0 pt' };
-  if (pred.homeScore === pred.actualHome && pred.awayScore === pred.actualAway) return { points: 3, label: '3 pt' };
-  return { points: 1, label: '1 pt' };
+  const isGroupMatch = pred.group !== null;
+  const joker = pred.jokerUsed && isGroupMatch;
+
+  if (predOutcome !== actualOutcome) {
+    const pts = joker ? -1 : 0;
+    return { points: pts, label: `${pts} pt` };
+  }
+  const exact = pred.homeScore === pred.actualHome && pred.awayScore === pred.actualAway;
+  const base = exact ? 3 : 1;
+  const pts = joker ? base * 2 : base;
+  return { points: pts, label: `${pts} pt` };
 }
 
 export default function UserPredictions({ userId, onBack }: Props) {
@@ -129,9 +138,11 @@ export default function UserPredictions({ userId, onBack }: Props) {
                 const pts = getPointsForMatch(p);
                 return (
                   <div key={p.matchNumber} className={`flex items-center gap-2 py-1.5 px-2 rounded ${
-                    pts ? (pts.points === 3 ? 'bg-green-950/30' : pts.points === 1 ? 'bg-yellow-950/20' : 'bg-red-950/20') : 'bg-white/5'
-                  }`}>
-                    <span className="text-xs text-gray-500 w-7">#{p.matchNumber}</span>
+                    pts ? (pts.points >= 3 ? 'bg-green-950/30' : pts.points >= 1 ? 'bg-yellow-950/20' : 'bg-red-950/20') : 'bg-white/5'
+                  } ${p.jokerUsed ? 'ring-1 ring-purple-500/40' : ''}`}>
+                    <span className="text-xs text-gray-500 w-7">
+                      {p.jokerUsed ? <span className="text-purple-400 font-bold" title="Joker">J</span> : `#${p.matchNumber}`}
+                    </span>
                     <div className="flex items-center gap-1 flex-1 justify-end text-sm">
                       <span>{home?.name || p.home}</span>
                       <FlagIcon teamCode={p.home} size={16} />
@@ -145,7 +156,7 @@ export default function UserPredictions({ userId, onBack }: Props) {
                       <div className="flex items-center gap-2 w-20 justify-end">
                         <span className="text-xs text-gray-500">({p.actualHome}-{p.actualAway})</span>
                         <span className={`text-xs font-bold ${
-                          pts.points === 3 ? 'text-green-400' : pts.points === 1 ? 'text-yellow-400' : 'text-red-400'
+                          pts.points >= 3 ? 'text-green-400' : pts.points >= 1 ? 'text-yellow-400' : 'text-red-400'
                         }`}>{pts.label}</span>
                       </div>
                     )}

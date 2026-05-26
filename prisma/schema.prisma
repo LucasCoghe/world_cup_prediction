@@ -43,6 +43,7 @@ model MatchPrediction {
   homeScore     Int
   awayScore     Int
   advancingTeam String?
+  jokerUsed     Boolean @default(false)
 
   user User @relation(fields: [userId], references: [id])
 

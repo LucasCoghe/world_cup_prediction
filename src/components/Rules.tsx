@@ -44,6 +44,25 @@ export default function Rules() {
             In de knockout gelden score-punten (uitkomst/exact) enkel als je de samenstelling (beide teams) correct hebt in dezelfde match.
           </p>
 
+          <h4 className="font-semibold text-white mt-5">Jokers (groepsfase)</h4>
+          <div className="grid gap-1">
+            <div className="flex justify-between py-1.5 border-b border-white/5">
+              <span className="text-gray-300">Aantal jokers</span>
+              <span className="font-bold text-purple-400">3 per speler</span>
+            </div>
+            <div className="flex justify-between py-1.5 border-b border-white/5">
+              <span className="text-gray-300">Correct met joker</span>
+              <span className="font-bold text-purple-400">x2 punten</span>
+            </div>
+            <div className="flex justify-between py-1.5 border-b border-white/5">
+              <span className="text-gray-300">Fout met joker</span>
+              <span className="font-bold text-red-400">-1 punt</span>
+            </div>
+          </div>
+          <p className="text-sm text-gray-400 italic">
+            Je mag maximaal 3 jokers inzetten in de groepsfase. Een joker verdubbelt je punten bij een correcte voorspelling, maar kost je 1 punt als je fout zit.
+          </p>
+
           <h4 className="font-semibold text-white mt-5">Knockout - Extra punten per ronde</h4>
           <p className="text-sm text-gray-400 mb-2">
             Team- en samenstellingspunten worden per <strong className="text-white">ronde</strong> bekeken, niet per match.
