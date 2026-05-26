@@ -16,7 +16,8 @@ export async function GET(req: Request) {
   }
 
   const now = new Date();
-  const soon = new Date(now.getTime() + 60 * 60 * 1000);
+  const endOfDay = new Date(now);
+  endOfDay.setHours(23, 59, 59, 999);
 
   const allMatches = [
     ...groupMatches.map(m => ({ ...m, round: undefined as string | undefined })),
@@ -25,11 +26,11 @@ export async function GET(req: Request) {
 
   const upcomingMatches = allMatches.filter(m => {
     const kickoff = new Date(`${m.date}T${m.time}:00+02:00`);
-    return kickoff > now && kickoff <= soon;
+    return kickoff > now && kickoff <= endOfDay;
   });
 
   if (upcomingMatches.length === 0) {
-    return NextResponse.json({ sent: 0, message: 'Geen wedstrijden binnen het uur' });
+    return NextResponse.json({ sent: 0, message: 'Geen wedstrijden vandaag' });
   }
 
   const users = await prisma.user.findMany({
@@ -61,8 +62,8 @@ export async function GET(req: Request) {
     }).slice(0, 3);
 
     const body = missing.length === 1
-      ? `${matchDescriptions[0]} begint zo! Vul je voorspelling in.`
-      : `${missing.length} wedstrijden beginnen zo! ${matchDescriptions.join(', ')}`;
+      ? `${matchDescriptions[0]} speelt vandaag! Vul je voorspelling in.`
+      : `${missing.length} wedstrijden vandaag! ${matchDescriptions.join(', ')} — vul je voorspellingen in.`;
 
     for (const sub of user.pushSubscriptions) {
       try {
