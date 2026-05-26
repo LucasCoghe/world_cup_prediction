@@ -331,6 +331,29 @@ export default function AdminPanel() {
             >
               Stuur deadline reminders
             </button>
+            <button
+              onClick={async () => {
+                setNotifyStatus('Test verzenden...');
+                try {
+                  const res = await fetch('/api/push/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'deadline', test: true }),
+                  });
+                  const data = await res.json();
+                  if (data.sent !== undefined) {
+                    setNotifyStatus(`TEST: ${data.sent} notificatie(s) verstuurd${data.matches ? ` voor ${data.matches} wedstrijd(en)` : ''}.`);
+                  } else {
+                    setNotifyStatus('Geen notificaties verstuurd.');
+                  }
+                } catch {
+                  setNotifyStatus('Fout bij versturen.');
+                }
+              }}
+              className="btn-secondary text-sm ml-2"
+            >
+              Test (doe alsof wedstrijden beginnen)
+            </button>
           </div>
 
           <div className="card">

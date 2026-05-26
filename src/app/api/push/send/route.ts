@@ -21,10 +21,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Alleen admin' }, { status: 403 });
   }
 
-  const { type, title, body } = await req.json();
+  const { type, title, body, test } = await req.json();
 
   if (type === 'deadline') {
-    return await sendDeadlineReminders();
+    return await sendDeadlineReminders(!!test);
   }
 
   if (type === 'custom') {
@@ -34,20 +34,23 @@ export async function POST(req: Request) {
   return NextResponse.json({ error: 'Ongeldig type' }, { status: 400 });
 }
 
-async function sendDeadlineReminders() {
-  const now = new Date();
-  const soon = new Date(now.getTime() + 60 * 60 * 1000); // +1 uur
-
-  // Find matches starting within the next hour
+async function sendDeadlineReminders(test = false) {
   const allMatches = [
     ...groupMatches.map(m => ({ ...m, round: undefined as string | undefined })),
     ...knockoutStructure.map(m => ({ ...m, home: '', away: '', group: '', round: m.round as string | undefined })),
   ];
 
-  const upcomingMatches = allMatches.filter(m => {
-    const kickoff = new Date(`${m.date}T${m.time}:00+02:00`);
-    return kickoff > now && kickoff <= soon;
-  });
+  let upcomingMatches;
+  if (test) {
+    upcomingMatches = allMatches.slice(0, 3);
+  } else {
+    const now = new Date();
+    const soon = new Date(now.getTime() + 60 * 60 * 1000);
+    upcomingMatches = allMatches.filter(m => {
+      const kickoff = new Date(`${m.date}T${m.time}:00+02:00`);
+      return kickoff > now && kickoff <= soon;
+    });
+  }
 
   if (upcomingMatches.length === 0) {
     return NextResponse.json({ sent: 0, message: 'Geen wedstrijden binnen het uur' });
