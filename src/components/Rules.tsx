@@ -52,7 +52,7 @@ export default function Rules() {
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/5">
               <span className="text-gray-300">Correct met joker</span>
-              <span className="font-bold text-purple-400">x2 punten</span>
+              <span className="font-bold text-purple-400">+2 bonuspunten</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/5">
               <span className="text-gray-300">Fout met joker</span>
@@ -60,7 +60,7 @@ export default function Rules() {
             </div>
           </div>
           <p className="text-sm text-gray-400 italic">
-            Je mag maximaal 3 jokers inzetten in de groepsfase. Een joker verdubbelt je punten bij een correcte voorspelling, maar kost je 1 punt als je fout zit.
+            Je mag maximaal 3 jokers inzetten in de groepsfase. Een joker geeft +2 bonuspunten bij een correcte voorspelling, maar kost je 1 punt als je fout zit.
           </p>
 
           <h4 className="font-semibold text-white mt-5">Knockout - Extra punten per ronde</h4>
@@ -148,7 +148,7 @@ export default function Rules() {
       <div className="card space-y-3">
         <h3 className="text-xl font-semibold text-gold">Inleg &amp; Prijzen</h3>
         <p className="text-base text-gray-300">
-          <strong className="text-white">20 euro</strong> inleg per deelnemer.
+          <strong className="text-white">10 euro</strong> inleg per deelnemer.
         </p>
         <p className="text-base text-gray-300">
           Verdeling van de prijzenpot hangt af van het aantal deelnemers.

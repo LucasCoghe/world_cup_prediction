@@ -62,9 +62,9 @@ export function calculatePoints(
     const isJoker = jokerMatches?.has(i) ?? false;
     if (isJoker) {
       if (matchPoints > 0) {
-        matchPoints *= 2;
+        matchPoints += 2;
         groupPhasePoints += matchPoints;
-        breakdown.push({ matchNumber: i, points: matchPoints, reason: (matchPoints === 6 ? 'Juiste uitslag' : 'Juiste uitkomst') + ' (Joker x2)' });
+        breakdown.push({ matchNumber: i, points: matchPoints, reason: (matchPoints === 5 ? 'Juiste uitslag' : 'Juiste uitkomst') + ' (Joker +2)' });
       } else {
         groupPhasePoints -= 1;
         breakdown.push({ matchNumber: i, points: -1, reason: 'Joker fout (-1)' });
@@ -211,5 +211,5 @@ export function calculateMatchPoints(
   const actualOutcome = Math.sign(actual.homeScore - actual.awayScore);
   if (predOutcome !== actualOutcome) return joker ? -1 : 0;
   const base = (pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore) ? 3 : 1;
-  return joker ? base * 2 : base;
+  return joker ? base + 2 : base;
 }

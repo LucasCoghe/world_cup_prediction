@@ -44,7 +44,7 @@ function getPointsForMatch(pred: MatchPrediction): { points: number; label: stri
   }
   const exact = pred.homeScore === pred.actualHome && pred.awayScore === pred.actualAway;
   const base = exact ? 3 : 1;
-  const pts = joker ? base * 2 : base;
+  const pts = joker ? base + 2 : base;
   return { points: pts, label: `${pts} pt` };
 }
 
