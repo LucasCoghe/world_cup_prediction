@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { groups, groupMatches, teams, formatDeadline, TOURNAMENT_DEADLINE } from '@/lib/tournament';
+import { groups, groupMatches, teams, formatDeadline } from '@/lib/tournament';
 import { calculateGroupStandings, getBestThirdPlaced } from '@/lib/standings';
 import type { PredictionsState } from '@/hooks/usePredictions';
 import FlagIcon from './FlagIcon';
@@ -90,8 +90,7 @@ export default function GroupStage({ predictions }: Props) {
             const homeTeam = teams[match.home];
             const awayTeam = teams[match.away];
             const locked = predictions.lockedMatches.has(match.matchNumber);
-            const m1 = groupMatches[0];
-            const deadline = formatDeadline(m1.date, m1.time);
+            const deadline = formatDeadline(match.date, match.time);
             const matchPreds = allPredictions[match.matchNumber];
             const isExpanded = expandedMatch === match.matchNumber;
             const isJoker = predictions.jokers.has(match.matchNumber);

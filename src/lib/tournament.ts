@@ -270,17 +270,15 @@ export function getMatchKickoff(matchNumber: number): Date | null {
 export function isMatchLocked(matchNumber: number): boolean {
   const kickoff = getMatchKickoff(matchNumber);
   if (!kickoff) return false;
-  if (matchNumber <= TOTAL_GROUP_MATCHES) {
-    return new Date() >= TOURNAMENT_DEADLINE;
-  }
   return new Date() >= kickoff;
 }
 
 export function getLockedMatches(): Set<number> {
   const locked = new Set<number>();
   const now = new Date();
-  if (now >= TOURNAMENT_DEADLINE) {
-    for (const m of groupMatches) locked.add(m.matchNumber);
+  for (const m of groupMatches) {
+    const kickoff = new Date(`${m.date}T${m.time}:00+02:00`);
+    if (now >= kickoff) locked.add(m.matchNumber);
   }
   for (const m of knockoutStructure) {
     const kickoff = new Date(`${m.date}T${m.time}:00+02:00`);
