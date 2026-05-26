@@ -263,19 +263,28 @@ export function getMatchKickoff(matchNumber: number): Date | null {
   const gm = groupMatches.find(m => m.matchNumber === matchNumber);
   if (gm) return new Date(`${gm.date}T${gm.time}:00+02:00`);
   const km = knockoutStructure.find(m => m.matchNumber === matchNumber);
-  if (km) return TOURNAMENT_DEADLINE;
+  if (km) return new Date(`${km.date}T${km.time}:00+02:00`);
   return null;
 }
 
-export function isMatchLocked(_matchNumber: number): boolean {
-  return new Date() >= TOURNAMENT_DEADLINE;
+export function isMatchLocked(matchNumber: number): boolean {
+  const kickoff = getMatchKickoff(matchNumber);
+  if (!kickoff) return false;
+  if (matchNumber <= TOTAL_GROUP_MATCHES) {
+    return new Date() >= TOURNAMENT_DEADLINE;
+  }
+  return new Date() >= kickoff;
 }
 
 export function getLockedMatches(): Set<number> {
   const locked = new Set<number>();
-  if (new Date() >= TOURNAMENT_DEADLINE) {
+  const now = new Date();
+  if (now >= TOURNAMENT_DEADLINE) {
     for (const m of groupMatches) locked.add(m.matchNumber);
-    for (const m of knockoutStructure) locked.add(m.matchNumber);
+  }
+  for (const m of knockoutStructure) {
+    const kickoff = new Date(`${m.date}T${m.time}:00+02:00`);
+    if (now >= kickoff) locked.add(m.matchNumber);
   }
   return locked;
 }

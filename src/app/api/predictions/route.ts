@@ -4,6 +4,7 @@ import { getUser } from '@/lib/auth';
 import { isMatchLocked, TOTAL_GROUP_MATCHES } from '@/lib/tournament';
 
 const MAX_GROUP_JOKERS = 3;
+const MAX_KNOCKOUT_JOKERS = 2;
 
 export async function GET() {
   const user = await getUser();
@@ -55,12 +56,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `Je mag maximaal ${MAX_GROUP_JOKERS} jokers gebruiken in de groepsfase` }, { status: 400 });
     }
 
+    // Validate knockout jokers
+    const existingKnockoutJokers = await prisma.matchPrediction.findMany({
+      where: { userId: user.userId, jokerUsed: true, matchNumber: { gt: TOTAL_GROUP_MATCHES } },
+      select: { matchNumber: true },
+    });
+    const lockedKnockoutJokers = existingKnockoutJokers.filter(p => isMatchLocked(p.matchNumber)).length;
+    const newKnockoutJokers = predictions.filter(
+      (p: { matchNumber: number; jokerUsed?: boolean }) =>
+        p.jokerUsed && p.matchNumber > TOTAL_GROUP_MATCHES && !isMatchLocked(p.matchNumber)
+    ).length;
+
+    if (lockedKnockoutJokers + newKnockoutJokers > MAX_KNOCKOUT_JOKERS) {
+      return NextResponse.json({ error: `Je mag maximaal ${MAX_KNOCKOUT_JOKERS} jokers gebruiken in de knockout` }, { status: 400 });
+    }
+
     for (const pred of predictions) {
       if (isMatchLocked(pred.matchNumber)) {
         skipped.push(pred.matchNumber);
         continue;
       }
-      const jokerUsed = pred.matchNumber <= TOTAL_GROUP_MATCHES ? (pred.jokerUsed ?? false) : false;
+      const jokerUsed = pred.jokerUsed ?? false;
       await prisma.matchPrediction.upsert({
         where: {
           userId_matchNumber: {

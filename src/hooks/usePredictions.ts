@@ -5,6 +5,7 @@ import { MatchScore } from '@/lib/standings';
 import { TOTAL_GROUP_MATCHES } from '@/lib/tournament';
 
 const MAX_GROUP_JOKERS = 3;
+const MAX_KNOCKOUT_JOKERS = 2;
 
 interface ExtraPrediction {
   topScorer: string;
@@ -125,14 +126,15 @@ export function usePredictions(): PredictionsState {
   }, [debouncedSave]);
 
   const toggleJoker = useCallback((matchNumber: number) => {
-    if (matchNumber > TOTAL_GROUP_MATCHES) return;
+    const isGroup = matchNumber <= TOTAL_GROUP_MATCHES;
+    const maxJokers = isGroup ? MAX_GROUP_JOKERS : MAX_KNOCKOUT_JOKERS;
     setJokers(prev => {
       const next = new Set(prev);
       if (next.has(matchNumber)) {
         next.delete(matchNumber);
       } else {
-        const unlocked = [...next].filter(m => !lockedMatches.has(m));
-        if (unlocked.length >= MAX_GROUP_JOKERS) return prev;
+        const used = [...next].filter(m => !lockedMatches.has(m) && (isGroup ? m <= TOTAL_GROUP_MATCHES : m > TOTAL_GROUP_MATCHES));
+        if (used.length >= maxJokers) return prev;
         next.add(matchNumber);
       }
       return next;
