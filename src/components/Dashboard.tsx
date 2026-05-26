@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import GroupStage from './GroupStage';
 import KnockoutStage from './KnockoutStage';
 import ExtraQuestions from './ExtraQuestions';
@@ -45,12 +45,34 @@ function getBelgianMatchToday(): string | null {
   return opponent;
 }
 
+const CHAT_SEEN_KEY = 'chat_last_seen';
+
 export default function Dashboard({ user, onLogout }: Props) {
   const [activeTab, setActiveTab] = useState('leaderboard');
+  const [unreadCount, setUnreadCount] = useState(0);
   const predictions = usePredictions();
   const tabs = user.isAdmin
     ? [...baseTabs, { id: 'admin', label: 'Admin' }]
     : baseTabs;
+
+  const fetchUnread = useCallback(() => {
+    const since = localStorage.getItem(CHAT_SEEN_KEY) || '';
+    const url = since ? `/api/comments/unread?since=${encodeURIComponent(since)}` : '/api/comments/unread';
+    fetch(url).then(r => r.json()).then(data => setUnreadCount(data.count || 0));
+  }, []);
+
+  useEffect(() => {
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 15000);
+    return () => clearInterval(interval);
+  }, [fetchUnread]);
+
+  useEffect(() => {
+    if (activeTab === 'chat') {
+      localStorage.setItem(CHAT_SEEN_KEY, new Date().toISOString());
+      setUnreadCount(0);
+    }
+  }, [activeTab]);
 
   // ?bel=1 in URL forceert Belgisch thema voor testing
   const belgianDay = useMemo(() => {
@@ -94,13 +116,18 @@ export default function Dashboard({ user, onLogout }: Props) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-5 py-2.5 rounded-lg text-base font-medium whitespace-nowrap transition-all ${
+              className={`px-5 py-2.5 rounded-lg text-base font-medium whitespace-nowrap transition-all relative ${
                 activeTab === tab.id
                   ? 'tab-active'
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
               {tab.label}
+              {tab.id === 'chat' && unreadCount > 0 && activeTab !== 'chat' && (
+                <span className="absolute -top-1 -right-1 min-w-5 h-5 flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold px-1 animate-pulse">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
