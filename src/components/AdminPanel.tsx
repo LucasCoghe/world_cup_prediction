@@ -40,6 +40,12 @@ export default function AdminPanel() {
     setUsers(users.map(u => u.isAdmin ? u : { ...u, locked: true }));
   }
 
+  async function deleteUser(userId: string, name: string) {
+    if (!confirm(`${name} verwijderen? Alle voorspellingen en data worden gewist.`)) return;
+    await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
+    setUsers(users.filter(u => u.id !== userId));
+  }
+
   async function toggleLock(userId: string, locked: boolean) {
     await fetch('/api/admin/lock', {
       method: 'POST',
@@ -119,12 +125,20 @@ export default function AdminPanel() {
                 {u.locked ? 'Vergrendeld' : 'Actief'}
               </span>
               {!u.isAdmin && (
-                <button
-                  onClick={() => toggleLock(u.id, !u.locked)}
-                  className="btn-secondary text-xs"
-                >
-                  {u.locked ? 'Ontgrendel' : 'Vergrendel'}
-                </button>
+                <>
+                  <button
+                    onClick={() => toggleLock(u.id, !u.locked)}
+                    className="btn-secondary text-xs"
+                  >
+                    {u.locked ? 'Ontgrendel' : 'Vergrendel'}
+                  </button>
+                  <button
+                    onClick={() => deleteUser(u.id, u.name)}
+                    className="btn-secondary text-xs text-red-400 hover:text-red-300"
+                  >
+                    Verwijder
+                  </button>
+                </>
               )}
             </div>
           ))}
