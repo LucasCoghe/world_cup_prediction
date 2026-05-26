@@ -100,7 +100,7 @@ export default function Rules() {
         </p>
         <p className="text-base text-gray-300">
           Verdeling van de prijzenpot hangt af van het aantal deelnemers.
-          De top 3 of top 5 valt in de prijzen!
+          De top 3 of top 5 valt in de prijzen!!
         </p>
       </div>
     </div>
