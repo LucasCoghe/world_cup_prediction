@@ -25,11 +25,6 @@ export async function GET(
   }
 
   const isOwnProfile = currentUser.userId === userId;
-  const tournamentStarted = isMatchLocked(1);
-
-  if (!isOwnProfile && !tournamentStarted) {
-    return NextResponse.json({ error: 'Voorspellingen zijn pas zichtbaar na de deadline' }, { status: 403 });
-  }
 
   const predictions = await prisma.matchPrediction.findMany({
     where: { userId },
@@ -51,7 +46,11 @@ export async function GET(
   const bracket = resolveKnockoutBracket(predScores);
   const bracketMap = new Map(bracket.map(b => [b.matchNumber, b]));
 
-  const matchPredictions = predictions.map(p => {
+  const visiblePredictions = isOwnProfile
+    ? predictions
+    : predictions.filter(p => isMatchLocked(p.matchNumber));
+
+  const matchPredictions = visiblePredictions.map(p => {
     const gm = groupMatches.find(m => m.matchNumber === p.matchNumber);
     const km = knockoutStructure.find(m => m.matchNumber === p.matchNumber);
     const actual = resultMap.get(p.matchNumber);
