@@ -11,6 +11,7 @@ import AdminPanel from './AdminPanel';
 import GroupChat from './GroupChat';
 import InstallPrompt from './InstallPrompt';
 import NotificationToggle from './NotificationToggle';
+import BracketSimulator from './BracketSimulator';
 import { usePredictions } from '@/hooks/usePredictions';
 import { groupMatches, knockoutStructure } from '@/lib/tournament';
 
@@ -24,6 +25,7 @@ const baseTabs = [
   { id: 'schandpaal', label: 'Schandpaal' },
   { id: 'groups', label: 'Groepsfase' },
   { id: 'knockout', label: 'Knockout' },
+  { id: 'simulator', label: 'Simulator' },
   { id: 'extra', label: 'Extra' },
   { id: 'chat', label: 'Chat' },
   { id: 'rules', label: 'Regels' },
@@ -141,6 +143,7 @@ export default function Dashboard({ user, onLogout }: Props) {
         {activeTab === 'schandpaal' && <Schandpaal />}
         {activeTab === 'groups' && <GroupStage predictions={predictions} />}
         {activeTab === 'knockout' && <KnockoutStage predictions={predictions} />}
+        {activeTab === 'simulator' && <BracketSimulator groupPredictions={predictions.getScoresArray()} />}
         {activeTab === 'extra' && <ExtraQuestions predictions={predictions} />}
         {activeTab === 'chat' && <GroupChat />}
         {activeTab === 'rules' && <Rules />}
