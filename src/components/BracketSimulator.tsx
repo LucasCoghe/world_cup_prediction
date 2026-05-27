@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { knockoutStructure, teams, groups, TOTAL_GROUP_MATCHES } from '@/lib/tournament';
 import { calculateGroupStandings, getBestThirdPlaced, type MatchScore } from '@/lib/standings';
 import FlagIcon from './FlagIcon';
+
+const MATCH_W = 105;
+const CONN_W = 12;
 
 function getRelevantTeams(source: string): string[] {
   if (source.startsWith('3RD_')) {
@@ -244,7 +247,7 @@ export default function BracketSimulator({ groupPredictions }: Props) {
     if (!teamCode) {
       return (
         <button
-          className={`w-full px-2 py-1 text-left text-[11px] leading-5 truncate ${
+          className={`w-full px-1.5 py-1 text-left text-[10px] leading-5 truncate ${
             isR32 ? 'text-gray-500 hover:bg-white/10 cursor-pointer' : 'text-gray-700'
           }`}
           onClick={isR32 ? onClick : undefined}
@@ -257,13 +260,15 @@ export default function BracketSimulator({ groupPredictions }: Props) {
     const team = teams[teamCode];
     return (
       <button
-        className={`w-full px-2 py-1 flex items-center gap-1 text-left text-[11px] leading-5 transition-all ${
+        className={`w-full px-1.5 py-1 flex items-center gap-1 text-left text-[10px] leading-5 transition-all ${
           isWinner ? 'bg-pitch/40 text-white font-bold' :
           isEliminated ? 'opacity-30' : 'hover:bg-white/10 cursor-pointer'
         }`}
         onClick={onClick}
       >
-        <FlagIcon teamCode={teamCode} size={14} />
+        <span className="flex-shrink-0">
+          <FlagIcon teamCode={teamCode} size={14} />
+        </span>
         <span className="truncate">{team?.name || teamCode}</span>
       </button>
     );
@@ -277,7 +282,7 @@ export default function BracketSimulator({ groupPredictions }: Props) {
     const isR32 = match.round === 'R32';
 
     return (
-      <div className="bg-white/5 rounded border border-white/10 overflow-hidden flex-shrink-0" style={{ width: 120 }}>
+      <div className="bg-white/5 rounded border border-white/10 overflow-hidden flex-shrink-0" style={{ width: MATCH_W }}>
         {renderTeamRow(match.homeSource, home, !!home && winner === home, !!winner && !!home && winner !== home, isR32, () => {
           if (isR32 && !home) setActivePicker(match.homeSource);
           else if (home && away) selectWinner(matchNumber, home);
@@ -295,13 +300,13 @@ export default function BracketSimulator({ groupPredictions }: Props) {
     const isLeft = side === 'left';
     const border = isLeft ? 'border-r' : 'border-l';
     return (
-      <div className="flex items-center self-stretch flex-shrink-0" style={{ width: 16 }}>
-        {!isLeft && <div className="border-t border-white/20 flex-shrink-0" style={{ width: 5 }} />}
+      <div className="flex items-center self-stretch flex-shrink-0" style={{ width: CONN_W }}>
+        {!isLeft && <div className="border-t border-white/20 flex-shrink-0" style={{ width: 4 }} />}
         <div className="flex flex-col self-stretch flex-1">
           <div className={`flex-1 ${border} border-b border-white/20`} />
           <div className={`flex-1 ${border} border-t border-white/20`} />
         </div>
-        {isLeft && <div className="border-t border-white/20 flex-shrink-0" style={{ width: 5 }} />}
+        {isLeft && <div className="border-t border-white/20 flex-shrink-0" style={{ width: 4 }} />}
       </div>
     );
   }
@@ -340,6 +345,37 @@ export default function BracketSimulator({ groupPredictions }: Props) {
       </div>
     );
   }
+
+  // Drag-to-scroll
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const dragState = useRef({ isDragging: false, startX: 0, scrollLeft: 0 });
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    dragState.current = { isDragging: true, startX: e.pageX, scrollLeft: el.scrollLeft };
+    el.style.cursor = 'grabbing';
+  }, []);
+
+  const handleDragMove = useCallback((e: React.MouseEvent) => {
+    if (!dragState.current.isDragging) return;
+    e.preventDefault();
+    const el = scrollRef.current!;
+    el.scrollLeft = dragState.current.scrollLeft - (e.pageX - dragState.current.startX);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    dragState.current.isDragging = false;
+    if (scrollRef.current) scrollRef.current.style.cursor = 'grab';
+  }, []);
+
+  // Auto-center on trophy
+  useEffect(() => {
+    if (loaded && scrollRef.current) {
+      const el = scrollRef.current;
+      el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+    }
+  }, [loaded]);
 
   if (!loaded) return null;
 
@@ -392,13 +428,18 @@ export default function BracketSimulator({ groupPredictions }: Props) {
         </div>
       )}
 
-      <div className="text-xs text-gray-600 text-center sm:hidden">Scroll voor volledig schema</div>
-
-      <div className="overflow-x-auto pb-4 -mx-4 px-4">
-        <div className="flex items-center justify-center" style={{ minWidth: 1100 }}>
+      <div
+        ref={scrollRef}
+        className="overflow-x-auto pb-2 cursor-grab active:cursor-grabbing select-none bracket-scroll"
+        onMouseDown={handleDragStart}
+        onMouseMove={handleDragMove}
+        onMouseUp={handleDragEnd}
+        onMouseLeave={handleDragEnd}
+      >
+        <div className="flex items-center justify-center py-2" style={{ minWidth: 960 }}>
           {renderBracketNode(101, 'left')}
 
-          <div className="flex-shrink-0 border-t border-white/20" style={{ width: 12 }} />
+          <div className="flex-shrink-0 border-t border-white/20" style={{ width: 8 }} />
 
           <div className="flex flex-col items-center gap-2 mx-1 flex-shrink-0">
             <div className="text-lg">🏆</div>
@@ -408,7 +449,7 @@ export default function BracketSimulator({ groupPredictions }: Props) {
             {renderMatchCard(103)}
           </div>
 
-          <div className="flex-shrink-0 border-t border-white/20" style={{ width: 12 }} />
+          <div className="flex-shrink-0 border-t border-white/20" style={{ width: 8 }} />
 
           {renderBracketNode(102, 'right')}
         </div>
