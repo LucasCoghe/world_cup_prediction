@@ -16,7 +16,7 @@ export async function GET() {
       isAdmin: true,
       locked: true,
       createdAt: true,
-      _count: { select: { predictions: true } },
+      _count: { select: { predictions: true, pushSubscriptions: true } },
     },
     orderBy: { createdAt: 'desc' },
   });

@@ -5,7 +5,7 @@ import { knockoutStructure, teams, groups, TOTAL_GROUP_MATCHES } from '@/lib/tou
 import { calculateGroupStandings, getBestThirdPlaced, type MatchScore } from '@/lib/standings';
 import FlagIcon from './FlagIcon';
 
-const MATCH_W = 75;
+const MATCH_W = 105;
 const CONN_W = 10;
 
 function getRelevantTeams(source: string): string[] {
@@ -270,7 +270,7 @@ export default function BracketSimulator({ groupPredictions }: Props) {
         <span className="flex-shrink-0">
           <FlagIcon teamCode={teamCode} size={14} />
         </span>
-        <span className="truncate">{teamCode}</span>
+        <span className="truncate">{team?.name || teamCode}</span>
       </button>
     );
   }
@@ -437,7 +437,7 @@ export default function BracketSimulator({ groupPredictions }: Props) {
         onMouseUp={handleDragEnd}
         onMouseLeave={handleDragEnd}
       >
-        <div className="flex items-center justify-center py-2" style={{ minWidth: 700 }}>
+        <div className="flex items-center justify-center py-2 px-4" style={{ minWidth: 960 }}>
           {renderBracketNode(101, 'left')}
 
           <div className="flex-shrink-0 border-t border-white/20" style={{ width: 8 }} />

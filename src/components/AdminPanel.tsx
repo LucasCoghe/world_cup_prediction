@@ -10,7 +10,7 @@ interface UserInfo {
   email: string;
   locked: boolean;
   isAdmin: boolean;
-  _count: { predictions: number };
+  _count: { predictions: number; pushSubscriptions: number };
 }
 
 interface Result {
@@ -119,7 +119,14 @@ export default function AdminPanel() {
             <div key={u.id} className="card flex items-center gap-3">
               <div className="flex-1">
                 <div className="font-medium">{u.name} {u.isAdmin && '(admin)'}</div>
-                <div className="text-xs text-gray-500">{u.email} - {u._count.predictions} voorspellingen</div>
+                <div className="text-xs text-gray-500">
+                  {u.email} - {u._count.predictions} voorspellingen
+                  {u._count.pushSubscriptions > 0 && (
+                    <span className="ml-1.5 text-green-400" title="Notificaties aan">
+                      - notificaties aan ({u._count.pushSubscriptions})
+                    </span>
+                  )}
+                </div>
               </div>
               <span className={`text-xs px-2 py-1 rounded ${u.locked ? 'bg-red-600/20 text-red-400' : 'bg-green-600/20 text-green-400'}`}>
                 {u.locked ? 'Vergrendeld' : 'Actief'}
