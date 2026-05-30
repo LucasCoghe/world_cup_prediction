@@ -12,9 +12,9 @@ const KICK_VY = -9.5;
 const KICK_VX_FACTOR = 4;
 const FLOOR_Y = CANVAS_H - 20;
 const PLAYER_Y = FLOOR_Y - PLAYER_H;
-const SPEED_INCREASE = 0.03;
-const WIND_BASE = 0.02;
-const WIND_INCREASE = 0.008;
+const SPEED_INCREASE = 0.018;
+const WIND_BASE = 0.015;
+const WIND_INCREASE = 0.004;
 const STORAGE_KEY = 'keepie-uppie-custom-player';
 
 interface LeaderboardEntry {
@@ -612,7 +612,7 @@ export default function KeepyUppy() {
       ) {
         state.ballVY = KICK_VY * state.speedMult;
         const offset = (state.ballX - playerCX) / (PLAYER_W / 2);
-        const chaos = Math.min(state.score * 0.15, 4);
+        const chaos = Math.min(state.score * 0.08, 3);
         state.ballVX = offset * KICK_VX_FACTOR + (Math.random() - 0.5) * (1 + chaos);
         state.score++;
         state.speedMult = 1 + state.score * SPEED_INCREASE;
