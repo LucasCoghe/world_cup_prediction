@@ -9,6 +9,7 @@ interface Props {
 
 export default function AuthScreen({ onLogin }: Props) {
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgot, setShowForgot] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,6 +45,8 @@ export default function AuthScreen({ onLogin }: Props) {
     }
   }
 
+  const inputClass = 'w-full bg-black/30 border border-white/20 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-gold';
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="card card-gold w-full max-w-md animate-in">
@@ -52,62 +55,94 @@ export default function AuthScreen({ onLogin }: Props) {
           <p className="text-gray-400 text-lg mt-1">Pronostiek</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {!isLogin && (
-            <div>
-              <label className="block text-base text-gray-400 mb-1">Naam</label>
-              <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                className="w-full bg-black/30 border border-white/20 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-gold"
-                placeholder="Je naam"
-                required={!isLogin}
-              />
+        {showForgot ? (
+          <>
+            <div className="text-center space-y-3 py-4">
+              <p className="text-gray-300">Wachtwoord vergeten?</p>
+              <p className="text-gray-400 text-sm">
+                Stuur een berichtje naar de admin en die reset je wachtwoord.
+              </p>
             </div>
-          )}
+            <p className="text-center text-base text-gray-500 mt-5">
+              <button
+                onClick={() => { setShowForgot(false); setError(''); }}
+                className="text-gold hover:underline"
+              >
+                Terug naar inloggen
+              </button>
+            </p>
+          </>
+        ) : (
+          <>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {!isLogin && (
+                <div>
+                  <label className="block text-base text-gray-400 mb-1">Naam</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    className={inputClass}
+                    placeholder="Je naam"
+                    required={!isLogin}
+                  />
+                </div>
+              )}
 
-          <div>
-            <label className="block text-base text-gray-400 mb-1">E-mail</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full bg-black/30 border border-white/20 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-gold"
-              placeholder="je@email.com"
-              required
-            />
-          </div>
+              <div>
+                <label className="block text-base text-gray-400 mb-1">E-mail</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  className={inputClass}
+                  placeholder="je@email.com"
+                  required
+                />
+              </div>
 
-          <div>
-            <label className="block text-base text-gray-400 mb-1">Wachtwoord</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full bg-black/30 border border-white/20 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-gold"
-              required
-            />
-          </div>
+              <div>
+                <label className="block text-base text-gray-400 mb-1">Wachtwoord</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className={inputClass}
+                  required
+                />
+              </div>
 
-          {error && (
-            <p className="text-red-400 text-base bg-red-400/10 rounded-lg p-3">{error}</p>
-          )}
+              {error && (
+                <p className="text-red-400 text-base bg-red-400/10 rounded-lg p-3">{error}</p>
+              )}
 
-          <button type="submit" className="btn-primary w-full" disabled={loading}>
-            {loading ? 'Even geduld...' : isLogin ? 'Inloggen' : 'Registreren'}
-          </button>
-        </form>
+              <button type="submit" className="btn-primary w-full" disabled={loading}>
+                {loading ? 'Even geduld...' : isLogin ? 'Inloggen' : 'Registreren'}
+              </button>
+            </form>
 
-        <p className="text-center text-base text-gray-500 mt-5">
-          {isLogin ? 'Nog geen account?' : 'Al een account?'}{' '}
-          <button
-            onClick={() => { setIsLogin(!isLogin); setError(''); }}
-            className="text-gold hover:underline"
-          >
-            {isLogin ? 'Registreer hier' : 'Log in'}
-          </button>
-        </p>
+            {isLogin && (
+              <p className="text-center text-sm text-gray-500 mt-3">
+                <button
+                  onClick={() => setShowForgot(true)}
+                  className="text-gray-400 hover:text-gold hover:underline"
+                >
+                  Wachtwoord vergeten?
+                </button>
+              </p>
+            )}
+
+            <p className="text-center text-base text-gray-500 mt-5">
+              {isLogin ? 'Nog geen account?' : 'Al een account?'}{' '}
+              <button
+                onClick={() => { setIsLogin(!isLogin); setError(''); }}
+                className="text-gold hover:underline"
+              >
+                {isLogin ? 'Registreer hier' : 'Log in'}
+              </button>
+            </p>
+          </>
+        )}
 
         <div className="flex justify-center mt-4">
           <InstallPrompt />

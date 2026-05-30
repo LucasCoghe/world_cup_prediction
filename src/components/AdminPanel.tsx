@@ -40,6 +40,21 @@ export default function AdminPanel() {
     setUsers(users.map(u => u.isAdmin ? u : { ...u, locked: true }));
   }
 
+  async function resetPassword(userId: string, name: string) {
+    const newPassword = prompt(`Nieuw wachtwoord voor ${name}:`);
+    if (!newPassword) return;
+    const res = await fetch('/api/admin/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, newPassword }),
+    });
+    if (res.ok) {
+      alert(`Wachtwoord van ${name} is gewijzigd!`);
+    } else {
+      alert('Fout bij het wijzigen van het wachtwoord.');
+    }
+  }
+
   async function deleteUser(userId: string, name: string) {
     if (!confirm(`${name} verwijderen? Alle voorspellingen en data worden gewist.`)) return;
     await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
@@ -138,6 +153,12 @@ export default function AdminPanel() {
                     className="btn-secondary text-xs"
                   >
                     {u.locked ? 'Ontgrendel' : 'Vergrendel'}
+                  </button>
+                  <button
+                    onClick={() => resetPassword(u.id, u.name)}
+                    className="btn-secondary text-xs"
+                  >
+                    Reset WW
                   </button>
                   <button
                     onClick={() => deleteUser(u.id, u.name)}
