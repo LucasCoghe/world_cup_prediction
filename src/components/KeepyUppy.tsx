@@ -566,27 +566,33 @@ export default function KeepyUppy() {
       ctx.restore();
     }
 
-    function loop() {
+    let lastTime = 0;
+
+    function loop(timestamp: number) {
       if (!gameRef.current) return;
       const state = gameRef.current;
+
+      if (!lastTime) lastTime = timestamp;
+      const dt = Math.min((timestamp - lastTime) / (1000 / 60), 3);
+      lastTime = timestamp;
 
       if (inputRef.current.pointerX !== null) {
         state.targetX = Math.max(0, Math.min(CANVAS_W - PLAYER_W, inputRef.current.pointerX - PLAYER_W / 2));
       }
       const dx = state.targetX - state.playerX;
-      state.playerX += dx * 0.2;
+      state.playerX += dx * (1 - Math.pow(0.3, dt));
 
-      state.windTimer++;
+      state.windTimer += dt;
       if (state.windTimer > 60 + Math.random() * 120) {
         const windStrength = WIND_BASE + state.score * WIND_INCREASE;
         state.wind = (Math.random() - 0.5) * 2 * windStrength;
         state.windTimer = 0;
       }
 
-      state.ballVY += GRAVITY * state.speedMult;
-      state.ballVX += state.wind;
-      state.ballX += state.ballVX;
-      state.ballY += state.ballVY;
+      state.ballVY += GRAVITY * state.speedMult * dt;
+      state.ballVX += state.wind * dt;
+      state.ballX += state.ballVX * dt;
+      state.ballY += state.ballVY * dt;
 
       if (state.ballX - BALL_R < 0) {
         state.ballX = BALL_R;
