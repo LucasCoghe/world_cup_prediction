@@ -21,6 +21,7 @@ model User {
   extraPredictions   ExtraPrediction?
   comments           MatchComment[]
   pushSubscriptions  PushSubscription[]
+  minigameScores     MinigameScore[]
   beersDrunk         BeerConfirmation[] @relation("drinker")
   beersWitnessed     BeerConfirmation[] @relation("witness")
 }
@@ -80,6 +81,17 @@ model PushSubscription {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+}
+
+model MinigameScore {
+  id        String   @id @default(cuid())
+  userId    String
+  score     Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([score(sort: Desc)])
 }
 
 model BeerConfirmation {

@@ -12,6 +12,7 @@ import GroupChat from './GroupChat';
 import InstallPrompt from './InstallPrompt';
 import NotificationToggle from './NotificationToggle';
 import BracketSimulator from './BracketSimulator';
+import KeepyUppy from './KeepyUppy';
 import { usePredictions } from '@/hooks/usePredictions';
 import { groupMatches, knockoutStructure } from '@/lib/tournament';
 
@@ -28,6 +29,7 @@ const baseTabs = [
   { id: 'simulator', label: 'Simulator' },
   { id: 'extra', label: 'Extra' },
   { id: 'chat', label: 'Chat' },
+  { id: 'minigame', label: 'Minigame' },
   { id: 'rules', label: 'Regels' },
 ];
 
@@ -146,6 +148,7 @@ export default function Dashboard({ user, onLogout }: Props) {
         {activeTab === 'simulator' && <BracketSimulator groupPredictions={predictions.getScoresArray()} />}
         {activeTab === 'extra' && <ExtraQuestions predictions={predictions} />}
         {activeTab === 'chat' && <GroupChat />}
+        {activeTab === 'minigame' && <KeepyUppy />}
         {activeTab === 'rules' && <Rules />}
         {activeTab === 'admin' && user.isAdmin && <AdminPanel />}
       </main>
