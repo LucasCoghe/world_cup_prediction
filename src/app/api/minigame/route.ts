@@ -29,6 +29,9 @@ export async function GET() {
   });
 }
 
+const MAX_SCORE = 200;
+const MIN_SECONDS_PER_POINT = 0.8;
+
 export async function POST(req: Request) {
   const user = await getUser();
   if (!user) {
@@ -36,13 +39,38 @@ export async function POST(req: Request) {
   }
 
   const { score } = await req.json();
-  if (typeof score !== 'number' || score < 0 || score > 10000) {
+  if (typeof score !== 'number' || !Number.isInteger(score) || score < 1 || score > MAX_SCORE) {
     return NextResponse.json({ error: 'Ongeldige score' }, { status: 400 });
   }
 
+  const lastSubmission = await prisma.minigameScore.findFirst({
+    where: { userId: user.userId },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  if (lastSubmission) {
+    const secondsSince = (Date.now() - lastSubmission.createdAt.getTime()) / 1000;
+    if (secondsSince < score * MIN_SECONDS_PER_POINT) {
+      return NextResponse.json({ error: 'Te snel gespeeld' }, { status: 429 });
+    }
+  }
+
   await prisma.minigameScore.create({
-    data: { userId: user.userId, score: Math.floor(score) },
+    data: { userId: user.userId, score },
   });
 
   return NextResponse.json({ success: true });
+}
+
+export async function DELETE() {
+  const user = await getUser();
+  if (!user?.isAdmin) {
+    return NextResponse.json({ error: 'Geen toegang' }, { status: 403 });
+  }
+
+  const deleted = await prisma.minigameScore.deleteMany({
+    where: { score: { gt: MAX_SCORE } },
+  });
+
+  return NextResponse.json({ deleted: deleted.count });
 }
