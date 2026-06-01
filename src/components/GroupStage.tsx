@@ -233,8 +233,8 @@ export default function GroupStage({ predictions }: Props) {
           <table className="w-full group-table">
             <thead>
               <tr className="border-b border-white/10 text-sm text-gold uppercase">
-                <th className="text-left py-2 px-2">#</th>
-                <th className="text-left py-2">Team</th>
+                <th className="text-left py-2 px-2 w-8">#</th>
+                <th className="text-left py-2 pl-2">Team</th>
                 <th className="text-center py-2 px-2">W</th>
                 <th className="text-center py-2 px-2">G</th>
                 <th className="text-center py-2 px-2">V</th>
@@ -254,8 +254,8 @@ export default function GroupStage({ predictions }: Props) {
                       i < 2 ? 'qualify-1' : i === 2 ? 'qualify-3' : ''
                     }`}
                   >
-                    <td className="py-2.5 px-2 text-gray-500">{i + 1}</td>
-                    <td className="py-2.5 text-base font-medium">
+                    <td className="py-2.5 px-2 text-gray-500 w-8">{i + 1}</td>
+                    <td className="py-2.5 pl-2 text-base font-medium">
                       <span className="inline-flex items-center gap-1.5">
                         {t && <FlagIcon teamCode={t.code} size={16} />}
                         {t?.name}
