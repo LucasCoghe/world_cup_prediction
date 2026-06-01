@@ -224,6 +224,41 @@ input[type="number"] {
   border: 1px solid rgba(255, 221, 0, 0.3);
 }
 
+.belgian-mode .btn-secondary {
+  border-color: rgba(255, 221, 0, 0.3) !important;
+  color: #ffdd00 !important;
+}
+
+.belgian-mode .text-gold,
+.belgian-mode .text-amber-500 {
+  color: #ffdd00 !important;
+}
+
+.belgian-mode .card {
+  box-shadow: 0 0 12px rgba(255, 221, 0, 0.04), 0 0 4px rgba(255, 0, 0, 0.03);
+}
+
+.belgian-mode main {
+  border-top: 2px solid transparent;
+  border-image: linear-gradient(90deg, #1a1a1a, #ffdd00, #ff0000, #1a1a1a) 1;
+}
+
+.belgian-mode ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #1a1a1a, #ffdd00, #ff0000) !important;
+}
+
+.belgian-mode .bg-green-600,
+.belgian-mode .bg-green-500 {
+  background: linear-gradient(135deg, #cc0000 0%, #ff0000 100%) !important;
+}
+
+.belgian-mode header::after {
+  content: '';
+  display: block;
+  height: 3px;
+  background: linear-gradient(90deg, #1a1a1a 0%, #1a1a1a 25%, #ffdd00 40%, #ffdd00 50%, #ff0000 60%, #ff0000 75%, #1a1a1a 100%);
+}
+
 .belgian-banner {
   background: linear-gradient(90deg, #1a1a1a 0%, #1a1a1a 30%, #3d2b00 45%, #ffdd00 50%, #3d2b00 55%, #3d0000 70%, #ff0000 80%, #3d0000 100%);
   text-align: center;

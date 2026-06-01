@@ -105,15 +105,14 @@ export default function Dashboard({ user, onLogout }: Props) {
 
   return (
     <div className={`min-h-screen ${belgianDay ? 'belgian-mode' : ''}`}>
-      {/* Belgian match day banner */}
-      {belgianDay && (
-        <div className="belgian-banner">
-          RODE DUIVELS SPELEN VANDAAG!{belgianOpponent ? ` vs ${belgianOpponent}` : ''}
-        </div>
-      )}
-
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-lg border-b border-white/10" style={{ background: 'linear-gradient(90deg, rgba(0,40,104,0.85) 0%, rgba(6,13,31,0.95) 30%, rgba(6,13,31,0.95) 70%, rgba(107,21,32,0.85) 100%)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+        {/* Belgian match day banner */}
+        {belgianDay && (
+          <div className="belgian-banner">
+            RODE DUIVELS SPELEN VANDAAG!{belgianOpponent ? ` vs ${belgianOpponent}` : ''}
+          </div>
+        )}
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <h1 className="text-xl font-bold trophy-text">WK 2026 Pronostiek</h1>
           <div className="flex items-center gap-3">
