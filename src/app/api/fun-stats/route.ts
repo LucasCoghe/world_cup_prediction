@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { calculateMatchPoints } from '@/lib/scoring';
 import { MatchScore } from '@/lib/standings';
-import { groupMatches, knockoutStructure, teams } from '@/lib/tournament';
+import { groupMatches, knockoutStructure, teams, TOTAL_GROUP_MATCHES } from '@/lib/tournament';
 
 export async function GET() {
   const users = await prisma.user.findMany({
@@ -97,7 +97,7 @@ export async function GET() {
         consecutiveZeros++;
       } else {
         const predRecord = user.predictions.find(p => p.matchNumber === matchNum);
-        const pts = calculateMatchPoints(pred, actual, predRecord?.jokerUsed);
+        const pts = calculateMatchPoints(pred, actual, predRecord?.jokerUsed, matchNum > TOTAL_GROUP_MATCHES);
         if (pts <= 0) {
           consecutiveZeros++;
         } else {
@@ -105,8 +105,8 @@ export async function GET() {
         }
       }
 
-      // Every time they hit a multiple of 3, that's a beer
-      if (consecutiveZeros > 0 && consecutiveZeros % 3 === 0) {
+      // Every time they hit a multiple of 2, that's a beer
+      if (consecutiveZeros > 0 && consecutiveZeros % 2 === 0) {
         beers++;
       }
     }

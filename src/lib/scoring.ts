@@ -1,4 +1,4 @@
-// Points calculation based on the Stockx rules adapted for WK 2026
+// Points calculation based on Sporza WK Pronostiek rules + joker system
 import { MatchScore } from './standings';
 import { TOTAL_GROUP_MATCHES, TOTAL_MATCHES } from './tournament';
 
@@ -14,6 +14,76 @@ interface PointBreakdown {
   matchNumber: number;
   points: number;
   reason: string;
+}
+
+function getOutcome(home: number, away: number): number {
+  return Math.sign(home - away);
+}
+
+function goalDiff(home: number, away: number): number {
+  return home - away;
+}
+
+// Sporza group phase scoring:
+//   10pt = exact score (bullseye)
+//    7pt = correct goal difference but wrong score (e.g. predict 3-1, actual 2-0)
+//    5pt = correct winner but wrong goal difference
+//    1pt = participation (filled in)
+function scoreGroupMatch(pred: MatchScore, actual: MatchScore): { points: number; reason: string; correctWinner: boolean } {
+  const predOut = getOutcome(pred.homeScore, pred.awayScore);
+  const actualOut = getOutcome(actual.homeScore, actual.awayScore);
+
+  if (predOut !== actualOut) {
+    return { points: 0, reason: 'Fout', correctWinner: false };
+  }
+
+  const exactScore = pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore;
+  if (exactScore) {
+    return { points: 10, reason: 'Exacte score', correctWinner: true };
+  }
+
+  const predDiff = goalDiff(pred.homeScore, pred.awayScore);
+  const actualDiff = goalDiff(actual.homeScore, actual.awayScore);
+  if (predDiff === actualDiff) {
+    return { points: 7, reason: 'Juist doelsaldo', correctWinner: true };
+  }
+
+  return { points: 5, reason: 'Juiste winnaar', correctWinner: true };
+}
+
+// Sporza knockout scoring (cumulative):
+//   +10pt = correct winner (who advances, even after penalties)
+//    +6pt = exact score after 90/120 min
+//    +4pt = correct goal difference (but not exact score)
+//    +1pt = participation
+function scoreKnockoutMatch(pred: MatchScore, actual: MatchScore): { points: number; reason: string; correctWinner: boolean } {
+  let points = 0;
+  const reasons: string[] = [];
+  let correctWinner = false;
+
+  const predOut = getOutcome(pred.homeScore, pred.awayScore);
+  const actualOut = getOutcome(actual.homeScore, actual.awayScore);
+
+  if (predOut === actualOut) {
+    points += 10;
+    reasons.unshift('Juiste winnaar');
+    correctWinner = true;
+
+    const exactScore = pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore;
+    if (exactScore) {
+      points += 6;
+      reasons.splice(1, 0, 'Exacte score');
+    } else {
+      const predDiff = goalDiff(pred.homeScore, pred.awayScore);
+      const actualDiff = goalDiff(actual.homeScore, actual.awayScore);
+      if (predDiff === actualDiff) {
+        points += 4;
+        reasons.splice(1, 0, 'Juist doelsaldo');
+      }
+    }
+  }
+
+  return { points, reason: reasons.length > 0 ? reasons.join(' + ') : 'Fout', correctWinner };
 }
 
 export function calculatePoints(
@@ -40,87 +110,63 @@ export function calculatePoints(
     const actual = actualMap.get(i);
     if (!pred || !actual) continue;
 
-    let matchPoints = 0;
-
-    // Rule 1: Correct outcome (win/draw/loss) = 1p
-    const predOutcome = Math.sign(pred.homeScore - pred.awayScore);
-    const actualOutcome = Math.sign(actual.homeScore - actual.awayScore);
-
-    if (predOutcome === actualOutcome) {
-      matchPoints += 1;
-
-      // Rule 2: Exact score = 2p extra
-      if (pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore) {
-        matchPoints += 2;
-      }
-    }
+    const result = scoreGroupMatch(pred, actual);
+    let matchPoints = result.points;
+    let reason = result.reason;
 
     const isJoker = jokerMatches?.has(i) ?? false;
     if (isJoker) {
-      if (matchPoints > 0) {
-        matchPoints += 2;
-        groupPhasePoints += matchPoints;
-        breakdown.push({ matchNumber: i, points: matchPoints, reason: (matchPoints === 5 ? 'Juiste uitslag' : 'Juiste uitkomst') + ' (Joker +2)' });
+      if (result.correctWinner) {
+        matchPoints += 5;
+        reason += ' (Joker +5)';
       } else {
-        groupPhasePoints -= 1;
-        breakdown.push({ matchNumber: i, points: -1, reason: 'Joker fout (-1)' });
+        matchPoints -= 2;
+        reason += ' (Joker -2)';
       }
-    } else if (matchPoints > 0) {
-      groupPhasePoints += matchPoints;
-      breakdown.push({ matchNumber: i, points: matchPoints, reason: matchPoints === 3 ? 'Juiste uitslag' : 'Juiste uitkomst' });
     }
+
+    groupPhasePoints += matchPoints;
+    breakdown.push({ matchNumber: i, points: matchPoints, reason });
   }
 
-  // === KNOCKOUT PHASE (matches 73+) — same scoring as group phase + jokers ===
+  // === KNOCKOUT PHASE (matches 73+) ===
   for (let i = TOTAL_GROUP_MATCHES + 1; i <= TOTAL_MATCHES; i++) {
     const pred = predMap.get(i);
     const actual = actualMap.get(i);
     if (!pred || !actual) continue;
 
-    let matchPoints = 0;
-
-    const predOutcome = Math.sign(pred.homeScore - pred.awayScore);
-    const actualOutcome = Math.sign(actual.homeScore - actual.awayScore);
-
-    if (predOutcome === actualOutcome) {
-      matchPoints += 1;
-      if (pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore) {
-        matchPoints += 2;
-      }
-    }
+    const result = scoreKnockoutMatch(pred, actual);
+    let matchPoints = result.points;
+    let reason = result.reason;
 
     const isJoker = jokerMatches?.has(i) ?? false;
     if (isJoker) {
-      if (matchPoints > 0) {
-        matchPoints += 2;
-        knockoutPoints += matchPoints;
-        breakdown.push({ matchNumber: i, points: matchPoints, reason: (matchPoints === 5 ? 'Juiste uitslag' : 'Juiste uitkomst') + ' (Joker +2)' });
+      if (result.correctWinner) {
+        matchPoints += 5;
+        reason += ' (Joker +5)';
       } else {
-        knockoutPoints -= 1;
-        breakdown.push({ matchNumber: i, points: -1, reason: 'Joker fout (-1)' });
+        matchPoints -= 2;
+        reason += ' (Joker -2)';
       }
-    } else if (matchPoints > 0) {
-      knockoutPoints += matchPoints;
-      breakdown.push({ matchNumber: i, points: matchPoints, reason: matchPoints === 3 ? 'Juiste uitslag' : 'Juiste uitkomst' });
     }
+
+    knockoutPoints += matchPoints;
+    breakdown.push({ matchNumber: i, points: matchPoints, reason });
   }
 
   // === EXTRA POINTS ===
   if (extraPrediction && actualExtra) {
-    // World Champion = 5p
     if (extraPrediction.worldChampion && extraPrediction.worldChampion === actualExtra.worldChampion) {
-      extraPoints += 5;
-      breakdown.push({ matchNumber: 0, points: 5, reason: 'Juiste Wereldkampioen' });
+      extraPoints += 25;
+      breakdown.push({ matchNumber: 0, points: 25, reason: 'Juiste Wereldkampioen' });
     }
-    // Top scorer = 5p
     if (extraPrediction.topScorer && extraPrediction.topScorer === actualExtra.topScorer) {
-      extraPoints += 5;
-      breakdown.push({ matchNumber: 0, points: 5, reason: 'Juiste Topschutter' });
+      extraPoints += 15;
+      breakdown.push({ matchNumber: 0, points: 15, reason: 'Juiste Topschutter' });
     }
-    // Belgian top scorer = 3p
     if (extraPrediction.belgianTopScorer && extraPrediction.belgianTopScorer === actualExtra.belgianTopScorer) {
-      extraPoints += 3;
-      breakdown.push({ matchNumber: 0, points: 3, reason: 'Juiste Belgische Topschutter' });
+      extraPoints += 10;
+      breakdown.push({ matchNumber: 0, points: 10, reason: 'Juiste Belgische Topschutter' });
     }
   }
 
@@ -133,15 +179,17 @@ export function calculatePoints(
   };
 }
 
-// Calculate points for a single group match (used for per-match stats)
+// Calculate points for a single match (used for per-match stats)
 export function calculateMatchPoints(
   pred: MatchScore,
   actual: MatchScore,
-  joker?: boolean
+  joker?: boolean,
+  isKnockout?: boolean
 ): number {
-  const predOutcome = Math.sign(pred.homeScore - pred.awayScore);
-  const actualOutcome = Math.sign(actual.homeScore - actual.awayScore);
-  if (predOutcome !== actualOutcome) return joker ? -1 : 0;
-  const base = (pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore) ? 3 : 1;
-  return joker ? base + 2 : base;
+  const result = isKnockout ? scoreKnockoutMatch(pred, actual) : scoreGroupMatch(pred, actual);
+  let points = result.points;
+  if (joker) {
+    points += result.correctWinner ? 5 : -2;
+  }
+  return points;
 }

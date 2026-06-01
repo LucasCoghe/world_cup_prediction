@@ -88,11 +88,12 @@ export async function GET() {
 
     if (standings.length < 2) continue;
 
-    const minPoints = Math.min(...standings.map(s => s.points));
+    standings.sort((a, b) => a.points - b.points);
+    const threshold = standings.length >= 3 ? standings[2].points : standings[0].points;
     const formattedDate = new Date(date + 'T12:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' });
     for (const s of standings) {
-      if (s.points === minPoints) {
-        beerReasons.get(s.id)!.push(`Laatste op ${formattedDate} (${s.points}pt)`);
+      if (s.points <= threshold) {
+        beerReasons.get(s.id)!.push(`Onderste 3 op ${formattedDate} (${s.points}pt)`);
       }
     }
   }
@@ -133,11 +134,12 @@ export async function GET() {
 
     if (standings.length < 2) continue;
 
-    const minPoints = Math.min(...standings.map(s => s.points));
+    standings.sort((a, b) => a.points - b.points);
+    const threshold = standings.length >= 3 ? standings[2].points : standings[0].points;
     const label = roundLabels[round] || round;
     for (const s of standings) {
-      if (s.points === minPoints) {
-        beerReasons.get(s.id)!.push(`Laatste in ${label} (${s.points}pt)`);
+      if (s.points <= threshold) {
+        beerReasons.get(s.id)!.push(`Onderste 3 in ${label} (${s.points}pt)`);
       }
     }
   }
@@ -165,7 +167,7 @@ export async function GET() {
         const predRecord = u.predictions.find(p => p.matchNumber === matchNum);
         consecutiveZeros = calculateMatchPoints(pred, actual, predRecord?.jokerUsed) <= 0 ? consecutiveZeros + 1 : 0;
       }
-      if (consecutiveZeros > 0 && consecutiveZeros % 3 === 0) {
+      if (consecutiveZeros > 0 && consecutiveZeros % 2 === 0) {
         beerReasons.get(u.id)!.push(`${consecutiveZeros}x op rij 0 punten`);
       }
     }

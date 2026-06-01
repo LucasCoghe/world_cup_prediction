@@ -29,17 +29,41 @@ export default function Rules() {
         <h3 className="text-xl font-semibold text-gold">Punten</h3>
 
         <div className="space-y-2 text-base">
-          <h4 className="font-semibold text-white mt-3">Elke wedstrijd (groepsfase + knockout)</h4>
+          <h4 className="font-semibold text-white mt-3">Groepsfase</h4>
           <div className="grid gap-1">
             <div className="flex justify-between py-1.5 border-b border-white/5">
-              <span className="text-gray-300">Juiste uitkomst (winst/gelijk/verlies)</span>
-              <span className="font-bold text-gold">1 punt</span>
+              <span className="text-gray-300">Exacte score (Bullseye!)</span>
+              <span className="font-bold text-gold">10 punten</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/5">
-              <span className="text-gray-300">Juiste uitslag (exact)</span>
-              <span className="font-bold text-gold">+2 punten</span>
+              <span className="text-gray-300">Juist doelsaldo, verkeerde uitslag</span>
+              <span className="font-bold text-gold">7 punten</span>
+            </div>
+            <div className="flex justify-between py-1.5 border-b border-white/5">
+              <span className="text-gray-300">Juiste winnaar, verkeerd doelsaldo</span>
+              <span className="font-bold text-gold">5 punten</span>
             </div>
           </div>
+
+          <h4 className="font-semibold text-white mt-5">Knockout (vanaf 1/8e finales)</h4>
+          <p className="text-sm text-gray-400 mb-2">
+            Punten zijn cumulatief: je kan meerdere bonussen combineren.
+          </p>
+          <div className="grid gap-1">
+            <div className="flex justify-between py-1.5 border-b border-white/5">
+              <span className="text-gray-300">Juiste winnaar (ook na penalty&apos;s)</span>
+              <span className="font-bold text-gold">10 punten</span>
+            </div>
+            <div className="flex justify-between py-1.5 border-b border-white/5">
+              <span className="text-gray-300">Exacte score (na 90 of 120 min)</span>
+              <span className="font-bold text-gold">+6 punten</span>
+            </div>
+            <div className="flex justify-between py-1.5 border-b border-white/5">
+              <span className="text-gray-300">Juist doelsaldo (niet exact)</span>
+              <span className="font-bold text-gold">+4 punten</span>
+            </div>
+          </div>
+
           <h4 className="font-semibold text-white mt-5">Jokers</h4>
           <div className="grid gap-1">
             <div className="flex justify-between py-1.5 border-b border-white/5">
@@ -51,34 +75,28 @@ export default function Rules() {
               <span className="font-bold text-purple-400">2 jokers</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/5">
-              <span className="text-gray-300">Correct met joker</span>
-              <span className="font-bold text-purple-400">+2 bonuspunten</span>
+              <span className="text-gray-300">Correct met joker (juiste winnaar of beter)</span>
+              <span className="font-bold text-purple-400">+5 bonuspunten</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/5">
               <span className="text-gray-300">Fout met joker</span>
-              <span className="font-bold text-red-400">-1 punt</span>
+              <span className="font-bold text-red-400">-2 punten</span>
             </div>
           </div>
-
-          <h4 className="font-semibold text-white mt-5">Knockout</h4>
-          <p className="text-sm text-gray-400 mb-2">
-            In de knockout voorspel je per wedstrijd zodra de teams bekend zijn. Deadline is de aftrap van elke wedstrijd.
-            Scoring is dezelfde als in de groepsfase: 1 punt voor juiste uitkomst, +2 voor exacte uitslag.
-          </p>
 
           <h4 className="font-semibold text-white mt-5">Extra Punten</h4>
           <div className="grid gap-1">
             <div className="flex justify-between py-1.5 border-b border-white/5">
               <span className="text-gray-300">Juiste Wereldkampioen</span>
-              <span className="font-bold text-gold">5 punten</span>
+              <span className="font-bold text-gold">25 punten</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/5">
               <span className="text-gray-300">Juiste Topschutter</span>
-              <span className="font-bold text-gold">5 punten</span>
+              <span className="font-bold text-gold">15 punten</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/5">
               <span className="text-gray-300">Juiste Belgische Topschutter</span>
-              <span className="font-bold text-gold">3 punten</span>
+              <span className="font-bold text-gold">10 punten</span>
             </div>
           </div>
 
@@ -90,6 +108,26 @@ export default function Rules() {
             <li>Aantal gescoorde doelpunten van de topschutter</li>
             <li>Minuut eerste doelpunt van de topschutter</li>
           </ol>
+        </div>
+      </div>
+
+      <div className="card space-y-4">
+        <h3 className="text-xl font-semibold text-amber-500">Bierteller</h3>
+        <p className="text-sm text-gray-400">Slecht voorspellen heeft gevolgen.</p>
+
+        <div className="grid gap-1 text-base">
+          <div className="flex justify-between py-1.5 border-b border-white/5">
+            <span className="text-gray-300">Onderste 3 op een speeldag (groepsfase)</span>
+            <span className="font-bold text-amber-500">1 biertje</span>
+          </div>
+          <div className="flex justify-between py-1.5 border-b border-white/5">
+            <span className="text-gray-300">Onderste 3 in een knockoutronde</span>
+            <span className="font-bold text-amber-500">1 biertje</span>
+          </div>
+          <div className="flex justify-between py-1.5 border-b border-white/5">
+            <span className="text-gray-300">2 wedstrijden op rij 0 punten</span>
+            <span className="font-bold text-amber-500">1 biertje</span>
+          </div>
         </div>
       </div>
 
