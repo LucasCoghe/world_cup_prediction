@@ -38,8 +38,13 @@ const extraBelgianDates: Record<string, string> = {
   '2026-06-06': 'Tunesië (oefenmatch)',
 };
 
+function getLocalDate(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function isBelgianMatchDay(): boolean {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDate();
   const belgianDates = [
     ...groupMatches.filter(m => m.home === 'BEL' || m.away === 'BEL').map(m => m.date),
     ...knockoutStructure.filter(m => m.homeSource.includes('BEL') || m.awaySource.includes('BEL')).map(m => m.date),
@@ -49,7 +54,7 @@ function isBelgianMatchDay(): boolean {
 }
 
 function getBelgianMatchToday(): string | null {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDate();
   if (extraBelgianDates[today]) return extraBelgianDates[today];
   const match = groupMatches.find(m => m.date === today && (m.home === 'BEL' || m.away === 'BEL'));
   if (!match) return null;

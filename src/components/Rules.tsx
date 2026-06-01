@@ -118,19 +118,19 @@ export default function Rules() {
         <div className="grid gap-1 text-base">
           <div className="flex justify-between py-1.5 border-b border-white/5">
             <span className="text-gray-300">Onderste 3 op een speeldag (groepsfase)</span>
-            <span className="font-bold text-amber-500">1 biertje</span>
+            <span className="font-bold text-amber-500">1 pint</span>
           </div>
           <div className="flex justify-between py-1.5 border-b border-white/5">
             <span className="text-gray-300">Onderste 3 in een knockoutronde</span>
-            <span className="font-bold text-amber-500">1 biertje</span>
+            <span className="font-bold text-amber-500">1 pint</span>
           </div>
           <div className="flex justify-between py-1.5 border-b border-white/5">
             <span className="text-gray-300">2 wedstrijden op rij 0 punten</span>
-            <span className="font-bold text-amber-500">1 biertje</span>
+            <span className="font-bold text-amber-500">1 pint</span>
           </div>
           <div className="flex justify-between py-1.5 border-b border-white/5">
             <span className="text-gray-300">Beste van de speeldag (alleen winnaar)</span>
-            <span className="font-bold text-emerald-400">1 biertje uitdelen</span>
+            <span className="font-bold text-emerald-400">1 pint uitdelen</span>
           </div>
         </div>
       </div>
