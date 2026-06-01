@@ -12,10 +12,35 @@ const KICK_VY = -9.5;
 const KICK_VX_FACTOR = 4;
 const FLOOR_Y = CANVAS_H - 20;
 const PLAYER_Y = FLOOR_Y - PLAYER_H;
-const SPEED_INCREASE = 0.018;
-const WIND_BASE = 0.015;
-const WIND_INCREASE = 0.004;
+const SPEED_INCREASE = 0.012;
+const WIND_BASE = 0.006;
+const WIND_INCREASE = 0.002;
 const STORAGE_KEY = 'keepie-uppie-custom-player';
+const POWERUP_DURATION = 300;
+const POWERUP_SPAWN_INTERVAL = 400;
+const POWERUP_SPAWN_CHANCE = 0.4;
+const POWERUP_R = 18;
+const POWERUP_FALL_SPEED = 1.5;
+
+type PowerUpType = 'wide' | 'slow' | 'magnet';
+
+interface PowerUp {
+  type: PowerUpType;
+  x: number;
+  y: number;
+}
+
+const POWERUP_COLORS: Record<PowerUpType, string> = {
+  wide: '#22d3ee',
+  slow: '#a78bfa',
+  magnet: '#f472b6',
+};
+
+const POWERUP_ICONS: Record<PowerUpType, string> = {
+  wide: '↔',
+  slow: '⏳',
+  magnet: '🧲',
+};
 
 interface LeaderboardEntry {
   name: string;
@@ -373,6 +398,10 @@ export default function KeepyUppy() {
     windTimer: number;
     playerConfig: PlayerConfig;
     isKDB: boolean;
+    powerUp: PowerUp | null;
+    activePowerUp: PowerUpType | null;
+    powerUpTimer: number;
+    powerUpSpawnTimer: number;
   } | null>(null);
   const inputRef = useRef<{ pointerX: number | null }>({ pointerX: null });
 
@@ -443,6 +472,10 @@ export default function KeepyUppy() {
       windTimer: 0,
       playerConfig: config,
       isKDB,
+      powerUp: null as PowerUp | null,
+      activePowerUp: null as PowerUpType | null,
+      powerUpTimer: 0,
+      powerUpSpawnTimer: 0,
     };
     gameRef.current = g;
 
@@ -589,8 +622,59 @@ export default function KeepyUppy() {
         state.windTimer = 0;
       }
 
-      state.ballVY += GRAVITY * state.speedMult * dt;
+      // Power-up timer
+      if (state.activePowerUp) {
+        state.powerUpTimer -= dt;
+        if (state.powerUpTimer <= 0) {
+          state.activePowerUp = null;
+          state.powerUpTimer = 0;
+        }
+      }
+
+      // Power-up spawning
+      state.powerUpSpawnTimer += dt;
+      if (!state.powerUp && state.powerUpSpawnTimer > POWERUP_SPAWN_INTERVAL && state.score >= 3) {
+        if (Math.random() < POWERUP_SPAWN_CHANCE) {
+          const types: PowerUpType[] = ['wide', 'slow', 'magnet'];
+          state.powerUp = {
+            type: types[Math.floor(Math.random() * types.length)],
+            x: 30 + Math.random() * (CANVAS_W - 60),
+            y: -POWERUP_R,
+          };
+        }
+        state.powerUpSpawnTimer = 0;
+      }
+
+      // Power-up falling & collection
+      if (state.powerUp) {
+        state.powerUp.y += POWERUP_FALL_SPEED * dt;
+        const pw = state.activePowerUp === 'wide' ? PLAYER_W * 2 : PLAYER_W;
+        const pCX = state.playerX + PLAYER_W / 2;
+        if (
+          state.powerUp.y + POWERUP_R >= PLAYER_Y &&
+          state.powerUp.x > pCX - pw / 2 - POWERUP_R &&
+          state.powerUp.x < pCX + pw / 2 + POWERUP_R
+        ) {
+          state.activePowerUp = state.powerUp.type;
+          state.powerUpTimer = POWERUP_DURATION;
+          state.powerUp = null;
+        } else if (state.powerUp.y > FLOOR_Y) {
+          state.powerUp = null;
+        }
+      }
+
+      // Apply power-up effects
+      const speedFactor = state.activePowerUp === 'slow' ? 0.5 : 1;
+      const effectiveSpeedMult = state.speedMult * speedFactor;
+
+      state.ballVY += GRAVITY * effectiveSpeedMult * dt;
       state.ballVX += state.wind * dt;
+      if (state.activePowerUp === 'magnet') {
+        const pCX = state.playerX + PLAYER_W / 2;
+        const pullX = (pCX - state.ballX) * 0.006;
+        state.ballVX += pullX * dt;
+        state.ballVX *= 0.98;
+      }
       state.ballX += state.ballVX * dt;
       state.ballY += state.ballVY * dt;
 
@@ -607,17 +691,18 @@ export default function KeepyUppy() {
         state.ballVY = Math.abs(state.ballVY) * 0.5;
       }
 
+      const pw = state.activePowerUp === 'wide' ? PLAYER_W * 2 : PLAYER_W;
       const playerCX = state.playerX + PLAYER_W / 2;
       const playerTop = PLAYER_Y;
       if (
         state.ballVY > 0 &&
         state.ballY + BALL_R >= playerTop &&
         state.ballY + BALL_R <= playerTop + 16 &&
-        state.ballX > state.playerX - BALL_R &&
-        state.ballX < state.playerX + PLAYER_W + BALL_R
+        state.ballX > playerCX - pw / 2 - BALL_R &&
+        state.ballX < playerCX + pw / 2 + BALL_R
       ) {
-        state.ballVY = KICK_VY * state.speedMult;
-        const offset = (state.ballX - playerCX) / (PLAYER_W / 2);
+        state.ballVY = KICK_VY * effectiveSpeedMult;
+        const offset = (state.ballX - playerCX) / (pw / 2);
         const chaos = Math.min(state.score * 0.08, 3);
         state.ballVX = offset * KICK_VX_FACTOR + (Math.random() - 0.5) * (1 + chaos);
         state.score++;
@@ -638,17 +723,91 @@ export default function KeepyUppy() {
       ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
 
       drawBackground();
+
+      // Draw wide effect zone
+      if (state.activePowerUp === 'wide') {
+        ctx.save();
+        const wideW = PLAYER_W * 2;
+        const wideX = state.playerX + PLAYER_W / 2 - wideW / 2;
+        ctx.fillStyle = 'rgba(34, 211, 238, 0.15)';
+        ctx.fillRect(wideX, PLAYER_Y, wideW, PLAYER_H);
+        ctx.strokeStyle = 'rgba(34, 211, 238, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(wideX, PLAYER_Y, wideW, PLAYER_H);
+        ctx.restore();
+      }
+
+      // Draw magnet lines
+      if (state.activePowerUp === 'magnet') {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(244, 114, 182, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(state.playerX + PLAYER_W / 2, PLAYER_Y);
+        ctx.lineTo(state.ballX, state.ballY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
+
       drawPlayerOnCanvas(ctx, state.playerX, PLAYER_Y, state.playerConfig, state.isKDB);
       drawBall(state.ballX, state.ballY);
+
+      // Draw falling power-up
+      if (state.powerUp) {
+        ctx.save();
+        const pu = state.powerUp;
+        ctx.beginPath();
+        ctx.arc(pu.x, pu.y, POWERUP_R, 0, Math.PI * 2);
+        ctx.fillStyle = POWERUP_COLORS[pu.type];
+        ctx.globalAlpha = 0.8 + Math.sin(frameCount * 0.1) * 0.2;
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(POWERUP_ICONS[pu.type], pu.x, pu.y);
+        ctx.restore();
+      }
+
+      // Draw active power-up indicator
+      if (state.activePowerUp) {
+        ctx.save();
+        const barW = 100;
+        const barH = 8;
+        const barX = CANVAS_W / 2 - barW / 2;
+        const barY = 60;
+        const progress = state.powerUpTimer / POWERUP_DURATION;
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.beginPath();
+        ctx.roundRect(barX - 1, barY - 1, barW + 2, barH + 2, 4);
+        ctx.fill();
+        ctx.fillStyle = POWERUP_COLORS[state.activePowerUp];
+        ctx.globalAlpha = 0.9;
+        ctx.beginPath();
+        ctx.roundRect(barX, barY, barW * progress, barH, 3);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(POWERUP_ICONS[state.activePowerUp], barX - 12, barY + barH - 1);
+        ctx.restore();
+      }
 
       if (Math.abs(state.wind) > 0.005) {
         ctx.save();
         ctx.globalAlpha = Math.min(Math.abs(state.wind) * 8, 0.7);
         ctx.fillStyle = '#93c5fd';
-        ctx.font = '16px monospace';
+        ctx.font = 'bold 24px monospace';
         ctx.textAlign = 'center';
         const windArrow = state.wind > 0 ? '>>>' : '<<<';
-        ctx.fillText(windArrow, CANVAS_W / 2, 75);
+        ctx.fillText(windArrow, CANVAS_W / 2, 85);
         ctx.restore();
       }
 
