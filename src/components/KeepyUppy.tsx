@@ -694,10 +694,11 @@ export default function KeepyUppy() {
       const pw = state.activePowerUp === 'wide' ? PLAYER_W * 2 : PLAYER_W;
       const playerCX = state.playerX + PLAYER_W / 2;
       const playerTop = PLAYER_Y;
+      const prevBallBottom = state.ballY + BALL_R - state.ballVY * dt;
       if (
         state.ballVY > 0 &&
+        prevBallBottom <= playerTop + 16 &&
         state.ballY + BALL_R >= playerTop &&
-        state.ballY + BALL_R <= playerTop + 16 &&
         state.ballX > playerCX - pw / 2 - BALL_R &&
         state.ballX < playerCX + pw / 2 + BALL_R
       ) {
