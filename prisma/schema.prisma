@@ -24,6 +24,8 @@ model User {
   minigameScores     MinigameScore[]
   beersDrunk         BeerConfirmation[] @relation("drinker")
   beersWitnessed     BeerConfirmation[] @relation("witness")
+  beersGiven         BeerGift[]         @relation("giver")
+  beersReceived      BeerGift[]         @relation("receiver")
 }
 
 model MatchComment {
@@ -106,4 +108,17 @@ model BeerConfirmation {
   witness User? @relation("witness", fields: [witnessId], references: [id])
 
   @@unique([drinkerId, reason])
+}
+
+model BeerGift {
+  id         String   @id @default(cuid())
+  giverId    String
+  receiverId String
+  reason     String
+  createdAt  DateTime @default(now())
+
+  giver    User @relation("giver", fields: [giverId], references: [id])
+  receiver User @relation("receiver", fields: [receiverId], references: [id])
+
+  @@unique([giverId, reason])
 }

@@ -33,15 +33,27 @@ function getPoints(pred: MatchPrediction): number | null {
   if (pred.actualHome === null || pred.actualAway === null) return null;
   const predOutcome = Math.sign(pred.homeScore - pred.awayScore);
   const actualOutcome = Math.sign(pred.actualHome - pred.actualAway);
+  const isKnockout = pred.round !== null;
+
+  if (isKnockout) {
+    if (predOutcome !== actualOutcome) return 0;
+    let pts = 10;
+    const exact = pred.homeScore === pred.actualHome && pred.awayScore === pred.actualAway;
+    if (exact) { pts += 6; }
+    else if ((pred.homeScore - pred.awayScore) === (pred.actualHome - pred.actualAway)) { pts += 4; }
+    return pts;
+  }
+
   if (predOutcome !== actualOutcome) return 0;
-  if (pred.homeScore === pred.actualHome && pred.awayScore === pred.actualAway) return 3;
-  return 1;
+  if (pred.homeScore === pred.actualHome && pred.awayScore === pred.actualAway) return 10;
+  if ((pred.homeScore - pred.awayScore) === (pred.actualHome - pred.actualAway)) return 7;
+  return 5;
 }
 
 function pointsColor(pts: number | null): string {
   if (pts === null) return 'text-gray-500';
-  if (pts === 3) return 'text-green-400';
-  if (pts === 1) return 'text-yellow-400';
+  if (pts >= 10) return 'text-green-400';
+  if (pts >= 5) return 'text-yellow-400';
   return 'text-red-400';
 }
 

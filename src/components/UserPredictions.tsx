@@ -35,16 +35,34 @@ function getPointsForMatch(pred: MatchPrediction): { points: number; label: stri
   if (pred.actualHome === null || pred.actualAway === null) return null;
   const predOutcome = Math.sign(pred.homeScore - pred.awayScore);
   const actualOutcome = Math.sign(pred.actualHome - pred.actualAway);
-  const isGroupMatch = pred.group !== null;
-  const joker = pred.jokerUsed && isGroupMatch;
+  const isKnockout = pred.round !== null;
+
+  if (isKnockout) {
+    let pts = 0;
+    if (predOutcome === actualOutcome) {
+      pts += 10;
+      const exact = pred.homeScore === pred.actualHome && pred.awayScore === pred.actualAway;
+      if (exact) {
+        pts += 6;
+      } else if ((pred.homeScore - pred.awayScore) === (pred.actualHome - pred.actualAway)) {
+        pts += 4;
+      }
+    }
+    if (pred.jokerUsed) pts += predOutcome === actualOutcome ? 5 : -2;
+    return { points: pts, label: `${pts} pt` };
+  }
 
   if (predOutcome !== actualOutcome) {
-    const pts = joker ? -1 : 0;
+    const pts = pred.jokerUsed ? -2 : 0;
     return { points: pts, label: `${pts} pt` };
   }
   const exact = pred.homeScore === pred.actualHome && pred.awayScore === pred.actualAway;
-  const base = exact ? 3 : 1;
-  const pts = joker ? base + 2 : base;
+  const predDiff = pred.homeScore - pred.awayScore;
+  const actualDiff = pred.actualHome - pred.actualAway;
+  let base = 5;
+  if (exact) base = 10;
+  else if (predDiff === actualDiff) base = 7;
+  const pts = pred.jokerUsed ? base + 5 : base;
   return { points: pts, label: `${pts} pt` };
 }
 
@@ -88,6 +106,17 @@ export default function UserPredictions({ userId, onBack }: Props) {
     return sum + (pts?.points || 0);
   }, 0);
 
+  const hotStreak = (() => {
+    let streak = 0;
+    for (const p of groupPreds) {
+      if (p.actualHome === null || p.actualAway === null) continue;
+      const predOut = Math.sign(p.homeScore - p.awayScore);
+      const actOut = Math.sign(p.actualHome - p.actualAway);
+      streak = predOut === actOut ? streak + 1 : 0;
+    }
+    return streak;
+  })();
+
   return (
     <div className="space-y-6 animate-in">
       <div className="flex items-center gap-4">
@@ -98,6 +127,9 @@ export default function UserPredictions({ userId, onBack }: Props) {
       <div className="card bg-white/5">
         <div className="text-sm text-gray-400">
           {predictions.length} voorspellingen &middot; {totalPoints} punten (uit gespeelde wedstrijden)
+          {hotStreak >= 2 && (
+            <span className="ml-2 fire-text font-bold">🔥 {hotStreak}x op rij juist</span>
+          )}
         </div>
       </div>
 
@@ -138,7 +170,7 @@ export default function UserPredictions({ userId, onBack }: Props) {
                 const pts = getPointsForMatch(p);
                 return (
                   <div key={p.matchNumber} className={`flex items-center gap-2 py-1.5 px-2 rounded ${
-                    pts ? (pts.points >= 3 ? 'bg-green-950/30' : pts.points >= 1 ? 'bg-yellow-950/20' : 'bg-red-950/20') : 'bg-white/5'
+                    pts ? (pts.points >= 10 ? 'bg-green-950/30' : pts.points >= 5 ? 'bg-yellow-950/20' : 'bg-red-950/20') : 'bg-white/5'
                   } ${p.jokerUsed ? 'ring-1 ring-purple-500/40' : ''}`}>
                     <span className="text-xs text-gray-500 w-7">
                       {p.jokerUsed ? <span className="text-purple-400 font-bold" title="Joker">J</span> : `#${p.matchNumber}`}
@@ -156,7 +188,7 @@ export default function UserPredictions({ userId, onBack }: Props) {
                       <div className="flex items-center gap-2 w-20 justify-end">
                         <span className="text-xs text-gray-500">({p.actualHome}-{p.actualAway})</span>
                         <span className={`text-xs font-bold ${
-                          pts.points >= 3 ? 'text-green-400' : pts.points >= 1 ? 'text-yellow-400' : 'text-red-400'
+                          pts.points >= 10 ? 'text-green-400' : pts.points >= 5 ? 'text-yellow-400' : 'text-red-400'
                         }`}>{pts.label}</span>
                       </div>
                     )}
@@ -179,7 +211,7 @@ export default function UserPredictions({ userId, onBack }: Props) {
                 const pts = getPointsForMatch(p);
                 return (
                   <div key={p.matchNumber} className={`flex items-center gap-2 py-1.5 px-2 rounded ${
-                    pts ? (pts.points === 3 ? 'bg-green-950/30' : pts.points === 1 ? 'bg-yellow-950/20' : 'bg-red-950/20') : 'bg-white/5'
+                    pts ? (pts.points >= 10 ? 'bg-green-950/30' : pts.points >= 5 ? 'bg-yellow-950/20' : 'bg-red-950/20') : 'bg-white/5'
                   }`}>
                     <span className="text-xs text-gray-500 w-7">#{p.matchNumber}</span>
                     <div className="flex items-center gap-1 flex-1 justify-end text-sm">
@@ -193,7 +225,7 @@ export default function UserPredictions({ userId, onBack }: Props) {
                       <div className="flex items-center gap-2 w-20 justify-end">
                         <span className="text-xs text-gray-500">({p.actualHome}-{p.actualAway})</span>
                         <span className={`text-xs font-bold ${
-                          pts.points === 3 ? 'text-green-400' : pts.points === 1 ? 'text-yellow-400' : 'text-red-400'
+                          pts.points >= 10 ? 'text-green-400' : pts.points >= 5 ? 'text-yellow-400' : 'text-red-400'
                         }`}>{pts.label}</span>
                       </div>
                     )}

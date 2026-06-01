@@ -14,20 +14,33 @@ interface BeerConfirmation {
   witness: { id: string; name: string } | null;
 }
 
+interface BeerGiftData {
+  id: string;
+  giverId: string;
+  receiverId: string;
+  reason: string;
+  giver: { id: string; name: string };
+  receiver: { id: string; name: string };
+}
+
 interface Props {
   userId: string;
   userName: string;
   currentUserId: string;
   reasons: string[];
+  giveReasons?: string[];
+  allUsers?: { id: string; name: string }[];
   onClose: () => void;
 }
 
-export default function BeerModal({ userId, userName, currentUserId, reasons, onClose }: Props) {
+export default function BeerModal({ userId, userName, currentUserId, reasons, giveReasons = [], allUsers = [], onClose }: Props) {
   const [confirmations, setConfirmations] = useState<BeerConfirmation[]>([]);
+  const [gifts, setGifts] = useState<BeerGiftData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectingFor, setSelectingFor] = useState<string | null>(null);
   const isMe = userId === currentUserId;
 
-  const loadConfirmations = useCallback(() => {
+  const loadData = useCallback(() => {
     fetch('/api/beers')
       .then(r => {
         if (!r.ok) throw new Error();
@@ -35,12 +48,13 @@ export default function BeerModal({ userId, userName, currentUserId, reasons, on
       })
       .then(data => {
         setConfirmations((data.confirmations || []).filter((c: BeerConfirmation) => c.drinkerId === userId));
+        setGifts(data.gifts || []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [userId]);
 
-  useEffect(() => { loadConfirmations(); }, [loadConfirmations]);
+  useEffect(() => { loadData(); }, [loadData]);
 
   async function handleClaim(reason: string) {
     await fetch('/api/beers', {
@@ -48,7 +62,7 @@ export default function BeerModal({ userId, userName, currentUserId, reasons, on
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'claim', drinkerId: userId, reason }),
     });
-    loadConfirmations();
+    loadData();
   }
 
   async function handleWitness(confirmationId: string) {
@@ -57,12 +71,28 @@ export default function BeerModal({ userId, userName, currentUserId, reasons, on
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'witness', confirmationId }),
     });
-    loadConfirmations();
+    loadData();
+  }
+
+  async function handleGive(reason: string, receiverId: string) {
+    await fetch('/api/beers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'give', reason, receiverId }),
+    });
+    setSelectingFor(null);
+    loadData();
   }
 
   function getStatus(reason: string) {
     return confirmations.find(c => c.reason === reason);
   }
+
+  function getGift(reason: string) {
+    return gifts.find(g => g.giverId === userId && g.reason === reason);
+  }
+
+  const otherUsers = allUsers.filter(u => u.id !== currentUserId);
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
@@ -124,6 +154,80 @@ export default function BeerModal({ userId, userName, currentUserId, reasons, on
               );
             })}
           </div>
+        )}
+
+        {giveReasons.length > 0 && (
+          <>
+            <div className="border-t border-white/10 my-4" />
+            <h4 className="text-lg font-bold text-emerald-300 mb-3">🎁 Uit te delen ({giveReasons.length})</h4>
+            <div className="space-y-2">
+              {giveReasons.map((reason, i) => {
+                const gift = getGift(reason);
+
+                if (gift) {
+                  return (
+                    <div key={i} className="rounded-lg border bg-emerald-900/20 border-emerald-700/40 p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg">🎁</span>
+                        <span className="text-emerald-100 text-sm flex-1">{reason}</span>
+                      </div>
+                      <div className="text-emerald-400 text-xs">
+                        Toegewezen aan <span className="font-bold">{gift.receiver.name}</span>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (selectingFor === reason) {
+                  return (
+                    <div key={i} className="rounded-lg border bg-emerald-900/30 border-emerald-500/40 p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg">🎁</span>
+                        <span className="text-emerald-100 text-sm flex-1">{reason}</span>
+                      </div>
+                      <p className="text-emerald-300 text-xs mb-2">Kies wie moet drinken:</p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {otherUsers.map(u => (
+                          <button
+                            key={u.id}
+                            onClick={() => handleGive(reason, u.id)}
+                            className="text-xs bg-emerald-800/50 hover:bg-emerald-700/60 text-emerald-200 px-2 py-1.5 rounded-lg border border-emerald-600/30"
+                          >
+                            {u.name}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => setSelectingFor(null)}
+                        className="text-xs text-gray-500 hover:text-gray-300 mt-2 w-full"
+                      >
+                        Annuleer
+                      </button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={i} className="rounded-lg border bg-emerald-900/20 border-emerald-700/40 p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🎁</span>
+                      <span className="text-emerald-100 text-sm flex-1">{reason}</span>
+                    </div>
+                    {isMe ? (
+                      <button
+                        onClick={() => setSelectingFor(reason)}
+                        className="text-xs bg-emerald-800/60 hover:bg-emerald-700/60 text-emerald-300 px-3 py-1 rounded-lg border border-emerald-600/40 mt-2"
+                      >
+                        Iemand aanwijzen
+                      </button>
+                    ) : (
+                      <div className="text-gray-500 text-xs mt-1">Nog niet toegewezen</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </div>,

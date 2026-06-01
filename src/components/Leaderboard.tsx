@@ -16,6 +16,9 @@ interface LeaderboardEntry {
   predictionsCount: number;
   beerCount: number;
   beerReasons: string[];
+  beerGiveCount: number;
+  beerGiveReasons: string[];
+  beerGivePending: number;
   hotStreak: number;
 }
 
@@ -125,7 +128,7 @@ export default function Leaderboard({ currentUserId }: Props) {
                 {/* Name */}
                 <div className="flex-1">
                   <div className={`text-lg font-semibold ${
-                    isH2hSelected ? 'text-blue-300' : 'text-white'
+                    entry.hotStreak >= 2 ? 'fire-text' : isH2hSelected ? 'text-blue-300' : 'text-white'
                   }`}>
                     {entry.name}
                     {isCurrentUser && (
@@ -143,16 +146,17 @@ export default function Leaderboard({ currentUserId }: Props) {
                   </div>
                 </div>
 
-                {/* Hot streak */}
-                {entry.hotStreak >= 2 && (
-                  <div className="flex items-center gap-0.5 bg-orange-900/40 px-2.5 py-1.5 rounded-lg border border-orange-600/30">
-                    <span className="text-lg">🔥</span>
-                    <span className={`font-bold text-lg ${
-                      entry.hotStreak >= 5 ? 'text-orange-300' : 'text-orange-400/80'
-                    }`}>
-                      {entry.hotStreak}
-                    </span>
-                  </div>
+                {/* Beer give count */}
+                {entry.beerGivePending > 0 && (
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 bg-emerald-900/40 px-3 py-1.5 rounded-lg border border-emerald-600/30 cursor-pointer hover:bg-emerald-900/60"
+                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); setBeerModalUser(entry.id); }}
+                    title="Biertjes uit te delen"
+                  >
+                    <span className="text-lg">🎁</span>
+                    <span className="font-bold text-lg text-emerald-400">{entry.beerGivePending}</span>
+                  </button>
                 )}
 
                 {/* Beer count - clickable for own user */}
@@ -205,6 +209,8 @@ export default function Leaderboard({ currentUserId }: Props) {
             userName={modalEntry.name}
             currentUserId={currentUserId}
             reasons={modalEntry.beerReasons}
+            giveReasons={modalEntry.beerGiveReasons}
+            allUsers={entries.map(e => ({ id: e.id, name: e.name }))}
             onClose={() => setBeerModalUser(null)}
           />
         );

@@ -57,9 +57,26 @@ export async function GET() {
     .map(([date]) => date)
     .sort();
 
+  // Pre-build prediction lookup maps for performance
+  const userPredMaps = new Map<string, Map<number, { matchNumber: number; homeScore: number; awayScore: number; jokerUsed: boolean }>>();
+  for (const u of users) {
+    const predMap = new Map<number, { matchNumber: number; homeScore: number; awayScore: number; jokerUsed: boolean }>();
+    for (const p of u.predictions) {
+      predMap.set(p.matchNumber, { matchNumber: p.matchNumber, homeScore: p.homeScore, awayScore: p.awayScore, jokerUsed: p.jokerUsed });
+    }
+    userPredMaps.set(u.id, predMap);
+  }
+
+  const actualScoreMap = new Map<number, MatchScore>();
+  for (const a of actualScores) actualScoreMap.set(a.matchNumber, a);
+
   // Beer counter with reasons
   const beerReasons = new Map<string, string[]>();
-  for (const userId of users.map(u => u.id)) beerReasons.set(userId, []);
+  const beerGiveReasons = new Map<string, string[]>();
+  for (const userId of users.map(u => u.id)) {
+    beerReasons.set(userId, []);
+    beerGiveReasons.set(userId, []);
+  }
 
   // Group phase: per matchday, lowest scorer drinks
   const groupDates = completedDates.filter(date => {
@@ -74,7 +91,7 @@ export async function GET() {
     const standings = users.map(u => {
       let dayPoints = 0;
       for (const actual of resultsOnDate) {
-        const pred = u.predictions.find(p => p.matchNumber === actual.matchNumber);
+        const pred = userPredMaps.get(u.id)?.get(actual.matchNumber);
         if (pred) {
           dayPoints += calculateMatchPoints(
             { matchNumber: pred.matchNumber, homeScore: pred.homeScore, awayScore: pred.awayScore },
@@ -96,6 +113,13 @@ export async function GET() {
         beerReasons.get(s.id)!.push(`Onderste 3 op ${formattedDate} (${s.points}pt)`);
       }
     }
+
+    const maxPoints = Math.max(...standings.map(s => s.points));
+    for (const s of standings) {
+      if (s.points === maxPoints) {
+        beerGiveReasons.get(s.id)!.push(`Beste op ${formattedDate} (${maxPoints}pt)`);
+      }
+    }
   }
 
   // Knockout: per round, lowest scorer drinks
@@ -115,21 +139,22 @@ export async function GET() {
     const allHaveResults = matchNums.every(n => resultMatchNumbers.has(n));
     if (!allHaveResults) continue;
 
-    const resultsBeforeRound = actualScores.filter(r => !matchNums.includes(r.matchNumber));
-    const resultsIncludingRound = actualScores.filter(r =>
-      resultsBeforeRound.some(rb => rb.matchNumber === r.matchNumber) || matchNums.includes(r.matchNumber)
-    );
+    const roundResults = actualScores.filter(r => matchNums.includes(r.matchNumber));
 
     const standings = users.map(u => {
-      const preds: MatchScore[] = u.predictions.map(p => ({
-        matchNumber: p.matchNumber,
-        homeScore: p.homeScore,
-        awayScore: p.awayScore,
-        advancingTeam: p.advancingTeam || undefined,
-      }));
-      const pointsBefore = calculatePoints(preds, resultsBeforeRound).totalPoints;
-      const pointsAfter = calculatePoints(preds, resultsIncludingRound).totalPoints;
-      return { id: u.id, points: pointsAfter - pointsBefore };
+      let roundPoints = 0;
+      for (const actual of roundResults) {
+        const pred = userPredMaps.get(u.id)?.get(actual.matchNumber);
+        if (pred) {
+          roundPoints += calculateMatchPoints(
+            { matchNumber: pred.matchNumber, homeScore: pred.homeScore, awayScore: pred.awayScore },
+            actual,
+            pred.jokerUsed,
+            true,
+          );
+        }
+      }
+      return { id: u.id, points: roundPoints };
     });
 
     if (standings.length < 2) continue;
@@ -148,15 +173,12 @@ export async function GET() {
   const playedGroupMatches = [...resultMatchNumbers].filter(n => n <= TOTAL_GROUP_MATCHES).sort((a, b) => a - b);
   const hotStreaks = new Map<string, number>();
   for (const u of users) {
-    const predMap = new Map<number, MatchScore>();
-    for (const p of u.predictions) {
-      predMap.set(p.matchNumber, { matchNumber: p.matchNumber, homeScore: p.homeScore, awayScore: p.awayScore });
-    }
+    const predMap = userPredMaps.get(u.id)!;
     let consecutiveZeros = 0;
     let streak = 0;
     for (const matchNum of playedGroupMatches) {
       const pred = predMap.get(matchNum);
-      const actual = actualScores.find(a => a.matchNumber === matchNum);
+      const actual = actualScoreMap.get(matchNum);
       if (!pred || !actual) {
         consecutiveZeros++;
         streak = 0;
@@ -164,14 +186,20 @@ export async function GET() {
         const predOutcome = Math.sign(pred.homeScore - pred.awayScore);
         const actualOutcome = Math.sign(actual.homeScore - actual.awayScore);
         streak = predOutcome === actualOutcome ? streak + 1 : 0;
-        const predRecord = u.predictions.find(p => p.matchNumber === matchNum);
-        consecutiveZeros = calculateMatchPoints(pred, actual, predRecord?.jokerUsed) <= 0 ? consecutiveZeros + 1 : 0;
+        consecutiveZeros = calculateMatchPoints(pred, actual, pred.jokerUsed) <= 0 ? consecutiveZeros + 1 : 0;
       }
       if (consecutiveZeros > 0 && consecutiveZeros % 2 === 0) {
         beerReasons.get(u.id)!.push(`${consecutiveZeros}x op rij 0 punten`);
       }
     }
     hotStreaks.set(u.id, streak);
+  }
+
+  const beerGifts = await prisma.beerGift.findMany({
+    include: { giver: { select: { name: true } } },
+  });
+  for (const gift of beerGifts) {
+    beerReasons.get(gift.receiverId)?.push(`Cadeau van ${gift.giver.name} (${gift.reason})`);
   }
 
   const leaderboard = users.map(u => {
@@ -203,6 +231,9 @@ export async function GET() {
       predictionsCount: u.predictions.length,
       beerCount: beerReasons.get(u.id)?.length || 0,
       beerReasons: beerReasons.get(u.id) || [],
+      beerGiveCount: beerGiveReasons.get(u.id)?.length || 0,
+      beerGiveReasons: beerGiveReasons.get(u.id) || [],
+      beerGivePending: (beerGiveReasons.get(u.id) || []).filter(r => !beerGifts.some(g => g.giverId === u.id && g.reason === r)).length,
       hotStreak: hotStreaks.get(u.id) || 0,
     };
   });

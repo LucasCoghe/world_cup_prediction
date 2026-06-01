@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getUser } from '@/lib/auth';
+import webpush from 'web-push';
+
+webpush.setVapidDetails(
+  'mailto:admin@wk2026.be',
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+  process.env.VAPID_PRIVATE_KEY!
+);
 
 export async function GET() {
   const user = await getUser();
@@ -14,14 +21,22 @@ export async function GET() {
     orderBy: { reason: 'asc' },
   });
 
-  return NextResponse.json({ confirmations });
+  const gifts = await prisma.beerGift.findMany({
+    include: {
+      giver: { select: { id: true, name: true } },
+      receiver: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return NextResponse.json({ confirmations, gifts });
 }
 
 export async function POST(req: Request) {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { action, drinkerId, reason, confirmationId } = await req.json();
+  const { action, drinkerId, reason, confirmationId, receiverId } = await req.json();
 
   if (action === 'claim') {
     if (user.userId !== drinkerId) {
@@ -52,6 +67,44 @@ export async function POST(req: Request) {
       where: { id: confirmationId },
       data: { witnessId: user.userId, witnessedAt: new Date() },
     });
+
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'give') {
+    if (!reason || !receiverId) {
+      return NextResponse.json({ error: 'Ongeldig verzoek' }, { status: 400 });
+    }
+    if (receiverId === user.userId) {
+      return NextResponse.json({ error: 'Je kan jezelf geen biertje geven' }, { status: 400 });
+    }
+
+    const existing = await prisma.beerGift.findUnique({
+      where: { giverId_reason: { giverId: user.userId, reason } },
+    });
+    if (existing) {
+      return NextResponse.json({ error: 'Al toegewezen voor deze dag' }, { status: 400 });
+    }
+
+    const giver = await prisma.user.findUnique({ where: { id: user.userId }, select: { name: true } });
+    await prisma.beerGift.create({
+      data: { giverId: user.userId, receiverId, reason },
+    });
+
+    const subs = await prisma.pushSubscription.findMany({ where: { userId: receiverId } });
+    for (const sub of subs) {
+      try {
+        await webpush.sendNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          JSON.stringify({ title: '🍺 Biertje!', body: `${giver?.name} heeft jou een biertje gegeven!` })
+        );
+      } catch (err: unknown) {
+        const statusCode = (err as { statusCode?: number })?.statusCode;
+        if (statusCode === 410 || statusCode === 404) {
+          await prisma.pushSubscription.delete({ where: { id: sub.id } });
+        }
+      }
+    }
 
     return NextResponse.json({ ok: true });
   }

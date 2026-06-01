@@ -142,6 +142,15 @@ input[type="number"] {
   box-shadow: 0 0 12px rgba(0, 104, 71, 0.3);
 }
 
+.fire-text {
+  background: linear-gradient(135deg, #ff4500 0%, #ff8c00 30%, #ffd700 50%, #ff8c00 70%, #ff4500 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 2s linear infinite;
+}
+
 .trophy-text {
   background: linear-gradient(135deg, #ffd700 0%, #ff6b35 50%, #ffd700 100%);
   background-size: 200% auto;
