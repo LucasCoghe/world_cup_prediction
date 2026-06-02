@@ -13,6 +13,8 @@ import InstallPrompt from './InstallPrompt';
 import NotificationToggle from './NotificationToggle';
 import BracketSimulator from './BracketSimulator';
 import KeepyUppy from './KeepyUppy';
+import Shop from './Shop';
+import PatchNotesModal from './PatchNotesModal';
 import { usePredictions } from '@/hooks/usePredictions';
 import { groupMatches, knockoutStructure } from '@/lib/tournament';
 
@@ -30,6 +32,7 @@ const baseTabs = [
   { id: 'extra', label: 'Extra' },
   { id: 'chat', label: 'Chat' },
   { id: 'minigame', label: 'Minigame' },
+  { id: 'shop', label: 'Shop' },
   { id: 'rules', label: 'Regels' },
 ];
 
@@ -67,6 +70,7 @@ const CHAT_SEEN_KEY = 'chat_last_seen';
 export default function Dashboard({ user, onLogout }: Props) {
   const [activeTab, setActiveTab] = useState('leaderboard');
   const [unreadCount, setUnreadCount] = useState(0);
+  const [coinsBalance, setCoinsBalance] = useState<number | null>(null);
   const predictions = usePredictions();
   const tabs = user.isAdmin
     ? [...baseTabs, { id: 'admin', label: 'Admin' }]
@@ -78,11 +82,21 @@ export default function Dashboard({ user, onLogout }: Props) {
     fetch(url).then(r => r.ok ? r.json() : null).then(data => setUnreadCount(data?.count || 0)).catch(() => {});
   }, []);
 
+  const fetchCoins = useCallback(() => {
+    fetch('/api/coins').then(r => r.ok ? r.json() : null).then(data => {
+      if (data?.balance != null) setCoinsBalance(data.balance);
+    }).catch(() => {});
+  }, []);
+
   useEffect(() => {
     fetchUnread();
+    fetchCoins();
     const interval = setInterval(fetchUnread, 15000);
-    return () => clearInterval(interval);
-  }, [fetchUnread]);
+    const coinsInterval = setInterval(fetchCoins, 20000);
+    return () => { clearInterval(interval); clearInterval(coinsInterval); };
+  }, [fetchUnread, fetchCoins]);
+
+  useEffect(() => { fetchCoins(); }, [activeTab, fetchCoins]);
 
   useEffect(() => {
     if (activeTab === 'chat') {
@@ -105,6 +119,7 @@ export default function Dashboard({ user, onLogout }: Props) {
 
   return (
     <div className={`min-h-screen ${belgianDay ? 'belgian-mode' : ''}`}>
+      <PatchNotesModal onNavigate={tabId => setActiveTab(tabId)} />
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-lg border-b border-white/10" style={{ background: 'linear-gradient(90deg, rgba(0,40,104,0.85) 0%, rgba(6,13,31,0.95) 30%, rgba(6,13,31,0.95) 70%, rgba(107,21,32,0.85) 100%)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         {/* Belgian match day banner */}
@@ -118,7 +133,17 @@ export default function Dashboard({ user, onLogout }: Props) {
           <div className="flex items-center gap-3">
             <NotificationToggle />
             <InstallPrompt />
-            <span className="text-base text-gray-400">
+            {coinsBalance != null && (
+              <button
+                onClick={() => setActiveTab('shop')}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gold/10 border border-gold/30 hover:bg-gold/20 transition-colors"
+                title="Open de shop"
+              >
+                <span className="text-base">🪙</span>
+                <span className="text-sm font-bold text-gold tabular-nums">{coinsBalance.toLocaleString('nl-BE')}</span>
+              </button>
+            )}
+            <span className="text-base text-gray-400 hidden sm:inline">
               {user.name} {user.isAdmin && '(admin)'}
             </span>
             <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-white">
@@ -160,6 +185,7 @@ export default function Dashboard({ user, onLogout }: Props) {
         {activeTab === 'extra' && <ExtraQuestions predictions={predictions} />}
         {activeTab === 'chat' && <GroupChat />}
         {activeTab === 'minigame' && <KeepyUppy />}
+        {activeTab === 'shop' && <Shop userName={user.name} />}
         {activeTab === 'rules' && <Rules />}
         {activeTab === 'admin' && user.isAdmin && <AdminPanel />}
       </main>

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { calculatePoints, calculateMatchPoints } from '@/lib/scoring';
 import { MatchScore } from '@/lib/standings';
 import { groupMatches, knockoutStructure, TOTAL_GROUP_MATCHES } from '@/lib/tournament';
+import { getEquippedCosmeticsForUsers } from '@/lib/coins';
 
 export async function GET() {
   const users = await prisma.user.findMany({
@@ -16,6 +17,7 @@ export async function GET() {
   const actualResults = await prisma.actualResult.findMany();
 
   if (actualResults.length === 0) {
+    const cosmetics0 = await getEquippedCosmeticsForUsers(users.map(u => u.id));
     const leaderboard = users.map(u => ({
       id: u.id,
       name: u.name,
@@ -27,6 +29,7 @@ export async function GET() {
       beerCount: 0,
       beerReasons: [] as string[],
       hotStreak: 0,
+      cosmetics: cosmetics0.get(u.id) || { nameColor: null, rowStyle: null, title: null },
     }));
     return NextResponse.json({ leaderboard });
   }
@@ -202,6 +205,8 @@ export async function GET() {
     beerReasons.get(gift.receiverId)?.push(`Cadeau van ${gift.giver.name} (${gift.reason})`);
   }
 
+  const cosmeticsByUser = await getEquippedCosmeticsForUsers(users.map(u => u.id));
+
   const leaderboard = users.map(u => {
     const predScores: MatchScore[] = u.predictions.map(p => ({
       matchNumber: p.matchNumber,
@@ -235,6 +240,7 @@ export async function GET() {
       beerGiveReasons: beerGiveReasons.get(u.id) || [],
       beerGivePending: (beerGiveReasons.get(u.id) || []).filter(r => !beerGifts.some(g => g.giverId === u.id && g.reason === r)).length,
       hotStreak: hotStreaks.get(u.id) || 0,
+      cosmetics: cosmeticsByUser.get(u.id) || { nameColor: null, rowStyle: null, title: null },
     };
   });
 

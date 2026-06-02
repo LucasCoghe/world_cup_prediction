@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { getCosmetic } from '@/lib/cosmetics';
 
 interface Comment {
   id: string;
   userName: string;
   message: string;
   createdAt: string;
+  cosmetics?: { nameColor: string | null; rowStyle: string | null; title: string | null };
 }
 
 function timeAgo(dateStr: string): string {
@@ -73,13 +75,20 @@ export default function GroupChat() {
               Nog geen berichten. Zeg iets!
             </div>
           ) : (
-            comments.map(c => (
-              <div key={c.id} className="flex gap-2 text-sm py-1.5 px-2 rounded-lg hover:bg-white/5">
-                <span className="text-amber-400 font-medium shrink-0">{c.userName}</span>
-                <span className="text-gray-300 flex-1 break-words">{c.message}</span>
-                <span className="text-gray-600 text-xs ml-2 shrink-0 self-end">{timeAgo(c.createdAt)}</span>
-              </div>
-            ))
+            comments.map(c => {
+              const nameCos = getCosmetic(c.cosmetics?.nameColor);
+              const titleCos = getCosmetic(c.cosmetics?.title);
+              return (
+                <div key={c.id} className="flex gap-2 text-sm py-1.5 px-2 rounded-lg hover:bg-white/5">
+                  <div className="shrink-0 flex flex-col">
+                    {titleCos?.title && <span className="cos-title leading-none">{titleCos.title}</span>}
+                    <span className={`font-medium ${nameCos?.nameClassName ?? 'text-amber-400'}`}>{c.userName}</span>
+                  </div>
+                  <span className="text-gray-300 flex-1 break-words">{c.message}</span>
+                  <span className="text-gray-600 text-xs ml-2 shrink-0 self-end">{timeAgo(c.createdAt)}</span>
+                </div>
+              );
+            })
           )}
           <div ref={bottomRef} />
         </div>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getUser } from '@/lib/auth';
+import { getEquippedCosmeticsForUsers } from '@/lib/coins';
 
 // GET /api/comments?match=1
 export async function GET(req: Request) {
@@ -19,8 +20,11 @@ export async function GET(req: Request) {
   const comments = await prisma.matchComment.findMany({
     where: { matchNumber },
     orderBy: { createdAt: 'asc' },
-    include: { user: { select: { name: true } } },
+    include: { user: { select: { id: true, name: true } } },
   });
+
+  const userIds = [...new Set(comments.map(c => c.user.id))];
+  const cosmeticsByUser = await getEquippedCosmeticsForUsers(userIds);
 
   return NextResponse.json({
     comments: comments.map(c => ({
@@ -28,6 +32,7 @@ export async function GET(req: Request) {
       userName: c.user.name,
       message: c.message,
       createdAt: c.createdAt.toISOString(),
+      cosmetics: cosmeticsByUser.get(c.user.id) || { nameColor: null, rowStyle: null, title: null },
     })),
   });
 }
@@ -53,8 +58,10 @@ export async function POST(req: Request) {
       matchNumber,
       message: trimmed,
     },
-    include: { user: { select: { name: true } } },
+    include: { user: { select: { id: true, name: true } } },
   });
+
+  const cosmeticsByUser = await getEquippedCosmeticsForUsers([comment.user.id]);
 
   return NextResponse.json({
     comment: {
@@ -62,6 +69,7 @@ export async function POST(req: Request) {
       userName: comment.user.name,
       message: comment.message,
       createdAt: comment.createdAt.toISOString(),
+      cosmetics: cosmeticsByUser.get(comment.user.id) || { nameColor: null, rowStyle: null, title: null },
     },
   });
 }

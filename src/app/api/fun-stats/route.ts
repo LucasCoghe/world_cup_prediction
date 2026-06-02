@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { calculateMatchPoints } from '@/lib/scoring';
 import { MatchScore } from '@/lib/standings';
 import { groupMatches, knockoutStructure, teams, TOTAL_GROUP_MATCHES } from '@/lib/tournament';
+import { getEquippedCosmeticsForUsers } from '@/lib/coins';
 
 export async function GET() {
   const users = await prisma.user.findMany({
@@ -35,6 +36,7 @@ export async function GET() {
 
   // === SCHANDPAAL: worst predictions ===
   interface ShameEntry {
+    userId: string;
     userName: string;
     matchNumber: number;
     homeTeam: string;
@@ -43,6 +45,7 @@ export async function GET() {
     actual: string;
     shameScore: number;
     date: string;
+    cosmetics?: { nameColor: string | null; rowStyle: string | null; title: string | null };
   }
   const shameEntries: ShameEntry[] = [];
 
@@ -60,6 +63,7 @@ export async function GET() {
         const homeTeam = teams[matchInfo.home];
         const awayTeam = teams[matchInfo.away];
         shameEntries.push({
+          userId: user.id,
           userName: user.name,
           matchNumber: pred.matchNumber,
           homeTeam: homeTeam ? `${homeTeam.flag} ${homeTeam.name}` : matchInfo.home,
@@ -74,6 +78,12 @@ export async function GET() {
   }
   shameEntries.sort((a, b) => b.shameScore - a.shameScore);
   const schandpaal = shameEntries.slice(0, 15);
+
+  const shameUserIds = [...new Set(schandpaal.map(s => s.userId))];
+  const shameCosmetics = await getEquippedCosmeticsForUsers(shameUserIds);
+  for (const entry of schandpaal) {
+    entry.cosmetics = shameCosmetics.get(entry.userId) || { nameColor: null, rowStyle: null, title: null };
+  }
 
   // === BESCHAMENDE REEKS: 3 consecutive 0-point matches = beer ===
   // Get all match numbers that have results, sorted

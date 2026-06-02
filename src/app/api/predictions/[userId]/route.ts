@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { getUser } from '@/lib/auth';
 import { isMatchLocked, groupMatches, knockoutStructure } from '@/lib/tournament';
 import { resolveKnockoutBracket, MatchScore } from '@/lib/standings';
+import { getEquippedCosmetics } from '@/lib/coins';
 
 export async function GET(
   _req: Request,
@@ -73,5 +74,7 @@ export async function GET(
     };
   });
 
-  return NextResponse.json({ predictions: matchPredictions, extra, userName: user.name });
+  const cosmetics = await getEquippedCosmetics(userId);
+
+  return NextResponse.json({ predictions: matchPredictions, extra, userName: user.name, cosmetics });
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { getCosmetic } from '@/lib/cosmetics';
 
 interface ShameEntry {
   userName: string;
@@ -11,6 +12,7 @@ interface ShameEntry {
   actual: string;
   shameScore: number;
   date: string;
+  cosmetics?: { nameColor: string | null; rowStyle: string | null; title: string | null };
 }
 
 interface FunStats {
@@ -65,7 +67,10 @@ export default function Schandpaal() {
           </div>
         ) : (
           <div className="space-y-2">
-            {stats.schandpaal.map((entry, i) => (
+            {stats.schandpaal.map((entry, i) => {
+              const nameCos = getCosmetic(entry.cosmetics?.nameColor);
+              const titleCos = getCosmetic(entry.cosmetics?.title);
+              return (
               <div
                 key={`${entry.userName}-${entry.matchNumber}`}
                 className={`card border-red-900/40 ${i === 0 ? 'bg-red-950/30 border-red-600/40' : ''}`}
@@ -79,7 +84,8 @@ export default function Schandpaal() {
                       </span>
                     </div>
                     <div>
-                      <div className="text-white font-semibold">{entry.userName}</div>
+                      {titleCos?.title && <div className="cos-title">{titleCos.title}</div>}
+                      <div className={`font-semibold ${nameCos?.nameClassName ?? 'text-white'}`}>{entry.userName}</div>
                       <div className="text-gray-500 text-sm">
                         {entry.homeTeam} vs {entry.awayTeam}
                         <span className="text-gray-600 ml-2">({formatDate(entry.date)})</span>
@@ -106,7 +112,8 @@ export default function Schandpaal() {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

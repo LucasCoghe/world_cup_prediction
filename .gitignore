@@ -52,3 +52,8 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# Local screenshots / debug images
+left_side_error.jpg
+*.local.jpg
+*.local.png

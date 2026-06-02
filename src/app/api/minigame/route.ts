@@ -55,11 +55,17 @@ export async function POST(req: Request) {
     }
   }
 
-  await prisma.minigameScore.create({
-    data: { userId: user.userId, score },
-  });
+  await prisma.$transaction([
+    prisma.minigameScore.create({
+      data: { userId: user.userId, score },
+    }),
+    prisma.user.update({
+      where: { id: user.userId },
+      data: { coinsBalance: { increment: score } },
+    }),
+  ]);
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, coinsEarned: score });
 }
 
 export async function DELETE() {

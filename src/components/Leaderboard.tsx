@@ -5,6 +5,7 @@ import UserPredictions from './UserPredictions';
 import HeadToHead from './HeadToHead';
 import BeerToast from './BeerToast';
 import BeerModal from './BeerModal';
+import { getCosmetic } from '@/lib/cosmetics';
 
 interface LeaderboardEntry {
   id: string;
@@ -20,6 +21,7 @@ interface LeaderboardEntry {
   beerGiveReasons: string[];
   beerGivePending: number;
   hotStreak: number;
+  cosmetics?: { nameColor: string | null; rowStyle: string | null; title: string | null };
 }
 
 interface Props {
@@ -106,6 +108,9 @@ export default function Leaderboard({ currentUserId }: Props) {
             const isCurrentUser = entry.id === currentUserId;
             const isLast = isLastPlace(i);
             const isH2hSelected = h2hSelect === entry.id;
+            const nameCos = getCosmetic(entry.cosmetics?.nameColor);
+            const rowCos = getCosmetic(entry.cosmetics?.rowStyle);
+            const titleCos = getCosmetic(entry.cosmetics?.title);
             return (
               <div
                 key={entry.id}
@@ -115,7 +120,7 @@ export default function Leaderboard({ currentUserId }: Props) {
                   isLast ? 'border-amber-600/50 bg-amber-950/20' : ''
                 } ${isH2hSelected ? 'border-blue-500/50 bg-blue-950/20' : ''} ${
                   h2hSelect && !isH2hSelected ? 'hover:border-blue-500/30' : 'hover:border-gold/30'
-                }`}
+                } ${rowCos?.rowClassName ?? ''}`}
                 onClick={() => handleNameClick(entry.id)}
               >
                 {/* Position */}
@@ -127,22 +132,19 @@ export default function Leaderboard({ currentUserId }: Props) {
 
                 {/* Name */}
                 <div className="flex-1">
+                  {titleCos?.title && (
+                    <div className="cos-title">{titleCos.title}</div>
+                  )}
                   <div className={`text-lg font-semibold ${
-                    entry.hotStreak >= 2 ? 'fire-text' : isH2hSelected ? 'text-blue-300' : 'text-white'
+                    nameCos?.nameClassName ?? (entry.hotStreak >= 2 ? 'fire-text' : isH2hSelected ? 'text-blue-300' : 'text-white')
                   }`}>
                     {entry.name}
-                    {isCurrentUser && (
-                      <span className="text-sm text-gold ml-2">(jij)</span>
-                    )}
-                    {isLast && (
-                      <span className="text-sm text-amber-400 ml-2">schaamt u!</span>
-                    )}
-                    {isH2hSelected && (
-                      <span className="text-sm text-blue-400 ml-2">geselecteerd</span>
-                    )}
                   </div>
-                  <div className="text-sm text-gray-500">
-                    {entry.predictionsCount} voorspellingen
+                  <div className="text-sm flex items-center gap-2 flex-wrap">
+                    {isCurrentUser && <span className="text-gold">(jij)</span>}
+                    {isLast && <span className="text-amber-400">schaamt u!</span>}
+                    {isH2hSelected && <span className="text-blue-400">geselecteerd</span>}
+                    <span className="text-gray-500">{entry.predictionsCount} voorspellingen</span>
                   </div>
                 </div>
 

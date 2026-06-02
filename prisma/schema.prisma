@@ -17,15 +17,34 @@ model User {
   locked    Boolean  @default(false)
   createdAt DateTime @default(now())
 
+  coinsBalance            Int       @default(0)
+  predictionPointsClaimed Int       @default(0)
+  lastDailyClaim          DateTime?
+
   predictions        MatchPrediction[]
   extraPredictions   ExtraPrediction?
   comments           MatchComment[]
   pushSubscriptions  PushSubscription[]
   minigameScores     MinigameScore[]
+  cosmetics          UserCosmetic[]
   beersDrunk         BeerConfirmation[] @relation("drinker")
   beersWitnessed     BeerConfirmation[] @relation("witness")
   beersGiven         BeerGift[]         @relation("giver")
   beersReceived      BeerGift[]         @relation("receiver")
+}
+
+model UserCosmetic {
+  id          String   @id @default(cuid())
+  userId      String
+  cosmeticId  String
+  category    String
+  equipped    Boolean  @default(false)
+  purchasedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, cosmeticId])
+  @@index([userId, equipped])
 }
 
 model MatchComment {

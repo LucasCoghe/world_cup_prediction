@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { teams, getRoundName } from '@/lib/tournament';
 import FlagIcon from './FlagIcon';
+import { getCosmetic } from '@/lib/cosmetics';
 
 interface MatchPrediction {
   matchNumber: number;
@@ -21,6 +22,7 @@ interface MatchPrediction {
 interface UserData {
   userName: string;
   predictions: MatchPrediction[];
+  cosmetics?: { nameColor: string | null; rowStyle: string | null; title: string | null };
 }
 
 interface Props {
@@ -78,8 +80,8 @@ export default function HeadToHead({ userA, userB, onBack }: Props) {
       fetch(`/api/predictions/${userA}`).then(r => r.json()),
       fetch(`/api/predictions/${userB}`).then(r => r.json()),
     ]).then(([a, b]) => {
-      setDataA({ userName: a.userName, predictions: a.predictions || [] });
-      setDataB({ userName: b.userName, predictions: b.predictions || [] });
+      setDataA({ userName: a.userName, predictions: a.predictions || [], cosmetics: a.cosmetics });
+      setDataB({ userName: b.userName, predictions: b.predictions || [], cosmetics: b.cosmetics });
       setLoading(false);
     });
   }, [userA, userB]);
@@ -204,6 +206,11 @@ export default function HeadToHead({ userA, userB, onBack }: Props) {
   const groupsList = [...new Set(groupMatchNums.map(mn => (predMapA.get(mn) || predMapB.get(mn))?.group).filter(Boolean))] as string[];
   const roundsList = [...new Set(knockoutMatchNums.map(mn => (predMapA.get(mn) || predMapB.get(mn))?.round).filter(Boolean))] as string[];
 
+  const nameCosA = getCosmetic(dataA.cosmetics?.nameColor);
+  const titleCosA = getCosmetic(dataA.cosmetics?.title);
+  const nameCosB = getCosmetic(dataB.cosmetics?.nameColor);
+  const titleCosB = getCosmetic(dataB.cosmetics?.title);
+
   return (
     <div className="space-y-6 animate-in">
       <div className="flex items-center gap-4">
@@ -215,7 +222,8 @@ export default function HeadToHead({ userA, userB, onBack }: Props) {
       <div className="card bg-white/5">
         <div className="flex items-center justify-between">
           <div className="text-center flex-1">
-            <div className="text-xl font-bold text-white">{dataA.userName}</div>
+            {titleCosA?.title && <div className="cos-title">{titleCosA.title}</div>}
+            <div className={`text-xl font-bold ${nameCosA?.nameClassName ?? 'text-white'}`}>{dataA.userName}</div>
             <div className="text-3xl font-bold trophy-text mt-1">{totalA}</div>
             <div className="text-sm text-gray-500">punten</div>
           </div>
@@ -230,7 +238,8 @@ export default function HeadToHead({ userA, userB, onBack }: Props) {
             </div>
           </div>
           <div className="text-center flex-1">
-            <div className="text-xl font-bold text-white">{dataB.userName}</div>
+            {titleCosB?.title && <div className="cos-title">{titleCosB.title}</div>}
+            <div className={`text-xl font-bold ${nameCosB?.nameClassName ?? 'text-white'}`}>{dataB.userName}</div>
             <div className="text-3xl font-bold trophy-text mt-1">{totalB}</div>
             <div className="text-sm text-gray-500">punten</div>
           </div>
@@ -240,9 +249,9 @@ export default function HeadToHead({ userA, userB, onBack }: Props) {
       {/* Column headers */}
       <div className="flex items-center gap-2 px-2 text-sm font-medium text-gray-400">
         <span className="w-7"></span>
-        <span className="w-12 text-center">{dataA.userName}</span>
+        <span className={`w-12 text-center ${nameCosA?.nameClassName ?? ''}`}>{dataA.userName}</span>
         <span className="flex-1 text-center">Wedstrijd</span>
-        <span className="w-12 text-center">{dataB.userName}</span>
+        <span className={`w-12 text-center ${nameCosB?.nameClassName ?? ''}`}>{dataB.userName}</span>
       </div>
 
       {/* Group matches */}
