@@ -78,6 +78,13 @@ export default function GroupStage({ predictions }: Props) {
         ))}
       </div>
 
+      {/* Warning for duplicate jokers in same group */}
+      {predictions.duplicateJokerGroups.length > 0 && (
+        <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-3 text-sm text-red-300">
+          <strong className="text-red-400">Let op!</strong> Je hebt meerdere jokers in dezelfde groep ({predictions.duplicateJokerGroups.map(g => `Groep ${g}`).join(', ')}). Verwijder er een per groep, anders kan je niet opslaan.
+        </div>
+      )}
+
       {/* Group matches */}
       <div className="card">
         <h3 className="text-xl font-semibold mb-4 text-gold">
@@ -94,7 +101,8 @@ export default function GroupStage({ predictions }: Props) {
             const matchPreds = allPredictions[match.matchNumber];
             const isExpanded = expandedMatch === match.matchNumber;
             const isJoker = predictions.jokers.has(match.matchNumber);
-            const canToggleJoker = !locked && (isJoker || predictions.jokersRemaining > 0);
+            const groupAlreadyHasJoker = !isJoker && predictions.groupHasJoker(match.group);
+            const canToggleJoker = !locked && (isJoker || (predictions.jokersRemaining > 0 && !groupAlreadyHasJoker));
 
             return (
               <div key={match.matchNumber}>

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getUser } from '@/lib/auth';
-import { isMatchLocked, TOTAL_GROUP_MATCHES } from '@/lib/tournament';
+import { isMatchLocked, TOTAL_GROUP_MATCHES, groupMatches } from '@/lib/tournament';
 
 const MAX_GROUP_JOKERS = 3;
 const MAX_KNOCKOUT_JOKERS = 2;
@@ -54,6 +54,28 @@ export async function POST(req: Request) {
 
     if (lockedJokers + newGroupJokers > MAX_GROUP_JOKERS) {
       return NextResponse.json({ error: `Je mag maximaal ${MAX_GROUP_JOKERS} jokers gebruiken in de groepsfase` }, { status: 400 });
+    }
+
+    // Validate: max 1 joker per group
+    const matchGroupMap = new Map<number, string>();
+    for (const m of groupMatches) matchGroupMap.set(m.matchNumber, m.group);
+
+    const allGroupJokerMatches = [
+      ...existingPreds.filter(p => isMatchLocked(p.matchNumber)).map(p => p.matchNumber),
+      ...predictions
+        .filter((p: { matchNumber: number; jokerUsed?: boolean }) =>
+          p.jokerUsed && p.matchNumber <= TOTAL_GROUP_MATCHES && !isMatchLocked(p.matchNumber))
+        .map((p: { matchNumber: number }) => p.matchNumber),
+    ];
+    const jokerGroups = new Set<string>();
+    for (const mn of allGroupJokerMatches) {
+      const group = matchGroupMap.get(mn);
+      if (group) {
+        if (jokerGroups.has(group)) {
+          return NextResponse.json({ error: `Je mag maximaal 1 joker per groep gebruiken` }, { status: 400 });
+        }
+        jokerGroups.add(group);
+      }
     }
 
     // Validate knockout jokers

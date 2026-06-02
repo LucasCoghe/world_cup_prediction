@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { MatchScore } from '@/lib/standings';
-import { TOTAL_GROUP_MATCHES } from '@/lib/tournament';
+import { TOTAL_GROUP_MATCHES, groupMatches } from '@/lib/tournament';
 
 const MAX_GROUP_JOKERS = 3;
 const MAX_KNOCKOUT_JOKERS = 2;
@@ -28,6 +28,8 @@ export interface PredictionsState {
   setExtra: (extra: Partial<ExtraPrediction>) => void;
   save: () => Promise<void>;
   getScoresArray: () => MatchScore[];
+  groupHasJoker: (group: string) => boolean;
+  duplicateJokerGroups: string[];
 }
 
 export function usePredictions(): PredictionsState {
@@ -125,6 +127,12 @@ export function usePredictions(): PredictionsState {
     debouncedSave();
   }, [debouncedSave]);
 
+  const matchGroupMap = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const m of groupMatches) map.set(m.matchNumber, m.group);
+    return map;
+  }, []);
+
   const toggleJoker = useCallback((matchNumber: number) => {
     const isGroup = matchNumber <= TOTAL_GROUP_MATCHES;
     const maxJokers = isGroup ? MAX_GROUP_JOKERS : MAX_KNOCKOUT_JOKERS;
@@ -135,12 +143,17 @@ export function usePredictions(): PredictionsState {
       } else {
         const used = [...next].filter(m => !lockedMatches.has(m) && (isGroup ? m <= TOTAL_GROUP_MATCHES : m > TOTAL_GROUP_MATCHES));
         if (used.length >= maxJokers) return prev;
+        if (isGroup) {
+          const group = matchGroupMap.get(matchNumber);
+          const groupHasJoker = [...next].some(m => m !== matchNumber && matchGroupMap.get(m) === group);
+          if (groupHasJoker) return prev;
+        }
         next.add(matchNumber);
       }
       return next;
     });
     debouncedSave();
-  }, [debouncedSave, lockedMatches]);
+  }, [debouncedSave, lockedMatches, matchGroupMap]);
 
   const setExtra = useCallback((partial: Partial<ExtraPrediction>) => {
     setExtraState(prev => ({ ...prev, ...partial }));
@@ -151,5 +164,18 @@ export function usePredictions(): PredictionsState {
 
   const jokersRemaining = MAX_GROUP_JOKERS - [...jokers].filter(m => m <= TOTAL_GROUP_MATCHES).length;
 
-  return { scores, jokers, jokersRemaining, extra, loaded, saving, lockedMatches, setScore, toggleJoker, setExtra, save, getScoresArray };
+  const groupHasJoker = useCallback((group: string) => {
+    return [...jokers].some(m => matchGroupMap.get(m) === group);
+  }, [jokers, matchGroupMap]);
+
+  const duplicateJokerGroups = useMemo(() => {
+    const groupCount = new Map<string, number>();
+    for (const m of jokers) {
+      const g = matchGroupMap.get(m);
+      if (g) groupCount.set(g, (groupCount.get(g) || 0) + 1);
+    }
+    return [...groupCount.entries()].filter(([, c]) => c > 1).map(([g]) => g);
+  }, [jokers, matchGroupMap]);
+
+  return { scores, jokers, jokersRemaining, extra, loaded, saving, lockedMatches, setScore, toggleJoker, setExtra, save, getScoresArray, groupHasJoker, duplicateJokerGroups };
 }

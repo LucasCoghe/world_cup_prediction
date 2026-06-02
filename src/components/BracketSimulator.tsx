@@ -437,7 +437,7 @@ export default function BracketSimulator({ groupPredictions }: Props) {
         onMouseUp={handleDragEnd}
         onMouseLeave={handleDragEnd}
       >
-        <div className="flex items-center justify-center py-2 px-4" style={{ minWidth: 960 }}>
+        <div className="flex items-center py-2 px-4 w-fit" style={{ minWidth: 960 }}>
           {renderBracketNode(101, 'left')}
 
           <div className="flex-shrink-0 border-t border-white/20" style={{ width: 8 }} />

@@ -48,12 +48,12 @@ function getPointsForMatch(pred: MatchPrediction): { points: number; label: stri
         pts += 4;
       }
     }
-    if (pred.jokerUsed) pts += predOutcome === actualOutcome ? 5 : -2;
+    if (pred.jokerUsed) pts += predOutcome === actualOutcome ? 5 : -5;
     return { points: pts, label: `${pts} pt` };
   }
 
   if (predOutcome !== actualOutcome) {
-    const pts = pred.jokerUsed ? -2 : 0;
+    const pts = pred.jokerUsed ? -5 : 0;
     return { points: pts, label: `${pts} pt` };
   }
   const exact = pred.homeScore === pred.actualHome && pred.awayScore === pred.actualAway;

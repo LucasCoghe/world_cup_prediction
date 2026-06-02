@@ -80,7 +80,11 @@ export default function Rules() {
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/5">
               <span className="text-gray-300">Fout met joker</span>
-              <span className="font-bold text-red-400">-2 punten</span>
+              <span className="font-bold text-red-400">-5 punten</span>
+            </div>
+            <div className="flex justify-between py-1.5 border-b border-white/5">
+              <span className="text-gray-300">Maximum per groep</span>
+              <span className="font-bold text-purple-400">1 joker</span>
             </div>
           </div>
 
@@ -88,11 +92,11 @@ export default function Rules() {
           <div className="grid gap-1">
             <div className="flex justify-between py-1.5 border-b border-white/5">
               <span className="text-gray-300">Juiste Wereldkampioen</span>
-              <span className="font-bold text-gold">25 punten</span>
+              <span className="font-bold text-gold">15 punten</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/5">
               <span className="text-gray-300">Juiste Topschutter</span>
-              <span className="font-bold text-gold">15 punten</span>
+              <span className="font-bold text-gold">10 punten</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/5">
               <span className="text-gray-300">Juiste Belgische Topschutter</span>

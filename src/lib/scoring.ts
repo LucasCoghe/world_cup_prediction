@@ -121,7 +121,7 @@ export function calculatePoints(
         reason += ' (Joker +5)';
       } else {
         matchPoints -= 2;
-        reason += ' (Joker -2)';
+        reason += ' (Joker -5)';
       }
     }
 
@@ -146,7 +146,7 @@ export function calculatePoints(
         reason += ' (Joker +5)';
       } else {
         matchPoints -= 2;
-        reason += ' (Joker -2)';
+        reason += ' (Joker -5)';
       }
     }
 
@@ -157,12 +157,12 @@ export function calculatePoints(
   // === EXTRA POINTS ===
   if (extraPrediction && actualExtra) {
     if (extraPrediction.worldChampion && extraPrediction.worldChampion === actualExtra.worldChampion) {
-      extraPoints += 25;
-      breakdown.push({ matchNumber: 0, points: 25, reason: 'Juiste Wereldkampioen' });
+      extraPoints += 15;
+      breakdown.push({ matchNumber: 0, points: 15, reason: 'Juiste Wereldkampioen' });
     }
     if (extraPrediction.topScorer && extraPrediction.topScorer === actualExtra.topScorer) {
-      extraPoints += 15;
-      breakdown.push({ matchNumber: 0, points: 15, reason: 'Juiste Topschutter' });
+      extraPoints += 10;
+      breakdown.push({ matchNumber: 0, points: 10, reason: 'Juiste Topschutter' });
     }
     if (extraPrediction.belgianTopScorer && extraPrediction.belgianTopScorer === actualExtra.belgianTopScorer) {
       extraPoints += 10;
@@ -189,7 +189,7 @@ export function calculateMatchPoints(
   const result = isKnockout ? scoreKnockoutMatch(pred, actual) : scoreGroupMatch(pred, actual);
   let points = result.points;
   if (joker) {
-    points += result.correctWinner ? 5 : -2;
+    points += result.correctWinner ? 5 : -5;
   }
   return points;
 }

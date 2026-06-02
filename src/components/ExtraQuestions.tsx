@@ -47,7 +47,7 @@ export default function ExtraQuestions({ predictions }: Props) {
       <div className="grid gap-4 md:grid-cols-2">
         <div className="card">
           <label className="block text-base text-gold font-semibold mb-2">
-            Wereldkampioen (5 punten)
+            Wereldkampioen (15 punten)
           </label>
           <select
             value={extra.worldChampion}
@@ -64,7 +64,7 @@ export default function ExtraQuestions({ predictions }: Props) {
 
         <div className="card">
           <label className="block text-base text-gold font-semibold mb-2">
-            Topschutter (5 punten)
+            Topschutter (10 punten)
           </label>
           <input
             type="text"
@@ -78,7 +78,7 @@ export default function ExtraQuestions({ predictions }: Props) {
 
         <div className="card">
           <label className="block text-base text-gold font-semibold mb-2">
-            Belgische Topschutter (3 punten)
+            Belgische Topschutter (10 punten)
           </label>
           <input
             type="text"
