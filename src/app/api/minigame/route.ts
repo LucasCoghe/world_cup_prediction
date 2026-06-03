@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getUser } from '@/lib/auth';
-import { awardKeepyUppyCoins } from '@/lib/coins';
+import { awardKeepyUppyCoins, getEquippedCosmeticsForUsers } from '@/lib/coins';
 
 export async function GET() {
   const leaderboard = await prisma.minigameScore.findMany({
     orderBy: { score: 'desc' },
     take: 20,
     distinct: ['userId'],
-    include: { user: { select: { name: true } } },
+    include: { user: { select: { id: true, name: true } } },
   });
 
   const user = await getUser();
@@ -21,10 +21,14 @@ export async function GET() {
     personalBest = best?.score ?? null;
   }
 
+  const userIds = [...new Set(leaderboard.map(s => s.user.id))];
+  const cosmeticsByUser = await getEquippedCosmeticsForUsers(userIds);
+
   return NextResponse.json({
     leaderboard: leaderboard.map(s => ({
       name: s.user.name,
       score: s.score,
+      cosmetics: cosmeticsByUser.get(s.user.id) || { nameColor: null, rowStyle: null, title: null },
     })),
     personalBest,
   });

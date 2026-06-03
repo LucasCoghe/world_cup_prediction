@@ -153,7 +153,7 @@ export default function Dashboard({ user, onLogout }: Props) {
         </div>
 
         {/* Tabs */}
-        <div className="max-w-6xl mx-auto px-4 flex gap-1 overflow-x-auto pb-2">
+        <div className="max-w-6xl mx-auto px-4 flex gap-1 overflow-x-auto scrollbar-hide pb-2">
           {tabs.map(tab => (
             <button
               key={tab.id}

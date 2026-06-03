@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { getCosmetic } from '@/lib/cosmetics';
 
 const CANVAS_W = 360;
 const CANVAS_H = 540;
@@ -102,6 +103,7 @@ const UNLOCKS_KEY = 'keepie-uppie-unlocks';
 interface LeaderboardEntry {
   name: string;
   score: number;
+  cosmetics?: { nameColor: string | null; rowStyle: string | null; title: string | null };
 }
 
 type HairStyle = 'spiky' | 'short' | 'buzz' | 'curly' | 'mohawk';
@@ -1735,15 +1737,23 @@ export default function KeepyUppy() {
           {leaderboard.length === 0 ? (
             <p className="text-gray-500 text-sm p-3">Nog geen scores</p>
           ) : (
-            leaderboard.map((entry, i) => (
-              <div key={i} className={`flex justify-between px-3 py-2 ${i % 2 === 0 ? 'bg-white/5' : ''}`}>
-                <span className="text-gray-300">
-                  <span className="text-gray-500 mr-2 inline-block w-5 text-right">{i + 1}.</span>
-                  {entry.name}
-                </span>
-                <span className="text-yellow-400 font-bold">{entry.score}</span>
-              </div>
-            ))
+            leaderboard.map((entry, i) => {
+              const nameCos = getCosmetic(entry.cosmetics?.nameColor);
+              const rowCos = getCosmetic(entry.cosmetics?.rowStyle);
+              const titleCos = getCosmetic(entry.cosmetics?.title);
+              return (
+                <div key={i} className={`flex justify-between items-center px-3 py-2 ${i % 2 === 0 ? 'bg-white/5' : ''} ${rowCos?.rowClassName ?? ''}`}>
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span className="text-gray-500 inline-block w-5 text-right shrink-0">{i + 1}.</span>
+                    <span className="flex flex-col min-w-0">
+                      {titleCos?.title && <span className="cos-title leading-tight">{titleCos.title}</span>}
+                      <span className={`truncate ${nameCos?.nameClassName ?? 'text-gray-300'}`}>{entry.name}</span>
+                    </span>
+                  </span>
+                  <span className="text-yellow-400 font-bold shrink-0 ml-2">{entry.score}</span>
+                </div>
+              );
+            })
           )}
         </div>
       </div>

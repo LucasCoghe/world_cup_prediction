@@ -284,6 +284,15 @@ input[type="number"] {
   background: rgba(255, 255, 255, 0.25);
 }
 
+/* Verbergt scrollbar visueel maar laat scroll-functionaliteit intact */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* ===== COSMETIC: name colors ===== */
 .cos-name-silver {
   background: linear-gradient(180deg, #f3f4f6, #9ca3af);
@@ -302,26 +311,46 @@ input[type="number"] {
 }
 
 .cos-name-fire {
-  background: linear-gradient(180deg, #fbbf24, #ef4444 80%);
+  background: linear-gradient(180deg, #fef3c7 0%, #fbbf24 22%, #f97316 50%, #ef4444 78%, #991b1b 100%);
+  background-size: 100% 220%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.5));
+  animation: cos-fire-flicker 1.6s ease-in-out infinite;
+}
+
+@keyframes cos-fire-flicker {
+  0%, 100% { background-position: 50% 0%;   filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.5)); }
+  50%      { background-position: 50% 55%;  filter: drop-shadow(0 0 11px rgba(251, 146, 60, 0.75)); }
 }
 
 .cos-name-ice {
-  background: linear-gradient(180deg, #ffffff, #38bdf8 60%, #0ea5e9);
+  background: linear-gradient(90deg, #bae6fd 0%, #ffffff 25%, #38bdf8 50%, #ffffff 75%, #bae6fd 100%);
+  background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.5));
+  animation: cos-ice-shimmer 3.5s linear infinite;
+}
+
+@keyframes cos-ice-shimmer {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: -200% 50%; }
 }
 
 .cos-name-belgian {
   background: linear-gradient(90deg, #1f2937 0%, #1f2937 33%, #fbbf24 33%, #fbbf24 66%, #dc2626 66%, #dc2626 100%);
+  background-size: 120% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  animation: cos-belgian-wave 4s ease-in-out infinite;
+}
+
+@keyframes cos-belgian-wave {
+  0%, 100% { background-position: -10% 50%; filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.4)); }
+  50%      { background-position:  10% 50%; filter: drop-shadow(0 0 9px rgba(220, 38, 38, 0.45)); }
 }
 
 .cos-name-rainbow {
@@ -365,6 +394,62 @@ input[type="number"] {
 @keyframes cos-neon-pulse {
   0%, 100% { box-shadow: 0 0 14px rgba(34, 211, 238, 0.3), inset 0 0 4px rgba(34, 211, 238, 0.08); }
   50%      { box-shadow: 0 0 24px rgba(34, 211, 238, 0.55), inset 0 0 10px rgba(34, 211, 238, 0.18); }
+}
+
+.cos-row-ice {
+  border-color: rgba(56, 189, 248, 0.5) !important;
+  background-image: linear-gradient(90deg,
+    rgba(186, 230, 253, 0.18) 0%,
+    rgba(255, 255, 255, 0.28) 25%,
+    rgba(56, 189, 248, 0.22) 50%,
+    rgba(255, 255, 255, 0.28) 75%,
+    rgba(186, 230, 253, 0.18) 100%);
+  background-size: 200% 100%;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.18);
+  animation: cos-row-ice-shimmer 3.5s linear infinite;
+}
+
+@keyframes cos-row-ice-shimmer {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: -200% 50%; }
+}
+
+.cos-row-belgian {
+  border-color: rgba(251, 191, 36, 0.5) !important;
+  background-image: linear-gradient(90deg,
+    rgba(31, 41, 55, 0.32) 0%,
+    rgba(31, 41, 55, 0.32) 33%,
+    rgba(251, 191, 36, 0.28) 33%,
+    rgba(251, 191, 36, 0.28) 66%,
+    rgba(220, 38, 38, 0.28) 66%,
+    rgba(220, 38, 38, 0.28) 100%);
+  background-size: 120% 100%;
+  animation: cos-row-belgian-wave 4.5s ease-in-out infinite;
+}
+
+@keyframes cos-row-belgian-wave {
+  0%, 100% { background-position: -10% 50%; filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.3)); }
+  50%      { background-position:  10% 50%; filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.35)); }
+}
+
+.cos-row-rainbow {
+  border-color: rgba(168, 85, 247, 0.55) !important;
+  background-image: linear-gradient(90deg,
+    rgba(239, 68, 68, 0.20),
+    rgba(245, 158, 11, 0.20),
+    rgba(234, 179, 8, 0.20),
+    rgba(34, 197, 94, 0.20),
+    rgba(59, 130, 246, 0.20),
+    rgba(139, 92, 246, 0.20),
+    rgba(239, 68, 68, 0.20));
+  background-size: 200% 100%;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.22);
+  animation: cos-row-rainbow-shift 4s linear infinite;
+}
+
+@keyframes cos-row-rainbow-shift {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: -200% 50%; }
 }
 
 /* ===== COSMETIC: title ===== */

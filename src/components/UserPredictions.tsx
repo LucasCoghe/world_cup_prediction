@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { teams, getRoundName } from '@/lib/tournament';
 import FlagIcon from './FlagIcon';
+import { getCosmetic } from '@/lib/cosmetics';
 
 interface MatchPrediction {
   matchNumber: number;
@@ -70,6 +71,7 @@ export default function UserPredictions({ userId, onBack }: Props) {
   const [predictions, setPredictions] = useState<MatchPrediction[]>([]);
   const [extra, setExtra] = useState<ExtraPrediction | null>(null);
   const [userName, setUserName] = useState('');
+  const [cosmetics, setCosmetics] = useState<{ nameColor: string | null; rowStyle: string | null; title: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -83,6 +85,7 @@ export default function UserPredictions({ userId, onBack }: Props) {
           setPredictions(data.predictions || []);
           setExtra(data.extra || null);
           setUserName(data.userName || '');
+          setCosmetics(data.cosmetics || null);
         }
         setLoading(false);
       });
@@ -117,11 +120,20 @@ export default function UserPredictions({ userId, onBack }: Props) {
     return streak;
   })();
 
+  const nameCos = getCosmetic(cosmetics?.nameColor);
+  const titleCos = getCosmetic(cosmetics?.title);
+
   return (
     <div className="space-y-6 animate-in">
       <div className="flex items-center gap-4">
         <button onClick={onBack} className="btn-secondary text-sm">&larr; Terug</button>
-        <h2 className="text-2xl font-bold trophy-text">Voorspellingen van {userName}</h2>
+        <div className="flex flex-col">
+          {titleCos?.title && <span className="cos-title">{titleCos.title}</span>}
+          <h2 className="text-2xl font-bold trophy-text">
+            Voorspellingen van{' '}
+            <span className={nameCos?.nameClassName ?? ''}>{userName}</span>
+          </h2>
+        </div>
       </div>
 
       <div className="card bg-white/5">
