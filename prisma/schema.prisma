@@ -20,6 +20,8 @@ model User {
   coinsBalance            Int       @default(0)
   predictionPointsClaimed Int       @default(0)
   lastDailyClaim          DateTime?
+  keepyUppyDayBest        Int       @default(0)
+  keepyUppyDay            DateTime?
 
   predictions        MatchPrediction[]
   extraPredictions   ExtraPrediction?

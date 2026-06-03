@@ -16,6 +16,18 @@ export interface PatchNote {
 // id format: YYYY-MM-DD-slug (helpt sorteren + dedup)
 export const PATCH_NOTES: PatchNote[] = [
   {
+    id: '2026-06-03-balance',
+    date: '3 juni 2026',
+    title: 'Coin Balance Update',
+    emoji: '⚖️',
+    items: [
+      { icon: '🎯', text: 'Voorspellingspunten geven nu 3× zoveel coins — scherp gokken loont meer dan ooit' },
+      { icon: '🏆', text: 'Keepie-Uppie: enkel je daghoogtepunt telt voor coins (reset elke dag) — geen gegrind meer' },
+      { icon: '👑', text: 'Top-tier cosmetics duurder: Regenboog 2500, Neon 3500, G.O.A.T. 5000' },
+      { icon: '✨', text: 'Mid-tier items blijven betaalbaar — alleen echte trofeeën zijn nu écht moeilijk' },
+    ],
+  },
+  {
     id: '2026-06-02-coins-shop',
     date: '2 juni 2026',
     title: 'Coin Economy + Cosmetic Shop',

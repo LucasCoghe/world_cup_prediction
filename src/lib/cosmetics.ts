@@ -18,20 +18,20 @@ export const COSMETICS: Cosmetic[] = [
   { id: 'name_fire',    category: 'name_color', name: 'Vuur Naam',             description: 'On fire',            price: 400,  nameClassName: 'cos-name-fire' },
   { id: 'name_ice',     category: 'name_color', name: 'IJs Naam',              description: 'Koeler dan ijs',     price: 400,  nameClassName: 'cos-name-ice' },
   { id: 'name_belgian', category: 'name_color', name: 'Belgische Driekleur',   description: 'Voor de Duivels',    price: 800,  nameClassName: 'cos-name-belgian' },
-  { id: 'name_rainbow', category: 'name_color', name: 'Regenboog',             description: 'Legendarische status',price: 1200, nameClassName: 'cos-name-rainbow' },
+  { id: 'name_rainbow', category: 'name_color', name: 'Regenboog',             description: 'Legendarische status',price: 2500, nameClassName: 'cos-name-rainbow' },
 
   // Row styles
   { id: 'row_gold_border', category: 'row_style', name: 'Gouden Rand',     description: 'Subtiele gouden glow',   price: 300,  rowClassName: 'cos-row-gold' },
   { id: 'row_fire_glow',   category: 'row_style', name: 'Vurige Glow',     description: 'Vlammende achtergrond',  price: 600,  rowClassName: 'cos-row-fire' },
   { id: 'row_galaxy',      category: 'row_style', name: 'Galaxy Gradient', description: 'Buitenaards',            price: 900,  rowClassName: 'cos-row-galaxy' },
-  { id: 'row_neon',        category: 'row_style', name: 'Neon Border',     description: 'Cyaan pulserende rand',  price: 1500, rowClassName: 'cos-row-neon' },
+  { id: 'row_neon',        category: 'row_style', name: 'Neon Border',     description: 'Cyaan pulserende rand',  price: 3500, rowClassName: 'cos-row-neon' },
 
   // Titles
   { id: 'title_keeper', category: 'title', name: 'Klassen-keeper', description: 'Voor de stoppers',     price: 200,  title: '🧤 Klassen-keeper' },
   { id: 'title_pintje', category: 'title', name: 'Pintjes-koning', description: 'Drinkt veel pinten',   price: 300,  title: '🍺 Pintjes-koning' },
   { id: 'title_kdb',    category: 'title', name: 'De Bruyne',      description: 'Koninklijke status',   price: 400,  title: '👑 De Bruyne' },
   { id: 'title_legend', category: 'title', name: 'De Legende',     description: 'Iconisch',             price: 500,  title: '⭐ De Legende' },
-  { id: 'title_goat',   category: 'title', name: 'G.O.A.T.',       description: 'Greatest of all time', price: 1500, title: '🐐 G.O.A.T.' },
+  { id: 'title_goat',   category: 'title', name: 'G.O.A.T.',       description: 'Greatest of all time', price: 5000, title: '🐐 G.O.A.T.' },
 ];
 
 const COSMETICS_BY_ID: Record<string, Cosmetic> = Object.fromEntries(COSMETICS.map(c => [c.id, c]));

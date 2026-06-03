@@ -3,6 +3,7 @@ import { calculatePoints } from './scoring';
 import { MatchScore } from './standings';
 
 export const DAILY_BONUS = 50;
+export const PREDICTION_COIN_MULTIPLIER = 3;
 
 function todayString(): string {
   const d = new Date();
@@ -52,11 +53,12 @@ export async function syncPredictionCoins(userId: string): Promise<number> {
   const alreadyClaimed = user.predictionPointsClaimed;
   if (earnable <= alreadyClaimed) return user.coinsBalance;
 
-  const delta = earnable - alreadyClaimed;
+  const rawDelta = earnable - alreadyClaimed;
+  const coinDelta = rawDelta * PREDICTION_COIN_MULTIPLIER;
   const updated = await prisma.user.update({
     where: { id: userId },
     data: {
-      coinsBalance: { increment: delta },
+      coinsBalance: { increment: coinDelta },
       predictionPointsClaimed: earnable,
     },
   });
@@ -120,4 +122,41 @@ export async function getEquippedCosmeticsForUsers(userIds: string[]): Promise<M
     else if (c.category === 'title') entry.title = c.cosmeticId;
   }
   return result;
+}
+
+export async function awardKeepyUppyCoins(userId: string, score: number): Promise<{ awarded: number; dayBest: number }> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { keepyUppyDayBest: true, keepyUppyDay: true },
+  });
+  if (!user) return { awarded: 0, dayBest: 0 };
+
+  const today = todayString();
+  const stored = user.keepyUppyDay ? dateString(user.keepyUppyDay) : null;
+  const currentBest = stored === today ? user.keepyUppyDayBest : 0;
+
+  const awarded = Math.max(0, score - currentBest);
+  const newDayBest = Math.max(currentBest, score);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      coinsBalance: { increment: awarded },
+      keepyUppyDayBest: newDayBest,
+      keepyUppyDay: new Date(),
+    },
+  });
+
+  return { awarded, dayBest: newDayBest };
+}
+
+export async function getKeepyUppyDailyStats(userId: string): Promise<{ dayBest: number }> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { keepyUppyDayBest: true, keepyUppyDay: true },
+  });
+  if (!user) return { dayBest: 0 };
+  const today = todayString();
+  const stored = user.keepyUppyDay ? dateString(user.keepyUppyDay) : null;
+  return { dayBest: stored === today ? user.keepyUppyDayBest : 0 };
 }

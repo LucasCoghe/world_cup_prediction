@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getUser } from '@/lib/auth';
-import { syncPredictionCoins, canClaimDaily, claimDailyCoins, DAILY_BONUS } from '@/lib/coins';
+import { syncPredictionCoins, canClaimDaily, claimDailyCoins, DAILY_BONUS, getKeepyUppyDailyStats } from '@/lib/coins';
 import { prisma } from '@/lib/db';
 
 export async function GET() {
@@ -9,11 +9,13 @@ export async function GET() {
 
   const balance = await syncPredictionCoins(user.userId);
   const claimAvailable = await canClaimDaily(user.userId);
+  const keepyUppyToday = await getKeepyUppyDailyStats(user.userId);
 
   return NextResponse.json({
     balance,
     canClaimDaily: claimAvailable,
     dailyAmount: DAILY_BONUS,
+    keepyUppyToday,
   });
 }
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getUser } from '@/lib/auth';
+import { awardKeepyUppyCoins } from '@/lib/coins';
 
 export async function GET() {
   const leaderboard = await prisma.minigameScore.findMany({
@@ -55,17 +56,12 @@ export async function POST(req: Request) {
     }
   }
 
-  await prisma.$transaction([
-    prisma.minigameScore.create({
-      data: { userId: user.userId, score },
-    }),
-    prisma.user.update({
-      where: { id: user.userId },
-      data: { coinsBalance: { increment: score } },
-    }),
-  ]);
+  await prisma.minigameScore.create({
+    data: { userId: user.userId, score },
+  });
+  const result = await awardKeepyUppyCoins(user.userId, score);
 
-  return NextResponse.json({ success: true, coinsEarned: score });
+  return NextResponse.json({ success: true, coinsEarned: result.awarded, dayBest: result.dayBest });
 }
 
 export async function DELETE() {

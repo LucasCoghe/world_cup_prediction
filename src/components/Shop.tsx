@@ -17,6 +17,7 @@ interface CoinsData {
   balance: number;
   canClaimDaily: boolean;
   dailyAmount: number;
+  keepyUppyToday: { dayBest: number };
 }
 
 const CATEGORY_LABELS: Record<CosmeticCategory, string> = {
@@ -184,9 +185,18 @@ export default function Shop({ userName }: Props) {
       {/* How to earn */}
       <div className="card bg-white/5 text-sm text-gray-300">
         <div className="font-bold mb-2 text-white">Coins verdienen</div>
-        <ul className="space-y-1 text-xs">
-          <li>⚽ <span className="text-gold font-bold">1 coin</span> per kick in Keepie-Uppie</li>
-          <li>🎯 <span className="text-gold font-bold">1 coin</span> per voorspellingspunt</li>
+        <ul className="space-y-1.5 text-xs">
+          <li>
+            ⚽ <span className="text-gold font-bold">Keepie-Uppie:</span> alleen je <span className="text-white">hoogste score van vandaag</span> telt
+            {coins.keepyUppyToday.dayBest > 0 ? (
+              <span className="block ml-5 text-gray-400 mt-0.5">
+                Vandaag: <span className="text-gold font-bold">{coins.keepyUppyToday.dayBest}</span> coins · volgende coin bij score &gt; {coins.keepyUppyToday.dayBest}
+              </span>
+            ) : (
+              <span className="block ml-5 text-gray-500 mt-0.5">Speel een ronde om vandaag coins te verdienen!</span>
+            )}
+          </li>
+          <li>🎯 <span className="text-gold font-bold">3 coins</span> per voorspellingspunt</li>
           <li>🎁 <span className="text-gold font-bold">{coins.dailyAmount} coins</span> per dag (claim hierboven)</li>
         </ul>
       </div>
