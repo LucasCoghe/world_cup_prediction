@@ -110,13 +110,17 @@ export function usePredictions(): PredictionsState {
     }
   }, [scores, jokers, extra]);
 
+  // Always call the latest save() — avoids stale closure in setTimeout below
+  const saveRef = useRef(save);
+  saveRef.current = save;
+
   // Auto-save with debounce
   const debouncedSave = useCallback(() => {
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
     saveTimeout.current = setTimeout(() => {
-      save();
+      saveRef.current();
     }, 2000);
-  }, [save]);
+  }, []);
 
   const setScore = useCallback((matchNumber: number, homeScore: number, awayScore: number, advancingTeam?: string) => {
     setScores(prev => {
