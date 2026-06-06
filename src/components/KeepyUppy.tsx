@@ -980,7 +980,12 @@ export default function KeepyUppy() {
       state.powerUpSpawnTimer += dt;
       if (!state.powerUp && state.powerUpSpawnTimer > POWERUP_SPAWN_INTERVAL && state.score >= 3) {
         if (Math.random() < POWERUP_SPAWN_CHANCE) {
-          const types: PowerUpType[] = ['wide', 'slow', 'magnet', 'shield'];
+          const types: PowerUpType[] = [
+            'wide', 'wide', 'wide',
+            'slow', 'slow', 'slow',
+            'magnet', 'magnet', 'magnet',
+            'shield',
+          ];
           state.powerUp = {
             type: types[Math.floor(Math.random() * types.length)],
             x: 30 + Math.random() * (CANVAS_W - 60),
@@ -1124,14 +1129,15 @@ export default function KeepyUppy() {
       if (state.ballY + BALL_R >= FLOOR_Y) {
         if (state.shieldActive) {
           state.shieldActive = false;
-          state.ballY = FLOOR_Y - BALL_R;
-          state.ballVY = KICK_VY * 0.8;
-          for (let i = 0; i < 15; i++) {
+          state.ballY = FLOOR_Y - BALL_R - 4;
+          state.ballVY = KICK_VY * 1.2 * effectiveSpeedMult;
+          state.ballVX = state.ballVX * 0.35;
+          for (let i = 0; i < 20; i++) {
             state.particles.push({
               x: state.ballX + (Math.random() - 0.5) * 40,
               y: FLOOR_Y,
-              vx: (Math.random() - 0.5) * 4,
-              vy: -Math.random() * 5 - 2,
+              vx: (Math.random() - 0.5) * 5,
+              vy: -Math.random() * 7 - 3,
               life: 30 + Math.random() * 20,
               maxLife: 30 + Math.random() * 20,
               color: '#22c55e',

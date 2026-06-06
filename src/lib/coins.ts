@@ -2,8 +2,8 @@ import { prisma } from './db';
 import { calculatePoints } from './scoring';
 import { MatchScore } from './standings';
 
-export const DAILY_BONUS = 50;
-export const PREDICTION_COIN_MULTIPLIER = 3;
+export const DAILY_BONUS = 15;
+export const PREDICTION_COIN_MULTIPLIER = 5;
 
 function todayString(): string {
   const d = new Date();

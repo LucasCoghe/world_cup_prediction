@@ -17,6 +17,7 @@ interface CoinsData {
   balance: number;
   canClaimDaily: boolean;
   dailyAmount: number;
+  predictionMultiplier: number;
   keepyUppyToday: { dayBest: number };
 }
 
@@ -196,7 +197,7 @@ export default function Shop({ userName }: Props) {
               <span className="block ml-5 text-gray-500 mt-0.5">Speel een ronde om vandaag coins te verdienen!</span>
             )}
           </li>
-          <li>🎯 <span className="text-gold font-bold">3 coins</span> per voorspellingspunt</li>
+          <li>🎯 <span className="text-gold font-bold">{coins.predictionMultiplier} coins</span> per voorspellingspunt</li>
           <li>🎁 <span className="text-gold font-bold">{coins.dailyAmount} coins</span> per dag (claim hierboven)</li>
         </ul>
       </div>

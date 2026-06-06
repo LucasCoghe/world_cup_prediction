@@ -30,37 +30,78 @@ export default function Rules() {
 
         <div className="space-y-2 text-base">
           <h4 className="font-semibold text-white mt-3">Groepsfase</h4>
-          <div className="grid gap-1">
-            <div className="flex justify-between py-1.5 border-b border-white/5">
-              <span className="text-gray-300">Exacte score (Bullseye!)</span>
-              <span className="font-bold text-gold">10 punten</span>
+          <div className="grid gap-2">
+            <div className="py-2 border-b border-white/5">
+              <div className="flex justify-between">
+                <span className="text-gray-300">Exacte score (Bullseye!)</span>
+                <span className="font-bold text-gold">10 punten</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Vb: jij tipt <span className="text-white">2-1</span>, het wordt <span className="text-white">2-1</span>.
+              </p>
             </div>
-            <div className="flex justify-between py-1.5 border-b border-white/5">
-              <span className="text-gray-300">Juist doelsaldo, verkeerde uitslag</span>
-              <span className="font-bold text-gold">7 punten</span>
+            <div className="py-2 border-b border-white/5">
+              <div className="flex justify-between">
+                <span className="text-gray-300">Juist doelsaldo, verkeerde uitslag</span>
+                <span className="font-bold text-gold">7 punten</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Juiste winnaar &amp; juist verschil, maar niet de exacte cijfers.
+                Vb: jij tipt <span className="text-white">3-1</span> (verschil +2), het wordt <span className="text-white">2-0</span> (ook verschil +2).
+              </p>
             </div>
-            <div className="flex justify-between py-1.5 border-b border-white/5">
-              <span className="text-gray-300">Juiste winnaar, verkeerd doelsaldo</span>
-              <span className="font-bold text-gold">5 punten</span>
+            <div className="py-2 border-b border-white/5">
+              <div className="flex justify-between">
+                <span className="text-gray-300">Juiste winnaar, verkeerd doelsaldo</span>
+                <span className="font-bold text-gold">5 punten</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Juiste winnaar, maar verschil klopt niet.
+                Vb: jij tipt <span className="text-white">3-0</span> (verschil +3), het wordt <span className="text-white">2-1</span> (verschil +1). Belgie wint in beide gevallen, maar niet met hetzelfde verschil.
+              </p>
+            </div>
+            <div className="py-2 border-b border-white/5">
+              <div className="flex justify-between">
+                <span className="text-gray-300">Verkeerde winnaar</span>
+                <span className="font-bold text-gray-400">0 punten</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Vb: jij tipt <span className="text-white">2-1</span> winst, het wordt <span className="text-white">0-1</span> verlies (of gelijkspel).
+              </p>
             </div>
           </div>
 
           <h4 className="font-semibold text-white mt-5">Knockout (vanaf 1/8e finales)</h4>
           <p className="text-sm text-gray-400 mb-2">
-            Punten zijn cumulatief: je kan meerdere bonussen combineren.
+            Punten zijn cumulatief: juiste winnaar is de basis, bovenop krijg je bonus voor score of doelsaldo.
           </p>
-          <div className="grid gap-1">
-            <div className="flex justify-between py-1.5 border-b border-white/5">
-              <span className="text-gray-300">Juiste winnaar (ook na penalty&apos;s)</span>
-              <span className="font-bold text-gold">10 punten</span>
+          <div className="grid gap-2">
+            <div className="py-2 border-b border-white/5">
+              <div className="flex justify-between">
+                <span className="text-gray-300">Juiste winnaar (ook na penalty&apos;s)</span>
+                <span className="font-bold text-gold">10 punten</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Vb: jij tipt Belgie wint, Belgie gaat door (ook al was het via strafschoppen).
+              </p>
             </div>
-            <div className="flex justify-between py-1.5 border-b border-white/5">
-              <span className="text-gray-300">Exacte score (na 90 of 120 min)</span>
-              <span className="font-bold text-gold">+6 punten</span>
+            <div className="py-2 border-b border-white/5">
+              <div className="flex justify-between">
+                <span className="text-gray-300">Exacte score (na 90 of 120 min)</span>
+                <span className="font-bold text-gold">+6 punten</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Bovenop de 10 voor juiste winnaar = <span className="text-white">16 punten totaal</span>. Vb: jij tipt 2-1, het wordt 2-1.
+              </p>
             </div>
-            <div className="flex justify-between py-1.5 border-b border-white/5">
-              <span className="text-gray-300">Juist doelsaldo (niet exact)</span>
-              <span className="font-bold text-gold">+4 punten</span>
+            <div className="py-2 border-b border-white/5">
+              <div className="flex justify-between">
+                <span className="text-gray-300">Juist doelsaldo (niet exact)</span>
+                <span className="font-bold text-gold">+4 punten</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Bovenop de 10 voor juiste winnaar = <span className="text-white">14 punten totaal</span>. Vb: jij tipt 3-1, het wordt 2-0.
+              </p>
             </div>
           </div>
 

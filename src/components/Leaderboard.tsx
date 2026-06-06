@@ -131,11 +131,11 @@ export default function Leaderboard({ currentUserId }: Props) {
                 </div>
 
                 {/* Name */}
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   {titleCos?.title && (
-                    <div className="cos-title">{titleCos.title}</div>
+                    <div className="cos-title truncate">{titleCos.title}</div>
                   )}
-                  <div className={`text-lg font-semibold ${
+                  <div className={`text-lg font-semibold truncate ${
                     nameCos?.nameClassName ?? (entry.hotStreak >= 2 ? 'fire-text' : isH2hSelected ? 'text-blue-300' : 'text-white')
                   }`}>
                     {entry.name}
