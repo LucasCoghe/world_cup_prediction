@@ -16,6 +16,21 @@ export interface PatchNote {
 // id format: YYYY-MM-DD-slug (helpt sorteren + dedup)
 export const PATCH_NOTES: PatchNote[] = [
   {
+    id: '2026-06-06-cosmetics-overhaul',
+    date: '6 juni 2026',
+    title: 'Cosmetics Overhaul + Tweaks',
+    emoji: '🎨',
+    items: [
+      { icon: '✨', text: '10 nieuwe cosmetics: Matrix & Sterrenhemel naam-kleuren, Bloed / Confetti / Disco / Champagne / Bliksem / Holografisch rij-stijlen, plus Bankzitter & Bondscoach titels' },
+      { icon: '🌈', text: 'Bestaande cosmetics opgepoetst: IJs/Galaxy/Regenboog Rand zijn nu echt onderscheidend, Regenboog Rand toont alle kleuren tegelijk' },
+      { icon: '🪙', text: 'Coin balans: dagbonus 50 → 15, voorspellingspunten geven nu 5× (was 3×). Predictions zijn duidelijk de hoofdbron' },
+      { icon: '🛡️', text: 'Keepie-Uppie shield bots nu écht terug (sterke verticale bounce, gedempte zijwaartse drift) en is zeldzamer geworden — 10% spawnkans ipv 25%' },
+      { icon: '📚', text: 'Spelregels duidelijker uitgelegd met concrete voorbeelden bij elke punten-categorie' },
+      { icon: '🐛', text: 'Lange usernames duwen de bierteller en punten niet meer uit het klassement' },
+    ],
+    cta: { label: 'Naar de Shop', tabId: 'shop' },
+  },
+  {
     id: '2026-06-03-balance',
     date: '3 juni 2026',
     title: 'Coin Balance Update',
