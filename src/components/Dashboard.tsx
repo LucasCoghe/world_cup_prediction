@@ -11,6 +11,7 @@ import AdminPanel from './AdminPanel';
 import GroupChat from './GroupChat';
 import InstallPrompt from './InstallPrompt';
 import NotificationToggle from './NotificationToggle';
+import NotificationOnboarding from './NotificationOnboarding';
 import BracketSimulator from './BracketSimulator';
 import KeepyUppy from './KeepyUppy';
 import Shop from './Shop';
@@ -120,6 +121,7 @@ export default function Dashboard({ user, onLogout }: Props) {
   return (
     <div className={`min-h-screen ${belgianDay ? 'belgian-mode' : ''}`}>
       <PatchNotesModal onNavigate={tabId => setActiveTab(tabId)} />
+      <NotificationOnboarding />
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-lg border-b border-white/10" style={{ background: 'linear-gradient(90deg, rgba(0,40,104,0.85) 0%, rgba(6,13,31,0.95) 30%, rgba(6,13,31,0.95) 70%, rgba(107,21,32,0.85) 100%)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         {/* Belgian match day banner */}
