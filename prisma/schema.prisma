@@ -93,6 +93,7 @@ model ActualResult {
   homeScore     Int
   awayScore     Int
   advancingTeam String?
+  live          Boolean @default(false)
 }
 
 model PushSubscription {

@@ -22,9 +22,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Geen admin rechten' }, { status: 403 });
   }
 
-  const { matchNumber, homeScore, awayScore, advancingTeam } = await req.json();
+  const { matchNumber, homeScore, awayScore, advancingTeam, live } = await req.json();
+  const isLive = live === true;
 
-  // Snapshot beer counts before
+  // For live saves: just update score, no beer recalc, no pushes.
+  // Leaderboard shows live points but skips beer counting until match is finalized.
+  if (isLive) {
+    await prisma.actualResult.upsert({
+      where: { matchNumber },
+      update: { homeScore, awayScore, advancingTeam: advancingTeam || null, live: true },
+      create: { matchNumber, homeScore, awayScore, advancingTeam: advancingTeam || null, live: true },
+    });
+    return NextResponse.json({ success: true, live: true });
+  }
+
+  // Final save: snapshot beer counts, write result (live=false), diff and push.
   const beforeCounts = new Map<string, number>();
   const beforeGiveCounts = new Map<string, number>();
   const leaderboardBefore = await fetchLeaderboard(req);
@@ -35,8 +47,8 @@ export async function POST(req: Request) {
 
   await prisma.actualResult.upsert({
     where: { matchNumber },
-    update: { homeScore, awayScore, advancingTeam: advancingTeam || null },
-    create: { matchNumber, homeScore, awayScore, advancingTeam: advancingTeam || null },
+    update: { homeScore, awayScore, advancingTeam: advancingTeam || null, live: false },
+    create: { matchNumber, homeScore, awayScore, advancingTeam: advancingTeam || null, live: false },
   });
 
   // Check beer counts after
@@ -58,7 +70,7 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, live: false });
 }
 
 async function fetchLeaderboard(req: Request): Promise<{ id: string; name: string; beerCount: number; beerReasons: string[]; beerGiveCount: number; beerGiveReasons: string[] }[]> {

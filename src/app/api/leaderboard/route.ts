@@ -53,10 +53,11 @@ export async function GET() {
     matchesByDate.set(m.date, list);
   }
 
-  // Find completed matchdays (dates where ALL scheduled matches have results)
-  const resultMatchNumbers = new Set(actualResults.map(r => r.matchNumber));
+  // Find completed matchdays (dates where ALL scheduled matches have a FINAL result).
+  // Live results show up in points/standings, but don't trigger beer counting until finalized.
+  const finalResultMatchNumbers = new Set(actualResults.filter(r => !r.live).map(r => r.matchNumber));
   const completedDates = [...matchesByDate.entries()]
-    .filter(([, matchNums]) => matchNums.every(n => resultMatchNumbers.has(n)))
+    .filter(([, matchNums]) => matchNums.every(n => finalResultMatchNumbers.has(n)))
     .map(([date]) => date)
     .sort();
 
@@ -139,7 +140,7 @@ export async function GET() {
   };
 
   for (const [round, matchNums] of matchesByRound) {
-    const allHaveResults = matchNums.every(n => resultMatchNumbers.has(n));
+    const allHaveResults = matchNums.every(n => finalResultMatchNumbers.has(n));
     if (!allHaveResults) continue;
 
     const roundResults = actualScores.filter(r => matchNums.includes(r.matchNumber));
@@ -172,8 +173,8 @@ export async function GET() {
     }
   }
 
-  // === BESCHAMENDE REEKS: 3x op rij 0 punten = extra bier (alleen groepsfase) ===
-  const playedGroupMatches = [...resultMatchNumbers].filter(n => n <= TOTAL_GROUP_MATCHES).sort((a, b) => a - b);
+  // === BESCHAMENDE REEKS: 3x op rij 0 punten = extra bier (alleen groepsfase, alleen finals) ===
+  const playedGroupMatches = [...finalResultMatchNumbers].filter(n => n <= TOTAL_GROUP_MATCHES).sort((a, b) => a - b);
   const hotStreaks = new Map<string, number>();
   for (const u of users) {
     const predMap = userPredMaps.get(u.id)!;

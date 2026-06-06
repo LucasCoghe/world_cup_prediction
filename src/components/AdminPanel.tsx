@@ -18,6 +18,7 @@ interface Result {
   homeScore: number;
   awayScore: number;
   advancingTeam: string | null;
+  live: boolean;
 }
 
 export default function AdminPanel() {
@@ -70,7 +71,7 @@ export default function AdminPanel() {
     setUsers(users.map(u => u.id === userId ? { ...u, locked } : u));
   }
 
-  async function saveResult(matchNumber: number) {
+  async function saveResult(matchNumber: number, live: boolean) {
     const home = parseInt(editHome);
     const away = parseInt(editAway);
     if (isNaN(home) || isNaN(away) || home < 0 || away < 0) return;
@@ -78,7 +79,7 @@ export default function AdminPanel() {
     await fetch('/api/admin/results', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ matchNumber, homeScore: home, awayScore: away }),
+      body: JSON.stringify({ matchNumber, homeScore: home, awayScore: away, live }),
     });
     const res = await fetch('/api/admin/results').then(r => r.json());
     setResults(res.results || []);
@@ -187,7 +188,7 @@ export default function AdminPanel() {
                   const isEditing = editingMatch === match.matchNumber;
 
                   return (
-                    <div key={match.matchNumber} className={`flex items-center gap-2 py-2 px-3 rounded-lg ${result ? 'bg-green-950/20 border border-green-600/20' : 'bg-white/5'}`}>
+                    <div key={match.matchNumber} className={`flex items-center gap-2 py-2 px-3 rounded-lg ${result ? (result.live ? 'bg-amber-950/20 border border-amber-600/30' : 'bg-green-950/20 border border-green-600/20') : 'bg-white/5'}`}>
                       <span className="text-xs text-gray-500 w-8">#{match.matchNumber}</span>
 
                       <div className="flex items-center gap-1.5 flex-1 justify-end">
@@ -219,7 +220,10 @@ export default function AdminPanel() {
                       ) : (
                         <div className="mx-2 w-16 text-center">
                           {result ? (
-                            <span className="font-bold text-green-400">{result.homeScore} - {result.awayScore}</span>
+                            <div className="flex flex-col items-center leading-tight">
+                              <span className={`font-bold ${result.live ? 'text-amber-300' : 'text-green-400'}`}>{result.homeScore} - {result.awayScore}</span>
+                              {result.live && <span className="text-[9px] text-amber-500 font-bold animate-pulse">LIVE</span>}
+                            </div>
                           ) : (
                             <span className="text-gray-600">- : -</span>
                           )}
@@ -233,7 +237,16 @@ export default function AdminPanel() {
 
                       {isEditing ? (
                         <div className="flex gap-1">
-                          <button onClick={() => saveResult(match.matchNumber)} className="btn-primary text-xs px-2 py-1">OK</button>
+                          <button
+                            onClick={() => saveResult(match.matchNumber, true)}
+                            className="text-xs px-2 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white font-semibold"
+                            title="Tussenstand opslaan (geen pushes)"
+                          >Live</button>
+                          <button
+                            onClick={() => saveResult(match.matchNumber, false)}
+                            className="text-xs px-2 py-1 rounded bg-green-600 hover:bg-green-500 text-white font-semibold"
+                            title="Eindscore: berekent biertjes + pushes"
+                          >Finaal</button>
                           <button onClick={() => setEditingMatch(null)} className="btn-secondary text-xs px-2 py-1">X</button>
                         </div>
                       ) : (
@@ -241,7 +254,7 @@ export default function AdminPanel() {
                           onClick={() => startEditing(match.matchNumber)}
                           className="btn-secondary text-xs px-2 py-1"
                         >
-                          {result ? 'Wijzig' : 'Invullen'}
+                          {result ? (result.live ? 'Live ✏️' : 'Wijzig') : 'Invullen'}
                         </button>
                       )}
                     </div>
@@ -263,7 +276,7 @@ export default function AdminPanel() {
                     const isEditing = editingMatch === match.matchNumber;
 
                     return (
-                      <div key={match.matchNumber} className={`flex items-center gap-2 py-2 px-3 rounded-lg ${result ? 'bg-green-950/20 border border-green-600/20' : 'bg-white/5'}`}>
+                      <div key={match.matchNumber} className={`flex items-center gap-2 py-2 px-3 rounded-lg ${result ? (result.live ? 'bg-amber-950/20 border border-amber-600/30' : 'bg-green-950/20 border border-green-600/20') : 'bg-white/5'}`}>
                         <span className="text-xs text-gray-500 w-8">#{match.matchNumber}</span>
 
                         <div className="flex items-center gap-1.5 flex-1 justify-end">
@@ -294,7 +307,10 @@ export default function AdminPanel() {
                         ) : (
                           <div className="mx-2 w-16 text-center">
                             {result ? (
-                              <span className="font-bold text-green-400">{result.homeScore} - {result.awayScore}</span>
+                              <div className="flex flex-col items-center leading-tight">
+                                <span className={`font-bold ${result.live ? 'text-amber-300' : 'text-green-400'}`}>{result.homeScore} - {result.awayScore}</span>
+                                {result.live && <span className="text-[9px] text-amber-500 font-bold animate-pulse">LIVE</span>}
+                              </div>
                             ) : (
                               <span className="text-gray-600">- : -</span>
                             )}
@@ -307,7 +323,16 @@ export default function AdminPanel() {
 
                         {isEditing ? (
                           <div className="flex gap-1">
-                            <button onClick={() => saveResult(match.matchNumber)} className="btn-primary text-xs px-2 py-1">OK</button>
+                            <button
+                              onClick={() => saveResult(match.matchNumber, true)}
+                              className="text-xs px-2 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white font-semibold"
+                              title="Tussenstand opslaan (geen pushes)"
+                            >Live</button>
+                            <button
+                              onClick={() => saveResult(match.matchNumber, false)}
+                              className="text-xs px-2 py-1 rounded bg-green-600 hover:bg-green-500 text-white font-semibold"
+                              title="Eindscore: berekent biertjes + pushes"
+                            >Finaal</button>
                             <button onClick={() => setEditingMatch(null)} className="btn-secondary text-xs px-2 py-1">X</button>
                           </div>
                         ) : (
@@ -315,7 +340,7 @@ export default function AdminPanel() {
                             onClick={() => startEditing(match.matchNumber)}
                             className="btn-secondary text-xs px-2 py-1"
                           >
-                            {result ? 'Wijzig' : 'Invullen'}
+                            {result ? (result.live ? 'Live ✏️' : 'Wijzig') : 'Invullen'}
                           </button>
                         )}
                       </div>

@@ -13,6 +13,7 @@ export default function AuthScreen({ onLogin }: Props) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +23,7 @@ export default function AuthScreen({ onLogin }: Props) {
     setLoading(true);
 
     const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-    const body = isLogin ? { email, password } : { name, email, password };
+    const body = isLogin ? { email, password } : { name, email, password, inviteCode };
 
     try {
       const res = await fetch(endpoint, {
@@ -111,6 +112,21 @@ export default function AuthScreen({ onLogin }: Props) {
                   required
                 />
               </div>
+
+              {!isLogin && (
+                <div>
+                  <label className="block text-base text-gray-400 mb-1">Uitnodigingscode</label>
+                  <input
+                    type="text"
+                    value={inviteCode}
+                    onChange={e => setInviteCode(e.target.value)}
+                    className={inputClass}
+                    placeholder="Vraag de code aan de admin"
+                    autoCapitalize="characters"
+                    autoComplete="off"
+                  />
+                </div>
+              )}
 
               {error && (
                 <p className="text-red-400 text-base bg-red-400/10 rounded-lg p-3">{error}</p>
