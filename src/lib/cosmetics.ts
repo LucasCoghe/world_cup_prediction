@@ -38,13 +38,17 @@ export const COSMETICS: Cosmetic[] = [
   { id: 'row_neon',        category: 'row_style', name: 'Neon Border',     description: 'Cyaan pulserende rand',              price: 5000, rowClassName: 'cos-row-neon' },
 
   // Titles (sorted by price)
-  { id: 'title_keeper',     category: 'title', name: 'Klassen-keeper', description: 'Voor de stoppers',        price: 300,  title: '🧤 Klassen-keeper' },
-  { id: 'title_bankzitter', category: 'title', name: 'Bankzitter',     description: 'Voor de eeuwige reserve', price: 300,  title: '🪑 Bankzitter' },
-  { id: 'title_bondscoach', category: 'title', name: 'Bondscoach',     description: 'Bemoeit zich met alles',  price: 350,  title: '📋 Bondscoach' },
-  { id: 'title_pintje',     category: 'title', name: 'Pintjes-koning', description: 'Drinkt veel pinten',      price: 450,  title: '🍺 Pintjes-koning' },
-  { id: 'title_kdb',        category: 'title', name: 'De Bruyne',      description: 'Koninklijke status',      price: 600,  title: '👑 De Bruyne' },
-  { id: 'title_legend',     category: 'title', name: 'De Legende',     description: 'Iconisch',                price: 700,  title: '⭐ De Legende' },
-  { id: 'title_goat',       category: 'title', name: 'G.O.A.T.',       description: 'Greatest of all time',    price: 7000, title: '🐐 G.O.A.T.' },
+  { id: 'title_keeper',       category: 'title', name: 'Klassen-keeper', description: 'Voor de stoppers',         price: 300,  title: '🧤 Klassen-keeper' },
+  { id: 'title_bankzitter',   category: 'title', name: 'Bankzitter',     description: 'Voor de eeuwige reserve',  price: 300,  title: '🪑 Bankzitter' },
+  { id: 'title_bondscoach',   category: 'title', name: 'Bondscoach',     description: 'Bemoeit zich met alles',   price: 350,  title: '📋 Bondscoach' },
+  { id: 'title_pintje',       category: 'title', name: 'Pintjes-koning', description: 'Drinkt veel pinten',       price: 450,  title: '🍺 Pintjes-koning' },
+  { id: 'title_kdb',          category: 'title', name: 'De Bruyne',      description: 'Koninklijke status',       price: 600,  title: '👑 De Bruyne' },
+  { id: 'title_legend',       category: 'title', name: 'De Legende',     description: 'Iconisch',                 price: 700,  title: '⭐ De Legende' },
+  { id: 'title_geluksvogel',  category: 'title', name: 'Geluksvogel',    description: 'Wint met pure mazzel',     price: 1100, title: '🍀 Geluksvogel' },
+  { id: 'title_orakel',       category: 'title', name: 'Het Orakel',     description: 'Voorspelt het onmogelijke',price: 1500, title: '🔮 Het Orakel' },
+  { id: 'title_devil',        category: 'title', name: 'Rode Duivel',    description: 'Voor de echte fans',       price: 2200, title: '🦁 Rode Duivel' },
+  { id: 'title_champion',     category: 'title', name: 'Wereldkampioen', description: 'Boven aan de top',         price: 3000, title: '🏆 Wereldkampioen' },
+  { id: 'title_goat',         category: 'title', name: 'G.O.A.T.',       description: 'Greatest of all time',     price: 4500, title: '🐐 G.O.A.T.' },
 ];
 
 const COSMETICS_BY_ID: Record<string, Cosmetic> = Object.fromEntries(COSMETICS.map(c => [c.id, c]));

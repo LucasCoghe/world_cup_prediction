@@ -15,6 +15,7 @@ model User {
   password  String
   isAdmin   Boolean  @default(false)
   locked    Boolean  @default(false)
+  inlegPaid Boolean  @default(false)
   createdAt DateTime @default(now())
 
   coinsBalance            Int       @default(0)

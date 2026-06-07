@@ -10,6 +10,7 @@ interface UserInfo {
   email: string;
   locked: boolean;
   isAdmin: boolean;
+  inlegPaid: boolean;
   _count: { predictions: number; pushSubscriptions: number };
 }
 
@@ -76,6 +77,19 @@ export default function AdminPanel() {
     setUsers(users.map(u => u.id === userId ? { ...u, locked } : u));
   }
 
+  async function toggleInlegPaid(userId: string, inlegPaid: boolean) {
+    const res = await fetch('/api/admin/inleg', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, inlegPaid }),
+    });
+    if (!res.ok) {
+      alert('Kon inleg-status niet bijwerken.');
+      return;
+    }
+    setUsers(users.map(u => u.id === userId ? { ...u, inlegPaid } : u));
+  }
+
   async function saveResult(matchNumber: number, live: boolean) {
     const home = parseInt(editHome);
     const away = parseInt(editAway);
@@ -132,6 +146,25 @@ export default function AdminPanel() {
 
       {activeSection === 'users' && (
         <div className="space-y-3">
+          {(() => {
+            const nonAdmin = users.filter(u => !u.isAdmin);
+            const paid = nonAdmin.filter(u => u.inlegPaid).length;
+            return (
+              <div className="card flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-gray-400">Inleg betaald</div>
+                  <div className="text-2xl font-bold text-gold">
+                    {paid} / {nonAdmin.length}
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 text-right">
+                  Nog te innen:<br />
+                  <span className="text-white font-semibold">{nonAdmin.length - paid} speler(s)</span>
+                </div>
+              </div>
+            );
+          })()}
+
           <button onClick={lockAll} className="btn-primary text-sm bg-red-600">
             Alle deelnemers vergrendelen
           </button>
@@ -153,7 +186,18 @@ export default function AdminPanel() {
                 {u.locked ? 'Vergrendeld' : 'Actief'}
               </span>
               {!u.isAdmin && (
+                <span className={`text-xs px-2 py-1 rounded ${u.inlegPaid ? 'bg-green-600/20 text-green-400' : 'bg-amber-600/20 text-amber-400'}`}>
+                  {u.inlegPaid ? 'Inleg betaald' : 'Niet betaald'}
+                </span>
+              )}
+              {!u.isAdmin && (
                 <>
+                  <button
+                    onClick={() => toggleInlegPaid(u.id, !u.inlegPaid)}
+                    className={`btn-secondary text-xs ${u.inlegPaid ? 'text-amber-400 hover:text-amber-300' : 'text-green-400 hover:text-green-300'}`}
+                  >
+                    {u.inlegPaid ? 'Markeer onbetaald' : 'Markeer betaald'}
+                  </button>
                   <button
                     onClick={() => toggleLock(u.id, !u.locked)}
                     className="btn-secondary text-xs"

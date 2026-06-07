@@ -15,6 +15,7 @@ export async function GET() {
       email: true,
       isAdmin: true,
       locked: true,
+      inlegPaid: true,
       createdAt: true,
       _count: { select: { predictions: true, pushSubscriptions: true } },
     },
