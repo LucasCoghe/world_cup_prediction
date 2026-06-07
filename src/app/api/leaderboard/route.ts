@@ -192,7 +192,7 @@ export async function GET() {
         streak = predOutcome === actualOutcome ? streak + 1 : 0;
         consecutiveZeros = calculateMatchPoints(pred, actual, pred.jokerUsed) <= 0 ? consecutiveZeros + 1 : 0;
       }
-      if (consecutiveZeros > 0 && consecutiveZeros % 2 === 0) {
+      if (consecutiveZeros > 0 && consecutiveZeros % 3 === 0) {
         beerReasons.get(u.id)!.push(`${consecutiveZeros}x op rij 0 punten`);
       }
     }

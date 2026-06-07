@@ -115,8 +115,8 @@ export async function GET() {
         }
       }
 
-      // Every time they hit a multiple of 2, that's a beer
-      if (consecutiveZeros > 0 && consecutiveZeros % 2 === 0) {
+      // Every time they hit a multiple of 3, that's a beer
+      if (consecutiveZeros > 0 && consecutiveZeros % 3 === 0) {
         beers++;
       }
     }

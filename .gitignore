@@ -57,3 +57,5 @@ next-env.d.ts
 left_side_error.jpg
 *.local.jpg
 *.local.png
+
+.vercel

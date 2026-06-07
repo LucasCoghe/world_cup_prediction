@@ -170,7 +170,7 @@ export default function Rules() {
             <span className="font-bold text-amber-500">1 pint</span>
           </div>
           <div className="flex justify-between py-1.5 border-b border-white/5">
-            <span className="text-gray-300">2 wedstrijden op rij 0 punten</span>
+            <span className="text-gray-300">3 wedstrijden op rij 0 punten</span>
             <span className="font-bold text-amber-500">1 pint</span>
           </div>
           <div className="flex justify-between py-1.5 border-b border-white/5">
@@ -183,11 +183,10 @@ export default function Rules() {
       <div className="card space-y-3">
         <h3 className="text-xl font-semibold text-gold">Inleg &amp; Prijzen</h3>
         <p className="text-base text-gray-300">
-          <strong className="text-white">10 euro</strong> inleg per deelnemer.
+          <strong className="text-white">15 euro</strong> inleg per deelnemer.
         </p>
         <p className="text-base text-gray-300">
-          Verdeling van de prijzenpot hangt af van het aantal deelnemers.
-          De top 3 of top 5 valt in de prijzen!!
+          Alleen de <strong className="text-white">top 3</strong> valt in de prijzen!
         </p>
       </div>
     </div>
