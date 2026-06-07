@@ -188,6 +188,20 @@ export default function Rules() {
         <p className="text-base text-gray-300">
           Alleen de <strong className="text-white">top 3</strong> valt in de prijzen!
         </p>
+        <div className="space-y-1.5 pt-1">
+          <div className="flex justify-between py-1.5 border-b border-white/5">
+            <span className="text-gray-300">1ste plaats</span>
+            <span className="font-bold text-gold">50% van de pot</span>
+          </div>
+          <div className="flex justify-between py-1.5 border-b border-white/5">
+            <span className="text-gray-300">2de plaats</span>
+            <span className="font-bold text-gold">30% van de pot</span>
+          </div>
+          <div className="flex justify-between py-1.5 border-b border-white/5">
+            <span className="text-gray-300">3de plaats</span>
+            <span className="font-bold text-gold">20% van de pot</span>
+          </div>
+        </div>
       </div>
     </div>
   );
