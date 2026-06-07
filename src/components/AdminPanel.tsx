@@ -58,7 +58,12 @@ export default function AdminPanel() {
 
   async function deleteUser(userId: string, name: string) {
     if (!confirm(`${name} verwijderen? Alle voorspellingen en data worden gewist.`)) return;
-    await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
+    const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(`Verwijderen mislukt: ${data.error || res.statusText}`);
+      return;
+    }
     setUsers(users.filter(u => u.id !== userId));
   }
 

@@ -23,7 +23,10 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     prisma.matchPrediction.deleteMany({ where: { userId: id } }),
     prisma.extraPrediction.deleteMany({ where: { userId: id } }),
     prisma.pushSubscription.deleteMany({ where: { userId: id } }),
+    prisma.userCosmetic.deleteMany({ where: { userId: id } }),
+    prisma.minigameScore.deleteMany({ where: { userId: id } }),
     prisma.beerConfirmation.deleteMany({ where: { OR: [{ drinkerId: id }, { witnessId: id }] } }),
+    prisma.beerGift.deleteMany({ where: { OR: [{ giverId: id }, { receiverId: id }] } }),
     prisma.user.delete({ where: { id } }),
   ]);
 
