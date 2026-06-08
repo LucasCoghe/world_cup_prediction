@@ -95,9 +95,27 @@ interface Props {
   onNavigateToMatch: (isKnockout: boolean) => void;
 }
 
+const MINIMIZED_KEY = 'next-match-banner-minimized';
+
 export default function NextMatchCountdown({ predictedMatchNumbers, onNavigateToMatch }: Props) {
   const [now, setNow] = useState<Date>(() => new Date());
   const [koResolved, setKoResolved] = useState<Record<number, { homeTeam: string | null; awayTeam: string | null }>>({});
+  const [minimized, setMinimized] = useState(false);
+
+  // Load minimized preference from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(MINIMIZED_KEY);
+      if (stored === '1') setMinimized(true);
+    } catch {}
+  }, []);
+
+  const toggleMinimized = (next: boolean) => {
+    setMinimized(next);
+    try {
+      localStorage.setItem(MINIMIZED_KEY, next ? '1' : '0');
+    } catch {}
+  };
 
   useEffect(() => {
     fetch('/api/knockout-teams')
@@ -121,6 +139,27 @@ export default function NextMatchCountdown({ predictedMatchNumbers, onNavigateTo
   const msUntil = featured.kickoff.getTime() - now.getTime();
   const msSinceKickoff = -msUntil;
   const isBel = featured.involvesBelgium;
+  const isLive = msUntil <= 0 && msSinceKickoff < LIVE_BUFFER_MS;
+
+  // Minimized: tiny one-line pill, click to expand. No navigation in this state.
+  if (minimized) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 my-2">
+        <button
+          type="button"
+          onClick={() => toggleMinimized(false)}
+          className="w-full text-left rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 px-3 py-1.5 flex items-center gap-3 text-xs transition-colors cursor-pointer"
+          aria-label="Toon volgende match"
+        >
+          <span className="text-white/70 uppercase tracking-wider">Volgende match</span>
+          <span className="text-white/85 font-mono ml-auto whitespace-nowrap">
+            {isLive ? 'LIVE' : formatCountdown(msUntil)}
+          </span>
+          <span className="text-white/40" aria-hidden>▾</span>
+        </button>
+      </div>
+    );
+  }
 
   const matchTitle = (
     <span className="inline-flex items-center gap-2 flex-wrap">
@@ -151,14 +190,26 @@ export default function NextMatchCountdown({ predictedMatchNumbers, onNavigateTo
     </span>
   ) : null;
 
+  const minimizeButton = (
+    <button
+      type="button"
+      onClick={() => toggleMinimized(true)}
+      className="absolute top-2 right-6 w-7 h-7 flex items-center justify-center rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+      aria-label="Minimaliseer"
+      title="Minimaliseer"
+    >
+      <span aria-hidden className="text-base leading-none">−</span>
+    </button>
+  );
+
   // Live state
-  if (msUntil <= 0 && msSinceKickoff < LIVE_BUFFER_MS) {
+  if (isLive) {
     return (
-      <div className="mx-auto max-w-6xl px-4 my-3">
+      <div className="mx-auto max-w-6xl px-4 my-3 relative">
         <button
           type="button"
           onClick={() => onNavigateToMatch(featured.isKnockout)}
-          className="w-full text-left rounded-xl border px-4 py-3 flex items-center justify-between gap-3 flex-wrap animate-pulse transition-transform active:scale-[0.99] hover:brightness-110 cursor-pointer"
+          className="w-full text-left rounded-xl border px-4 py-3 pr-12 flex items-center justify-between gap-3 flex-wrap animate-pulse transition-transform active:scale-[0.99] hover:brightness-110 cursor-pointer"
           style={{
             background: isBel
               ? 'linear-gradient(90deg, rgba(107,21,32,0.6) 0%, rgba(0,0,0,0.6) 100%)'
@@ -176,6 +227,7 @@ export default function NextMatchCountdown({ predictedMatchNumbers, onNavigateTo
           </div>
           <div className="text-sm text-white/80">Voorspellingen vergrendeld</div>
         </button>
+        {minimizeButton}
       </div>
     );
   }
@@ -191,11 +243,11 @@ export default function NextMatchCountdown({ predictedMatchNumbers, onNavigateTo
       : 'Volgende match';
 
   return (
-    <div className={`mx-auto max-w-6xl px-4 my-3 ${isUrgent ? 'animate-pulse' : ''}`}>
+    <div className={`mx-auto max-w-6xl px-4 my-3 relative ${isUrgent ? 'animate-pulse' : ''}`}>
       <button
         type="button"
         onClick={() => onNavigateToMatch(featured.isKnockout)}
-        className="w-full text-left rounded-xl border px-4 py-3 flex items-center justify-between gap-3 flex-wrap transition-transform active:scale-[0.99] hover:brightness-110 cursor-pointer"
+        className="w-full text-left rounded-xl border px-4 py-3 pr-12 flex items-center justify-between gap-3 flex-wrap transition-transform active:scale-[0.99] hover:brightness-110 cursor-pointer"
         style={{
           background: isBel
             ? 'linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(107,21,32,0.45) 50%, rgba(253,206,5,0.35) 100%)'
@@ -220,6 +272,7 @@ export default function NextMatchCountdown({ predictedMatchNumbers, onNavigateTo
           </div>
         </div>
       </button>
+      {minimizeButton}
     </div>
   );
 }
