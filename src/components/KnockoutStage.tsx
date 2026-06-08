@@ -7,6 +7,8 @@ import FlagIcon from './FlagIcon';
 
 interface Props {
   predictions: PredictionsState;
+  targetMatchNumber?: number | null;
+  targetNonce?: number;
 }
 
 interface KnockoutTeamInfo {
@@ -18,7 +20,7 @@ const rounds = ['R32', 'R16', 'QF', 'SF', 'F'] as const;
 
 const MAX_KNOCKOUT_JOKERS = 2;
 
-export default function KnockoutStage({ predictions }: Props) {
+export default function KnockoutStage({ predictions, targetMatchNumber, targetNonce }: Props) {
   const [activeRound, setActiveRound] = useState<string>('R32');
   const [actualTeams, setActualTeams] = useState<Record<number, KnockoutTeamInfo>>({});
 
@@ -27,6 +29,23 @@ export default function KnockoutStage({ predictions }: Props) {
       .then(r => r.json())
       .then(data => setActualTeams(data.teams || {}));
   }, []);
+
+  // Jump to the requested match's round + scroll. Re-runs on every nonce bump.
+  useEffect(() => {
+    if (targetMatchNumber == null) return;
+    const target = knockoutStructure.find(m => m.matchNumber === targetMatchNumber);
+    if (!target) return;
+    setActiveRound(target.round);
+    const id = setTimeout(() => {
+      const el = document.getElementById(`ko-match-${targetMatchNumber}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 50);
+    return () => clearTimeout(id);
+  }, [targetMatchNumber, targetNonce]);
 
   const knockoutJokersUsed = useMemo(() => {
     return [...predictions.jokers].filter(m => m > TOTAL_GROUP_MATCHES).length;
@@ -91,7 +110,7 @@ export default function KnockoutStage({ predictions }: Props) {
 
           if (!teamsKnown) {
             return (
-              <div key={match.matchNumber} className="card opacity-50">
+              <div key={match.matchNumber} id={`ko-match-${match.matchNumber}`} className="card opacity-50">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-gray-500">#{match.matchNumber}</span>
@@ -109,7 +128,7 @@ export default function KnockoutStage({ predictions }: Props) {
           }
 
           return (
-            <div key={match.matchNumber} className={`card ${locked ? 'opacity-50' : ''} ${isJoker ? 'ring-2 ring-purple-500/60 bg-purple-950/10' : ''}`}>
+            <div key={match.matchNumber} id={`ko-match-${match.matchNumber}`} className={`card ${locked ? 'opacity-50' : ''} ${isJoker ? 'ring-2 ring-purple-500/60 bg-purple-950/10' : ''}`}>
               {/* Header with deadline */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">

@@ -8,6 +8,8 @@ import FlagIcon from './FlagIcon';
 
 interface Props {
   predictions: PredictionsState;
+  targetMatchNumber?: number | null;
+  targetNonce?: number;
 }
 
 interface MatchPrediction {
@@ -19,7 +21,7 @@ interface MatchPrediction {
 
 const groupLabels = Object.keys(groups);
 
-export default function GroupStage({ predictions }: Props) {
+export default function GroupStage({ predictions, targetMatchNumber, targetNonce }: Props) {
   const [activeGroup, setActiveGroup] = useState('A');
   const [allPredictions, setAllPredictions] = useState<Record<number, MatchPrediction[]>>({});
   const [expandedMatch, setExpandedMatch] = useState<number | null>(null);
@@ -30,6 +32,26 @@ export default function GroupStage({ predictions }: Props) {
       .then(r => r.json())
       .then(data => setAllPredictions(data.predictions || {}));
   }, []);
+
+  // Jump to the requested match's group + scroll to it. Re-runs on every nonce
+  // bump, so clicking the same match again still triggers a re-scroll.
+  useEffect(() => {
+    if (targetMatchNumber == null) return;
+    const target = groupMatches.find(m => m.matchNumber === targetMatchNumber);
+    if (!target) return;
+    setActiveGroup(target.group);
+    setExpandedMatch(targetMatchNumber);
+    // Wait a tick for the group switch to render, then scroll to the match row.
+    const id = setTimeout(() => {
+      const el = document.getElementById(`match-${targetMatchNumber}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 50);
+    return () => clearTimeout(id);
+  }, [targetMatchNumber, targetNonce]);
 
   const standings = useMemo(
     () => calculateGroupStandings(predictions.getScoresArray()),
@@ -114,7 +136,7 @@ export default function GroupStage({ predictions }: Props) {
             const canToggleJoker = !locked && (isJoker || (predictions.jokersRemaining > 0 && !groupAlreadyHasJoker));
 
             return (
-              <div key={match.matchNumber}>
+              <div key={match.matchNumber} id={`match-${match.matchNumber}`}>
                 <div className={`match-row rounded-lg p-3 ${locked ? 'opacity-50' : ''} ${isJoker ? 'ring-2 ring-purple-500/60 bg-purple-950/20' : ''}`}>
                   {/* Deadline row */}
                   <div className="flex items-center justify-between mb-2">

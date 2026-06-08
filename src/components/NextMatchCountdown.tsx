@@ -92,7 +92,7 @@ function formatKickoffLabel(d: Date): string {
 
 interface Props {
   predictedMatchNumbers: Set<number>;
-  onNavigateToMatch: (isKnockout: boolean) => void;
+  onNavigateToMatch: (matchNumber: number, isKnockout: boolean) => void;
 }
 
 const MINIMIZED_KEY = 'next-match-banner-minimized';
@@ -208,7 +208,7 @@ export default function NextMatchCountdown({ predictedMatchNumbers, onNavigateTo
       <div className="mx-auto max-w-6xl px-4 my-3 relative">
         <button
           type="button"
-          onClick={() => onNavigateToMatch(featured.isKnockout)}
+          onClick={() => onNavigateToMatch(featured.matchNumber, featured.isKnockout)}
           className="w-full text-left rounded-xl border px-4 py-3 pr-12 flex items-center justify-between gap-3 flex-wrap animate-pulse transition-transform active:scale-[0.99] hover:brightness-110 cursor-pointer"
           style={{
             background: isBel
@@ -246,7 +246,7 @@ export default function NextMatchCountdown({ predictedMatchNumbers, onNavigateTo
     <div className={`mx-auto max-w-6xl px-4 my-3 relative ${isUrgent ? 'animate-pulse' : ''}`}>
       <button
         type="button"
-        onClick={() => onNavigateToMatch(featured.isKnockout)}
+        onClick={() => onNavigateToMatch(featured.matchNumber, featured.isKnockout)}
         className="w-full text-left rounded-xl border px-4 py-3 pr-12 flex items-center justify-between gap-3 flex-wrap transition-transform active:scale-[0.99] hover:brightness-110 cursor-pointer"
         style={{
           background: isBel

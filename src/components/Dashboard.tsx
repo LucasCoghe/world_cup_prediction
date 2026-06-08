@@ -73,6 +73,8 @@ export default function Dashboard({ user, onLogout }: Props) {
   const [activeTab, setActiveTab] = useState('leaderboard');
   const [unreadCount, setUnreadCount] = useState(0);
   const [coinsBalance, setCoinsBalance] = useState<number | null>(null);
+  const [targetMatchNumber, setTargetMatchNumber] = useState<number | null>(null);
+  const [targetNonce, setTargetNonce] = useState(0); // bumps to force re-trigger even when same match clicked
   const predictions = usePredictions();
   const tabs = user.isAdmin
     ? [...baseTabs, { id: 'admin', label: 'Admin' }]
@@ -180,15 +182,19 @@ export default function Dashboard({ user, onLogout }: Props) {
 
       <NextMatchCountdown
         predictedMatchNumbers={new Set(predictions.scores.keys())}
-        onNavigateToMatch={(isKnockout) => setActiveTab(isKnockout ? 'knockout' : 'groups')}
+        onNavigateToMatch={(matchNumber, isKnockout) => {
+          setTargetMatchNumber(matchNumber);
+          setTargetNonce(n => n + 1);
+          setActiveTab(isKnockout ? 'knockout' : 'groups');
+        }}
       />
 
       {/* Content */}
       <main className="max-w-6xl mx-auto px-4 py-6">
         {activeTab === 'leaderboard' && <Leaderboard currentUserId={user.userId} />}
         {activeTab === 'schandpaal' && <Schandpaal />}
-        {activeTab === 'groups' && <GroupStage predictions={predictions} />}
-        {activeTab === 'knockout' && <KnockoutStage predictions={predictions} />}
+        {activeTab === 'groups' && <GroupStage predictions={predictions} targetMatchNumber={targetMatchNumber} targetNonce={targetNonce} />}
+        {activeTab === 'knockout' && <KnockoutStage predictions={predictions} targetMatchNumber={targetMatchNumber} targetNonce={targetNonce} />}
         {activeTab === 'simulator' && <BracketSimulator groupPredictions={predictions.getScoresArray()} />}
         {activeTab === 'extra' && <ExtraQuestions predictions={predictions} />}
         {activeTab === 'chat' && <GroupChat />}
