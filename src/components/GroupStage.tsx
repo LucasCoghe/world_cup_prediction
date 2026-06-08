@@ -271,11 +271,11 @@ export default function GroupStage({ predictions }: Props) {
                       i < 2 ? 'qualify-1' : i === 2 ? 'qualify-3' : ''
                     }`}
                   >
-                    <td className="py-2.5 pl-3 pr-1 text-gray-500 w-10">{i + 1}</td>
-                    <td className="py-2.5 pl-3 text-base font-medium whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1.5">
+                    <td className="py-2.5 pl-3 pr-1 text-gray-500 w-8">{i + 1}</td>
+                    <td className="py-2.5 pl-2 pr-2 text-sm font-medium">
+                      <span className="flex items-center gap-1.5">
                         {t && <FlagIcon teamCode={t.code} size={16} />}
-                        {t?.name}
+                        <span className="leading-tight">{t?.name}</span>
                       </span>
                     </td>
                     <td className="text-center">{team.won}</td>
@@ -315,14 +315,14 @@ export default function GroupStage({ predictions }: Props) {
             return (
               <div
                 key={bt.team.code}
-                className={`flex items-center gap-2 p-2.5 rounded-lg ${
+                className={`flex items-center gap-2 p-2.5 rounded-lg min-w-0 ${
                   i < 8 ? 'bg-yellow-600/10 border border-yellow-600/30' : 'bg-white/5'
                 }`}
               >
-                <span className="text-sm text-gray-500">{i + 1}.</span>
+                <span className="text-sm text-gray-500 shrink-0">{i + 1}.</span>
                 {t && <FlagIcon teamCode={t.code} size={14} />}
-                <span className="text-sm font-medium">{t?.name}</span>
-                <span className="text-sm text-gray-500 ml-auto">{bt.team.points}p</span>
+                <span className="text-sm font-medium truncate min-w-0 flex-1">{t?.name}</span>
+                <span className="text-sm text-gray-500 shrink-0">{bt.team.points}p</span>
               </div>
             );
           })}
