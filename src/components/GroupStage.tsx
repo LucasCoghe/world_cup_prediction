@@ -128,9 +128,9 @@ export default function GroupStage({ predictions }: Props) {
                   </div>
 
                   {/* Match row */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 flex items-center justify-end gap-2">
-                      <span className="text-base font-medium">{homeTeam?.name}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0 flex items-center justify-end gap-2">
+                      <span className="text-sm font-medium text-right leading-tight">{homeTeam?.name}</span>
                       {homeTeam && <FlagIcon teamCode={homeTeam.code} />}
                     </div>
 
@@ -178,9 +178,9 @@ export default function GroupStage({ predictions }: Props) {
                       />
                     </div>
 
-                    <div className="flex-1 flex items-center gap-2">
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
                       {awayTeam && <FlagIcon teamCode={awayTeam.code} />}
-                      <span className="text-base font-medium">{awayTeam?.name}</span>
+                      <span className="text-sm font-medium leading-tight">{awayTeam?.name}</span>
                     </div>
                   </div>
 

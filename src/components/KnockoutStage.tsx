@@ -121,10 +121,10 @@ export default function KnockoutStage({ predictions }: Props) {
                 </span>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 {/* Home team */}
-                <div className="flex-1 flex items-center justify-end gap-2">
-                  <span className="text-base font-medium">{homeTeam.name}</span>
+                <div className="flex-1 min-w-0 flex items-center justify-end gap-2">
+                  <span className="text-sm font-medium text-right leading-tight">{homeTeam.name}</span>
                   <FlagIcon teamCode={homeTeam.code} />
                 </div>
 
@@ -176,17 +176,17 @@ export default function KnockoutStage({ predictions }: Props) {
                 </div>
 
                 {/* Away team */}
-                <div className="flex-1 flex items-center gap-2">
+                <div className="flex-1 min-w-0 flex items-center gap-2">
                   <FlagIcon teamCode={awayTeam.code} />
-                  <span className="text-base font-medium">{awayTeam.name}</span>
+                  <span className="text-sm font-medium leading-tight">{awayTeam.name}</span>
                 </div>
               </div>
 
               {/* Draw resolver */}
               {isDraw && !locked && (
-                <div className="mt-3 flex items-center justify-center gap-3">
-                  <span className="text-sm text-yellow-400">Gelijkspel - wie gaat door?</span>
-                  <div className="flex gap-2">
+                <div className="mt-3 flex flex-col items-center gap-2">
+                  <span className="text-sm text-yellow-400 text-center">Gelijkspel - wie gaat door?</span>
+                  <div className="flex flex-wrap justify-center gap-2 w-full">
                     <button
                       onClick={() => predictions.setScore(
                         match.matchNumber,
@@ -194,7 +194,7 @@ export default function KnockoutStage({ predictions }: Props) {
                         pred!.awayScore,
                         resolved?.homeTeam || undefined
                       )}
-                      className={`text-sm px-4 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
+                      className={`text-xs px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
                         pred?.advancingTeam === resolved?.homeTeam
                           ? 'bg-pitch-light text-white'
                           : 'bg-white/10 text-gray-400 hover:bg-white/20'
@@ -209,7 +209,7 @@ export default function KnockoutStage({ predictions }: Props) {
                         pred!.awayScore,
                         resolved?.awayTeam || undefined
                       )}
-                      className={`text-sm px-4 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
+                      className={`text-xs px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
                         pred?.advancingTeam === resolved?.awayTeam
                           ? 'bg-pitch-light text-white'
                           : 'bg-white/10 text-gray-400 hover:bg-white/20'
