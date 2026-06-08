@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { groupMatches, knockoutStructure, teams, getRoundName } from '@/lib/tournament';
+import FlagIcon from './FlagIcon';
 
 interface UpcomingMatch {
   matchNumber: number;
@@ -10,8 +11,6 @@ interface UpcomingMatch {
   awayCode: string | null;
   homeLabel: string;
   awayLabel: string;
-  homeFlag: string;
-  awayFlag: string;
   involvesBelgium: boolean;
   isKnockout: boolean;
   roundLabel?: string;
@@ -36,8 +35,6 @@ function buildUpcoming(
       awayCode: m.away,
       homeLabel: home?.name ?? m.home,
       awayLabel: away?.name ?? m.away,
-      homeFlag: home?.flag ?? '',
-      awayFlag: away?.flag ?? '',
       involvesBelgium: m.home === 'BEL' || m.away === 'BEL',
       isKnockout: false,
     });
@@ -57,8 +54,6 @@ function buildUpcoming(
       awayCode,
       homeLabel: home?.name ?? homeCode ?? km.homeSource,
       awayLabel: away?.name ?? awayCode ?? km.awaySource,
-      homeFlag: home?.flag ?? '',
-      awayFlag: away?.flag ?? '',
       involvesBelgium: homeCode === 'BEL' || awayCode === 'BEL',
       isKnockout: true,
       roundLabel: getRoundName(km.round),
@@ -97,9 +92,10 @@ function formatKickoffLabel(d: Date): string {
 
 interface Props {
   predictedMatchNumbers: Set<number>;
+  onNavigateToMatch: (isKnockout: boolean) => void;
 }
 
-export default function NextMatchCountdown({ predictedMatchNumbers }: Props) {
+export default function NextMatchCountdown({ predictedMatchNumbers, onNavigateToMatch }: Props) {
   const [now, setNow] = useState<Date>(() => new Date());
   const [koResolved, setKoResolved] = useState<Record<number, { homeTeam: string | null; awayTeam: string | null }>>({});
 
@@ -125,20 +121,33 @@ export default function NextMatchCountdown({ predictedMatchNumbers }: Props) {
   const msUntil = featured.kickoff.getTime() - now.getTime();
   const msSinceKickoff = -msUntil;
   const isBel = featured.involvesBelgium;
-  const matchTitle = `${featured.homeFlag} ${featured.homeLabel} – ${featured.awayLabel} ${featured.awayFlag}`.trim();
+
+  const matchTitle = (
+    <span className="inline-flex items-center gap-2 flex-wrap">
+      {featured.homeCode && <FlagIcon teamCode={featured.homeCode} size={18} />}
+      <span>{featured.homeLabel}</span>
+      <span className="text-white/50">–</span>
+      <span>{featured.awayLabel}</span>
+      {featured.awayCode && <FlagIcon teamCode={featured.awayCode} size={18} />}
+    </span>
+  );
 
   // Knockout matches with unresolved teams aren't predictable yet — hide the badge in that case.
   const isPredictable = !featured.isKnockout || (featured.homeCode !== null && featured.awayCode !== null);
   const hasPredicted = predictedMatchNumbers.has(featured.matchNumber);
   const predictionBadge = isPredictable ? (
     <span
-      className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
+      className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap inline-flex items-center gap-1.5 ${
         hasPredicted
           ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30'
           : 'bg-amber-600/20 text-amber-300 border border-amber-500/40'
       }`}
     >
-      {hasPredicted ? '✓ Voorspeld' : '⚠ Nog niet voorspeld'}
+      <span
+        className={`inline-block w-1.5 h-1.5 rounded-full ${hasPredicted ? 'bg-emerald-400' : 'bg-amber-400'}`}
+        aria-hidden
+      />
+      {hasPredicted ? 'Voorspeld' : 'Nog niet voorspeld'}
     </span>
   ) : null;
 
@@ -146,8 +155,10 @@ export default function NextMatchCountdown({ predictedMatchNumbers }: Props) {
   if (msUntil <= 0 && msSinceKickoff < LIVE_BUFFER_MS) {
     return (
       <div className="mx-auto max-w-6xl px-4 my-3">
-        <div
-          className="rounded-xl border px-4 py-3 flex items-center justify-between gap-3 flex-wrap animate-pulse"
+        <button
+          type="button"
+          onClick={() => onNavigateToMatch(featured.isKnockout)}
+          className="w-full text-left rounded-xl border px-4 py-3 flex items-center justify-between gap-3 flex-wrap animate-pulse transition-transform active:scale-[0.99] hover:brightness-110 cursor-pointer"
           style={{
             background: isBel
               ? 'linear-gradient(90deg, rgba(107,21,32,0.6) 0%, rgba(0,0,0,0.6) 100%)'
@@ -156,14 +167,15 @@ export default function NextMatchCountdown({ predictedMatchNumbers }: Props) {
           }}
         >
           <div className="flex flex-col gap-1">
-            <div className={`text-xs uppercase tracking-wider ${isBel ? 'text-red-300' : 'text-amber-300'}`}>
-              🔴 LIVE{featured.isKnockout && featured.roundLabel ? ` · ${featured.roundLabel}` : ''}
+            <div className={`text-xs uppercase tracking-wider inline-flex items-center gap-1.5 ${isBel ? 'text-red-300' : 'text-amber-300'}`}>
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" aria-hidden />
+              LIVE{featured.isKnockout && featured.roundLabel ? ` · ${featured.roundLabel}` : ''}
             </div>
             <div className="text-lg font-bold text-white">{matchTitle}</div>
             {predictionBadge && <div>{predictionBadge}</div>}
           </div>
           <div className="text-sm text-white/80">Voorspellingen vergrendeld</div>
-        </div>
+        </button>
       </div>
     );
   }
@@ -180,8 +192,10 @@ export default function NextMatchCountdown({ predictedMatchNumbers }: Props) {
 
   return (
     <div className={`mx-auto max-w-6xl px-4 my-3 ${isUrgent ? 'animate-pulse' : ''}`}>
-      <div
-        className="rounded-xl border px-4 py-3 flex items-center justify-between gap-3 flex-wrap"
+      <button
+        type="button"
+        onClick={() => onNavigateToMatch(featured.isKnockout)}
+        className="w-full text-left rounded-xl border px-4 py-3 flex items-center justify-between gap-3 flex-wrap transition-transform active:scale-[0.99] hover:brightness-110 cursor-pointer"
         style={{
           background: isBel
             ? 'linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(107,21,32,0.45) 50%, rgba(253,206,5,0.35) 100%)'
@@ -205,7 +219,7 @@ export default function NextMatchCountdown({ predictedMatchNumbers }: Props) {
             {formatCountdown(msUntil)}
           </div>
         </div>
-      </div>
+      </button>
     </div>
   );
 }

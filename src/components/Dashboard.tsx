@@ -178,7 +178,10 @@ export default function Dashboard({ user, onLogout }: Props) {
         </div>
       </header>
 
-      <NextMatchCountdown predictedMatchNumbers={new Set(predictions.scores.keys())} />
+      <NextMatchCountdown
+        predictedMatchNumbers={new Set(predictions.scores.keys())}
+        onNavigateToMatch={(isKnockout) => setActiveTab(isKnockout ? 'knockout' : 'groups')}
+      />
 
       {/* Content */}
       <main className="max-w-6xl mx-auto px-4 py-6">
