@@ -16,6 +16,7 @@ import BracketSimulator from './BracketSimulator';
 import KeepyUppy from './KeepyUppy';
 import Shop from './Shop';
 import PatchNotesModal from './PatchNotesModal';
+import NextMatchCountdown from './NextMatchCountdown';
 import { usePredictions } from '@/hooks/usePredictions';
 import { groupMatches, knockoutStructure } from '@/lib/tournament';
 
@@ -176,6 +177,8 @@ export default function Dashboard({ user, onLogout }: Props) {
           ))}
         </div>
       </header>
+
+      <NextMatchCountdown predictedMatchNumbers={new Set(predictions.scores.keys())} />
 
       {/* Content */}
       <main className="max-w-6xl mx-auto px-4 py-6">
