@@ -1,5 +1,5 @@
 // Points calculation based on Sporza WK Pronostiek rules + joker system
-import { MatchScore } from './standings';
+import { MatchScore, resolveKnockoutBracket } from './standings';
 import { TOTAL_GROUP_MATCHES, TOTAL_MATCHES } from './tournament';
 
 interface ScoringResult {
@@ -51,20 +51,37 @@ function scoreGroupMatch(pred: MatchScore, actual: MatchScore): { points: number
   return { points: 5, reason: 'Juiste winnaar', correctWinner: true };
 }
 
+// Determine which side advances (1 = home, -1 = away, 0 = unresolved).
+// Uses advancingTeam when set (handles penalty shootouts where score is a draw).
+function getAdvancingSide(score: MatchScore, homeTeam?: string, awayTeam?: string): 1 | -1 | 0 {
+  if (score.advancingTeam && homeTeam && awayTeam) {
+    if (score.advancingTeam === homeTeam) return 1;
+    if (score.advancingTeam === awayTeam) return -1;
+  }
+  if (score.homeScore > score.awayScore) return 1;
+  if (score.awayScore > score.homeScore) return -1;
+  return 0;
+}
+
 // Sporza knockout scoring (cumulative):
 //   +10pt = correct winner (who advances, even after penalties)
 //    +6pt = exact score after 90/120 min
 //    +4pt = correct goal difference (but not exact score)
 //    +1pt = participation
-function scoreKnockoutMatch(pred: MatchScore, actual: MatchScore): { points: number; reason: string; correctWinner: boolean } {
+function scoreKnockoutMatch(
+  pred: MatchScore,
+  actual: MatchScore,
+  actualHomeTeam?: string,
+  actualAwayTeam?: string,
+): { points: number; reason: string; correctWinner: boolean } {
   let points = 0;
   const reasons: string[] = [];
   let correctWinner = false;
 
-  const predOut = getOutcome(pred.homeScore, pred.awayScore);
-  const actualOut = getOutcome(actual.homeScore, actual.awayScore);
+  const predSide = getAdvancingSide(pred, actualHomeTeam, actualAwayTeam);
+  const actualSide = getAdvancingSide(actual, actualHomeTeam, actualAwayTeam);
 
-  if (predOut === actualOut) {
+  if (predSide !== 0 && predSide === actualSide) {
     points += 10;
     reasons.unshift('Juiste winnaar');
     correctWinner = true;
@@ -120,7 +137,7 @@ export function calculatePoints(
         matchPoints += 5;
         reason += ' (Joker +5)';
       } else {
-        matchPoints -= 2;
+        matchPoints -= 5;
         reason += ' (Joker -5)';
       }
     }
@@ -130,12 +147,21 @@ export function calculatePoints(
   }
 
   // === KNOCKOUT PHASE (matches 73+) ===
+  // Resolve actual bracket to know who actually played each knockout match
+  // (needed for penalty-shootout winner detection via advancingTeam).
+  const actualBracket = resolveKnockoutBracket(actualResults);
+  const actualTeamsMap = new Map<number, { homeTeam: string | null; awayTeam: string | null }>();
+  for (const b of actualBracket) {
+    actualTeamsMap.set(b.matchNumber, { homeTeam: b.homeTeam, awayTeam: b.awayTeam });
+  }
+
   for (let i = TOTAL_GROUP_MATCHES + 1; i <= TOTAL_MATCHES; i++) {
     const pred = predMap.get(i);
     const actual = actualMap.get(i);
     if (!pred || !actual) continue;
 
-    const result = scoreKnockoutMatch(pred, actual);
+    const teams = actualTeamsMap.get(i);
+    const result = scoreKnockoutMatch(pred, actual, teams?.homeTeam ?? undefined, teams?.awayTeam ?? undefined);
     let matchPoints = result.points;
     let reason = result.reason;
 
@@ -145,7 +171,7 @@ export function calculatePoints(
         matchPoints += 5;
         reason += ' (Joker +5)';
       } else {
-        matchPoints -= 2;
+        matchPoints -= 5;
         reason += ' (Joker -5)';
       }
     }
@@ -184,9 +210,13 @@ export function calculateMatchPoints(
   pred: MatchScore,
   actual: MatchScore,
   joker?: boolean,
-  isKnockout?: boolean
+  isKnockout?: boolean,
+  actualHomeTeam?: string,
+  actualAwayTeam?: string,
 ): number {
-  const result = isKnockout ? scoreKnockoutMatch(pred, actual) : scoreGroupMatch(pred, actual);
+  const result = isKnockout
+    ? scoreKnockoutMatch(pred, actual, actualHomeTeam, actualAwayTeam)
+    : scoreGroupMatch(pred, actual);
   let points = result.points;
   if (joker) {
     points += result.correctWinner ? 5 : -5;

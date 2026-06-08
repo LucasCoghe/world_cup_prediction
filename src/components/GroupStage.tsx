@@ -48,6 +48,15 @@ export default function GroupStage({ predictions }: Props) {
 
   const currentStanding = standings[activeGroup] || [];
 
+  const currentGroupIndex = groupLabels.indexOf(activeGroup);
+  const prevGroup = currentGroupIndex > 0 ? groupLabels[currentGroupIndex - 1] : null;
+  const nextGroup = currentGroupIndex < groupLabels.length - 1 ? groupLabels[currentGroupIndex + 1] : null;
+
+  const goToGroup = (g: string) => {
+    setActiveGroup(g);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="space-y-6 animate-in">
       <div className="flex items-center justify-between">
@@ -318,6 +327,32 @@ export default function GroupStage({ predictions }: Props) {
             );
           })}
         </div>
+      </div>
+
+      {/* Group navigation */}
+      <div className="flex items-center gap-3">
+        {prevGroup ? (
+          <button
+            onClick={() => goToGroup(prevGroup)}
+            className="flex-1 btn-secondary flex items-center justify-center gap-2"
+          >
+            <span>&#x2190;</span>
+            <span>Groep {prevGroup}</span>
+          </button>
+        ) : (
+          <div className="flex-1" />
+        )}
+        {nextGroup ? (
+          <button
+            onClick={() => goToGroup(nextGroup)}
+            className="flex-1 btn-primary flex items-center justify-center gap-2"
+          >
+            <span>Groep {nextGroup}</span>
+            <span>&#x2192;</span>
+          </button>
+        ) : (
+          <div className="flex-1" />
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { calculateMatchPoints } from '@/lib/scoring';
-import { MatchScore } from '@/lib/standings';
+import { MatchScore, resolveKnockoutBracket } from '@/lib/standings';
 import { groupMatches, knockoutStructure, teams, TOTAL_GROUP_MATCHES } from '@/lib/tournament';
 import { getEquippedCosmeticsForUsers } from '@/lib/coins';
 
@@ -22,7 +22,15 @@ export async function GET() {
       matchNumber: r.matchNumber,
       homeScore: r.homeScore,
       awayScore: r.awayScore,
+      advancingTeam: r.advancingTeam ?? undefined,
     });
+  }
+
+  // Resolve actual knockout bracket for shootout winner detection
+  const actualBracket = resolveKnockoutBracket([...actualMap.values()]);
+  const actualKoTeams = new Map<number, { home?: string; away?: string }>();
+  for (const b of actualBracket) {
+    actualKoTeams.set(b.matchNumber, { home: b.homeTeam ?? undefined, away: b.awayTeam ?? undefined });
   }
 
   // Build match info lookup
@@ -107,7 +115,9 @@ export async function GET() {
         consecutiveZeros++;
       } else {
         const predRecord = user.predictions.find(p => p.matchNumber === matchNum);
-        const pts = calculateMatchPoints(pred, actual, predRecord?.jokerUsed, matchNum > TOTAL_GROUP_MATCHES);
+        const isKo = matchNum > TOTAL_GROUP_MATCHES;
+        const koTeams = isKo ? actualKoTeams.get(matchNum) : undefined;
+        const pts = calculateMatchPoints(pred, actual, predRecord?.jokerUsed, isKo, koTeams?.home, koTeams?.away);
         if (pts <= 0) {
           consecutiveZeros++;
         } else {

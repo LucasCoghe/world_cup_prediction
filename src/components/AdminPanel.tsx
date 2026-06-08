@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { groupMatches, knockoutStructure, teams, getRoundName } from '@/lib/tournament';
+import { groupMatches, knockoutStructure, teams, getRoundName, TOTAL_GROUP_MATCHES } from '@/lib/tournament';
 import FlagIcon from './FlagIcon';
 
 interface UserInfo {
@@ -22,6 +22,11 @@ interface Result {
   live: boolean;
 }
 
+interface KnockoutMatchTeams {
+  homeTeam: string | null;
+  awayTeam: string | null;
+}
+
 export default function AdminPanel() {
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [results, setResults] = useState<Result[]>([]);
@@ -30,10 +35,13 @@ export default function AdminPanel() {
   const [editingMatch, setEditingMatch] = useState<number | null>(null);
   const [editHome, setEditHome] = useState('');
   const [editAway, setEditAway] = useState('');
+  const [editAdvancing, setEditAdvancing] = useState('');
+  const [koTeams, setKoTeams] = useState<Record<number, KnockoutMatchTeams>>({});
 
   useEffect(() => {
     fetch('/api/admin/users').then(r => r.json()).then(d => setUsers(d.users || []));
     fetch('/api/admin/results').then(r => r.json()).then(d => setResults(d.results || []));
+    fetch('/api/knockout-teams').then(r => r.json()).then(d => setKoTeams(d.teams || {}));
   }, []);
 
   async function lockAll() {
@@ -95,16 +103,31 @@ export default function AdminPanel() {
     const away = parseInt(editAway);
     if (isNaN(home) || isNaN(away) || home < 0 || away < 0) return;
 
+    // For knockout draws, advancingTeam is required to record the penalty-shootout winner
+    const isKnockout = matchNumber > TOTAL_GROUP_MATCHES;
+    const isDraw = home === away;
+    if (isKnockout && isDraw && !editAdvancing) {
+      alert('Bij een gelijkspel in de knockout moet je aanduiden welk team doorgaat (na penalty\'s).');
+      return;
+    }
+
     await fetch('/api/admin/results', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ matchNumber, homeScore: home, awayScore: away, live }),
+      body: JSON.stringify({
+        matchNumber,
+        homeScore: home,
+        awayScore: away,
+        advancingTeam: isKnockout && isDraw ? editAdvancing : null,
+        live,
+      }),
     });
     const res = await fetch('/api/admin/results').then(r => r.json());
     setResults(res.results || []);
     setEditingMatch(null);
     setEditHome('');
     setEditAway('');
+    setEditAdvancing('');
   }
 
   function startEditing(matchNumber: number) {
@@ -112,6 +135,7 @@ export default function AdminPanel() {
     setEditingMatch(matchNumber);
     setEditHome(existing ? String(existing.homeScore) : '');
     setEditAway(existing ? String(existing.awayScore) : '');
+    setEditAdvancing(existing?.advancingTeam || '');
   }
 
   const resultMap = new Map(results.map(r => [r.matchNumber, r]));
@@ -323,13 +347,19 @@ export default function AdminPanel() {
                   {knockoutStructure.filter(m => m.round === round).map(match => {
                     const result = resultMap.get(match.matchNumber);
                     const isEditing = editingMatch === match.matchNumber;
+                    const resolved = koTeams[match.matchNumber];
+                    const homeLabel = resolved?.homeTeam ? (teams[resolved.homeTeam]?.name || resolved.homeTeam) : match.homeSource;
+                    const awayLabel = resolved?.awayTeam ? (teams[resolved.awayTeam]?.name || resolved.awayTeam) : match.awaySource;
+                    const isDrawInput = isEditing && editHome !== '' && editHome === editAway;
 
                     return (
-                      <div key={match.matchNumber} className={`flex items-center gap-2 py-2 px-3 rounded-lg ${result ? (result.live ? 'bg-amber-950/20 border border-amber-600/30' : 'bg-green-950/20 border border-green-600/20') : 'bg-white/5'}`}>
+                      <div key={match.matchNumber} className={`rounded-lg ${result ? (result.live ? 'bg-amber-950/20 border border-amber-600/30' : 'bg-green-950/20 border border-green-600/20') : 'bg-white/5'}`}>
+                        <div className="flex items-center gap-2 py-2 px-3">
                         <span className="text-xs text-gray-500 w-8">#{match.matchNumber}</span>
 
                         <div className="flex items-center gap-1.5 flex-1 justify-end">
-                          <span className="text-sm text-gray-400">{match.homeSource}</span>
+                          {resolved?.homeTeam && <FlagIcon teamCode={resolved.homeTeam} size={18} />}
+                          <span className="text-sm text-gray-400">{homeLabel}</span>
                         </div>
 
                         {isEditing ? (
@@ -367,7 +397,8 @@ export default function AdminPanel() {
                         )}
 
                         <div className="flex items-center gap-1.5 flex-1">
-                          <span className="text-sm text-gray-400">{match.awaySource}</span>
+                          {resolved?.awayTeam && <FlagIcon teamCode={resolved.awayTeam} size={18} />}
+                          <span className="text-sm text-gray-400">{awayLabel}</span>
                         </div>
 
                         {isEditing ? (
@@ -391,6 +422,38 @@ export default function AdminPanel() {
                           >
                             {result ? (result.live ? 'Live ✏️' : 'Wijzig') : 'Invullen'}
                           </button>
+                        )}
+                        </div>
+
+                        {isDrawInput && (
+                          <div className="px-3 pb-2 flex flex-wrap items-center gap-2 text-xs border-t border-white/5 pt-2">
+                            <span className="text-amber-400 font-semibold">Penalty&apos;s — wie ging door?</span>
+                            {resolved?.homeTeam && resolved?.awayTeam ? (
+                              <>
+                                <button
+                                  onClick={() => setEditAdvancing(resolved.homeTeam!)}
+                                  className={`px-2 py-1 rounded font-semibold ${editAdvancing === resolved.homeTeam ? 'bg-green-600 text-white' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                                >
+                                  {teams[resolved.homeTeam]?.name || resolved.homeTeam}
+                                </button>
+                                <button
+                                  onClick={() => setEditAdvancing(resolved.awayTeam!)}
+                                  className={`px-2 py-1 rounded font-semibold ${editAdvancing === resolved.awayTeam ? 'bg-green-600 text-white' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                                >
+                                  {teams[resolved.awayTeam]?.name || resolved.awayTeam}
+                                </button>
+                              </>
+                            ) : (
+                              <input
+                                type="text"
+                                value={editAdvancing}
+                                onChange={e => setEditAdvancing(e.target.value.toUpperCase())}
+                                placeholder="Team code (bv. BEL)"
+                                className="score-input px-2 py-1 w-32"
+                                maxLength={3}
+                              />
+                            )}
+                          </div>
                         )}
                       </div>
                     );

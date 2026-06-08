@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { calculatePoints, calculateMatchPoints } from '@/lib/scoring';
-import { MatchScore } from '@/lib/standings';
+import { MatchScore, resolveKnockoutBracket } from '@/lib/standings';
 import { groupMatches, knockoutStructure, TOTAL_GROUP_MATCHES } from '@/lib/tournament';
 import { getEquippedCosmeticsForUsers } from '@/lib/coins';
 
@@ -73,6 +73,13 @@ export async function GET() {
 
   const actualScoreMap = new Map<number, MatchScore>();
   for (const a of actualScores) actualScoreMap.set(a.matchNumber, a);
+
+  // Resolve actual knockout bracket once, for shootout winner detection
+  const actualBracket = resolveKnockoutBracket(actualScores);
+  const actualKoTeams = new Map<number, { home?: string; away?: string }>();
+  for (const b of actualBracket) {
+    actualKoTeams.set(b.matchNumber, { home: b.homeTeam ?? undefined, away: b.awayTeam ?? undefined });
+  }
 
   // Beer counter with reasons
   const beerReasons = new Map<string, string[]>();
@@ -150,11 +157,14 @@ export async function GET() {
       for (const actual of roundResults) {
         const pred = userPredMaps.get(u.id)?.get(actual.matchNumber);
         if (pred) {
+          const teams = actualKoTeams.get(actual.matchNumber);
           roundPoints += calculateMatchPoints(
             { matchNumber: pred.matchNumber, homeScore: pred.homeScore, awayScore: pred.awayScore },
             actual,
             pred.jokerUsed,
             true,
+            teams?.home,
+            teams?.away,
           );
         }
       }
