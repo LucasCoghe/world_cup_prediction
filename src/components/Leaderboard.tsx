@@ -116,7 +116,7 @@ export default function Leaderboard({ currentUserId }: Props) {
                 key={entry.id}
                 className={`card flex items-center gap-4 cursor-pointer ${
                   isCurrentUser ? 'card-gold' : ''
-                } ${i < 3 ? 'border-gold/30' : ''} ${
+                } ${i < 5 ? 'border-gold/30' : ''} ${
                   isLast ? 'border-amber-600/50 bg-amber-950/20' : ''
                 } ${isH2hSelected ? 'border-blue-500/50 bg-blue-950/20' : ''} ${
                   h2hSelect && !isH2hSelected ? 'hover:border-blue-500/30' : 'hover:border-gold/30'
@@ -125,7 +125,7 @@ export default function Leaderboard({ currentUserId }: Props) {
               >
                 {/* Position */}
                 <div className="text-center w-10">
-                  <span className={`text-xl font-bold ${i < 3 ? 'trophy-text' : 'text-gray-500'}`}>
+                  <span className={`text-xl font-bold ${i < 5 ? 'trophy-text' : 'text-gray-500'}`}>
                     {i + 1}
                   </span>
                 </div>
