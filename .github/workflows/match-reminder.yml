@@ -5,6 +5,23 @@ on:
     # Every 15 minutes. Endpoint picks matches with kickoff in [now+45, now+75] min.
     - cron: '*/15 * * * *'
   workflow_dispatch:
+    inputs:
+      test_user_id:
+        description: 'Test: stuur ALLEEN naar deze userId (leeg = iedereen)'
+        required: false
+        default: ''
+      test_match_number:
+        description: 'Test: forceer deze match (leeg = normale 1u-window)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Dry-run: niets versturen, alleen tellen'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 jobs:
   ping:
@@ -14,14 +31,32 @@ jobs:
         env:
           APP_URL: ${{ secrets.APP_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          TEST_USER_ID: ${{ inputs.test_user_id }}
+          TEST_MATCH_NUMBER: ${{ inputs.test_match_number }}
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
           if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
             echo "Missing APP_URL or CRON_SECRET secret"
             exit 1
           fi
+          url="$APP_URL/api/cron/match-reminder"
+          params=""
+          if [ -n "$TEST_USER_ID" ]; then
+            params="${params}testUserId=${TEST_USER_ID}&"
+          fi
+          if [ -n "$TEST_MATCH_NUMBER" ]; then
+            params="${params}testMatchNumber=${TEST_MATCH_NUMBER}&"
+          fi
+          if [ "$DRY_RUN" = "true" ]; then
+            params="${params}dryRun=1&"
+          fi
+          if [ -n "$params" ]; then
+            url="${url}?${params%&}"
+          fi
+          echo "Calling: $url"
           response=$(curl -s -w "\n%{http_code}" \
             -H "Authorization: Bearer $CRON_SECRET" \
-            "$APP_URL/api/cron/match-reminder")
+            "$url")
           body=$(echo "$response" | head -n -1)
           status=$(echo "$response" | tail -n 1)
           echo "Status: $status"
