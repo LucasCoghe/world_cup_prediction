@@ -127,7 +127,7 @@ export default function GroupStage({ predictions, targetMatchNumber, targetNonce
             const pred = predictions.scores.get(match.matchNumber);
             const homeTeam = teams[match.home];
             const awayTeam = teams[match.away];
-            const locked = predictions.lockedMatches.has(match.matchNumber);
+            const locked = predictions.lockedMatches.has(match.matchNumber) || predictions.userLocked;
             const deadline = formatDeadline(match.date, match.time);
             const matchPreds = allPredictions[match.matchNumber];
             const isExpanded = expandedMatch === match.matchNumber;

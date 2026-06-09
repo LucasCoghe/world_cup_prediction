@@ -12,15 +12,13 @@ export async function GET() {
     return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
   }
 
-  const predictions = await prisma.matchPrediction.findMany({
-    where: { userId: user.userId },
-  });
+  const [predictions, extra, dbUser] = await Promise.all([
+    prisma.matchPrediction.findMany({ where: { userId: user.userId } }),
+    prisma.extraPrediction.findUnique({ where: { userId: user.userId } }),
+    prisma.user.findUnique({ where: { id: user.userId }, select: { locked: true } }),
+  ]);
 
-  const extra = await prisma.extraPrediction.findUnique({
-    where: { userId: user.userId },
-  });
-
-  return NextResponse.json({ predictions, extra });
+  return NextResponse.json({ predictions, extra, userLocked: dbUser?.locked ?? false });
 }
 
 export async function POST(req: Request) {

@@ -191,6 +191,14 @@ export default function Dashboard({ user, onLogout }: Props) {
 
       {/* Content */}
       <main className="max-w-6xl mx-auto px-4 py-6">
+        {predictions.userLocked && (activeTab === 'groups' || activeTab === 'knockout' || activeTab === 'extra') && (
+          <div className="card bg-red-950/30 border-red-600/40 mb-4">
+            <div className="flex items-center gap-2 text-sm text-red-400">
+              <span>🔒</span>
+              <span>Je account is vergrendeld door een admin. Je kan je voorspellingen niet meer aanpassen.</span>
+            </div>
+          </div>
+        )}
         {activeTab === 'leaderboard' && <Leaderboard currentUserId={user.userId} />}
         {activeTab === 'schandpaal' && <Schandpaal />}
         {activeTab === 'groups' && <GroupStage predictions={predictions} targetMatchNumber={targetMatchNumber} targetNonce={targetNonce} />}

@@ -23,6 +23,7 @@ export interface PredictionsState {
   loaded: boolean;
   saving: boolean;
   lockedMatches: Set<number>;
+  userLocked: boolean;
   setScore: (matchNumber: number, homeScore: number, awayScore: number, advancingTeam?: string) => void;
   toggleJoker: (matchNumber: number) => void;
   setExtra: (extra: Partial<ExtraPrediction>) => void;
@@ -45,6 +46,7 @@ export function usePredictions(): PredictionsState {
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lockedMatches, setLockedMatches] = useState<Set<number>>(new Set());
+  const [userLocked, setUserLocked] = useState(false);
   const saveTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Fetch locked matches
@@ -80,6 +82,9 @@ export function usePredictions(): PredictionsState {
           setScores(map);
           setJokers(jokerSet);
         }
+        if (typeof data.userLocked === 'boolean') {
+          setUserLocked(data.userLocked);
+        }
         if (data.extra) {
           setExtraState({
             topScorer: data.extra.topScorer || '',
@@ -94,21 +99,25 @@ export function usePredictions(): PredictionsState {
   }, []);
 
   const save = useCallback(async () => {
+    if (userLocked) return;
     setSaving(true);
     try {
       const predictions = Array.from(scores.values()).map(p => ({
         ...p,
         jokerUsed: jokers.has(p.matchNumber),
       }));
-      await fetch('/api/predictions', {
+      const res = await fetch('/api/predictions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ predictions, extra }),
       });
+      if (res.status === 403) {
+        setUserLocked(true);
+      }
     } finally {
       setSaving(false);
     }
-  }, [scores, jokers, extra]);
+  }, [scores, jokers, extra, userLocked]);
 
   // Always call the latest save() — avoids stale closure in setTimeout below
   const saveRef = useRef(save);
@@ -181,5 +190,5 @@ export function usePredictions(): PredictionsState {
     return [...groupCount.entries()].filter(([, c]) => c > 1).map(([g]) => g);
   }, [jokers, matchGroupMap]);
 
-  return { scores, jokers, jokersRemaining, extra, loaded, saving, lockedMatches, setScore, toggleJoker, setExtra, save, getScoresArray, groupHasJoker, duplicateJokerGroups };
+  return { scores, jokers, jokersRemaining, extra, loaded, saving, lockedMatches, userLocked, setScore, toggleJoker, setExtra, save, getScoresArray, groupHasJoker, duplicateJokerGroups };
 }

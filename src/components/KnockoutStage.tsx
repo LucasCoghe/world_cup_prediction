@@ -103,7 +103,7 @@ export default function KnockoutStage({ predictions, targetMatchNumber, targetNo
           const teamsKnown = homeTeam && awayTeam;
           const pred = predictions.scores.get(match.matchNumber);
           const isDraw = pred && pred.homeScore === pred.awayScore;
-          const locked = predictions.lockedMatches.has(match.matchNumber);
+          const locked = predictions.lockedMatches.has(match.matchNumber) || predictions.userLocked;
           const deadline = formatDeadline(match.date, match.time);
           const isJoker = predictions.jokers.has(match.matchNumber);
           const canToggleJoker = !locked && teamsKnown && (isJoker || knockoutJokersRemaining > 0);

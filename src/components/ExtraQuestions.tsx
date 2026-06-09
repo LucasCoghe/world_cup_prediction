@@ -10,8 +10,8 @@ interface Props {
 const allTeamsList = Object.values(teams).sort((a, b) => a.name.localeCompare(b.name));
 
 export default function ExtraQuestions({ predictions }: Props) {
-  const { extra, setExtra, save, saving, lockedMatches } = predictions;
-  const extraLocked = lockedMatches.has(1); // locked when match 1 has started
+  const { extra, setExtra, save, saving, lockedMatches, userLocked } = predictions;
+  const extraLocked = lockedMatches.has(1) || userLocked; // locked when match 1 has started or admin-lock
 
   const kickoff = getMatchKickoff(1);
   const deadlineStr = kickoff
