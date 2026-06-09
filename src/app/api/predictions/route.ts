@@ -1,37 +1,34 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getUser } from '@/lib/auth';
+import { getDBUser } from '@/lib/auth';
 import { isMatchLocked, TOTAL_GROUP_MATCHES, groupMatches } from '@/lib/tournament';
 
 const MAX_GROUP_JOKERS = 3;
 const MAX_KNOCKOUT_JOKERS = 2;
 
 export async function GET() {
-  const user = await getUser();
-  if (!user) {
+  const dbUser = await getDBUser();
+  if (!dbUser) {
     return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
   }
 
-  const [predictions, extra, dbUser] = await Promise.all([
-    prisma.matchPrediction.findMany({ where: { userId: user.userId } }),
-    prisma.extraPrediction.findUnique({ where: { userId: user.userId } }),
-    prisma.user.findUnique({ where: { id: user.userId }, select: { locked: true } }),
+  const [predictions, extra] = await Promise.all([
+    prisma.matchPrediction.findMany({ where: { userId: dbUser.id } }),
+    prisma.extraPrediction.findUnique({ where: { userId: dbUser.id } }),
   ]);
 
-  return NextResponse.json({ predictions, extra, userLocked: dbUser?.locked ?? false });
+  return NextResponse.json({ predictions, extra, userLocked: dbUser.locked });
 }
 
 export async function POST(req: Request) {
-  const user = await getUser();
-  if (!user) {
+  const dbUser = await getDBUser();
+  if (!dbUser) {
     return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
   }
-
-  // Check if user is locked
-  const dbUser = await prisma.user.findUnique({ where: { id: user.userId } });
-  if (dbUser?.locked) {
+  if (dbUser.locked) {
     return NextResponse.json({ error: 'Je voorspellingen zijn vergrendeld' }, { status: 403 });
   }
+  const user = { userId: dbUser.id, name: dbUser.name, isAdmin: dbUser.isAdmin };
 
   const { predictions, extra } = await req.json();
   const skipped: number[] = [];
