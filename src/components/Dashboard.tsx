@@ -181,7 +181,7 @@ export default function Dashboard({ user, onLogout }: Props) {
       </header>
 
       <NextMatchCountdown
-        predictedMatchNumbers={new Set(predictions.scores.keys())}
+        predictions={predictions}
         onNavigateToMatch={(matchNumber, isKnockout) => {
           setTargetMatchNumber(matchNumber);
           setTargetNonce(n => n + 1);

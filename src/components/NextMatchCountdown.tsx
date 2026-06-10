@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { groupMatches, knockoutStructure, teams, getRoundName } from '@/lib/tournament';
+import type { PredictionsState } from '@/hooks/usePredictions';
 import FlagIcon from './FlagIcon';
 
 interface UpcomingMatch {
@@ -90,23 +91,50 @@ function formatKickoffLabel(d: Date): string {
   }).format(d);
 }
 
+function formatDayHeader(d: Date): string {
+  return new Intl.DateTimeFormat('nl-BE', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'Europe/Brussels',
+  }).format(d);
+}
+
+function formatTime(d: Date): string {
+  return new Intl.DateTimeFormat('nl-BE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Brussels',
+  }).format(d);
+}
+
 interface Props {
-  predictedMatchNumbers: Set<number>;
+  predictions: PredictionsState;
   onNavigateToMatch: (matchNumber: number, isKnockout: boolean) => void;
 }
 
 const MINIMIZED_KEY = 'next-match-banner-minimized';
+const EXPANDED_KEY = 'next-match-banner-expanded';
+const PANEL_SIZE = 5;
 
-export default function NextMatchCountdown({ predictedMatchNumbers, onNavigateToMatch }: Props) {
+export default function NextMatchCountdown({ predictions, onNavigateToMatch }: Props) {
+  const predictedMatchNumbers = useMemo(
+    () => new Set(predictions.scores.keys()),
+    [predictions.scores]
+  );
+
   const [now, setNow] = useState<Date>(() => new Date());
   const [koResolved, setKoResolved] = useState<Record<number, { homeTeam: string | null; awayTeam: string | null }>>({});
   const [minimized, setMinimized] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
-  // Load minimized preference from localStorage on mount
+  // Load minimized/expanded preference from localStorage on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(MINIMIZED_KEY);
-      if (stored === '1') setMinimized(true);
+      const storedMin = localStorage.getItem(MINIMIZED_KEY);
+      if (storedMin === '1') setMinimized(true);
+      const storedExp = localStorage.getItem(EXPANDED_KEY);
+      if (storedExp === '1') setExpanded(true);
     } catch {}
   }, []);
 
@@ -114,6 +142,13 @@ export default function NextMatchCountdown({ predictedMatchNumbers, onNavigateTo
     setMinimized(next);
     try {
       localStorage.setItem(MINIMIZED_KEY, next ? '1' : '0');
+    } catch {}
+  };
+
+  const toggleExpanded = (next: boolean) => {
+    setExpanded(next);
+    try {
+      localStorage.setItem(EXPANDED_KEY, next ? '1' : '0');
     } catch {}
   };
 
@@ -242,37 +277,239 @@ export default function NextMatchCountdown({ predictedMatchNumbers, onNavigateTo
       ? (isSoon ? 'België speelt vandaag' : 'Volgende match — Belgie!')
       : 'Volgende match';
 
+  const panelMatches = upcoming.slice(1, 1 + PANEL_SIZE);
+  const canExpand = panelMatches.length > 0;
+
   return (
-    <div className={`mx-auto max-w-6xl px-4 my-3 relative ${isUrgent ? 'animate-pulse' : ''}`}>
+    <>
+      <div className={`mx-auto max-w-6xl px-4 my-3 relative ${isUrgent ? 'animate-pulse' : ''}`}>
+        <button
+          type="button"
+          onClick={() => onNavigateToMatch(featured.matchNumber, featured.isKnockout)}
+          className="w-full text-left rounded-xl border px-4 py-3 pr-12 flex items-center justify-between gap-3 flex-wrap transition-transform active:scale-[0.99] hover:brightness-110 cursor-pointer"
+          style={{
+            background: isBel
+              ? 'linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(107,21,32,0.45) 50%, rgba(253,206,5,0.35) 100%)'
+              : 'linear-gradient(90deg, rgba(6,13,31,0.85) 0%, rgba(0,40,104,0.5) 100%)',
+            borderColor: isUrgent ? '#fdce05' : 'rgba(255,255,255,0.12)',
+          }}
+        >
+          <div className="flex flex-col gap-1">
+            <div className="text-xs uppercase tracking-wider text-white/70">
+              {headerText}{featured.isKnockout && featured.roundLabel ? ` · ${featured.roundLabel}` : ''}
+            </div>
+            <div className="text-lg font-bold text-white">{matchTitle}</div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-white/80">{formatKickoffLabel(featured.kickoff)}</span>
+              {predictionBadge}
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-[11px] text-white/70 uppercase">Aftrap over</div>
+            <div className={`font-mono font-bold text-xl ${isUrgent ? 'text-yellow-300' : 'text-white'}`}>
+              {formatCountdown(msUntil)}
+            </div>
+          </div>
+        </button>
+        {minimizeButton}
+      </div>
+
+      {canExpand && (
+        <div className="mx-auto max-w-6xl px-4 -mt-1 mb-2 flex justify-center">
+          <button
+            type="button"
+            onClick={() => toggleExpanded(!expanded)}
+            className="text-xs text-white/60 hover:text-white px-3 py-1.5 rounded-md hover:bg-white/5 transition-colors inline-flex items-center gap-1.5"
+            aria-expanded={expanded}
+          >
+            {expanded ? 'Verberg' : 'Toon'} volgende {panelMatches.length} matches
+            <span aria-hidden>{expanded ? '▴' : '▾'}</span>
+          </button>
+        </div>
+      )}
+
+      {canExpand && expanded && (
+        <UpcomingPanel
+          matches={panelMatches}
+          predictions={predictions}
+          predictedMatchNumbers={predictedMatchNumbers}
+          onNavigateToMatch={onNavigateToMatch}
+        />
+      )}
+    </>
+  );
+}
+
+function UpcomingPanel({
+  matches,
+  predictions,
+  predictedMatchNumbers,
+  onNavigateToMatch,
+}: {
+  matches: UpcomingMatch[];
+  predictions: PredictionsState;
+  predictedMatchNumbers: Set<number>;
+  onNavigateToMatch: (matchNumber: number, isKnockout: boolean) => void;
+}) {
+  const byDate = useMemo(() => {
+    const result: Array<{ key: string; label: string; matches: UpcomingMatch[] }> = [];
+    for (const m of matches) {
+      const key = `${m.kickoff.getFullYear()}-${m.kickoff.getMonth()}-${m.kickoff.getDate()}`;
+      const last = result[result.length - 1];
+      if (last && last.key === key) {
+        last.matches.push(m);
+      } else {
+        result.push({ key, label: formatDayHeader(m.kickoff), matches: [m] });
+      }
+    }
+    return result;
+  }, [matches]);
+
+  return (
+    <div className="mx-auto max-w-6xl px-4 mb-4">
+      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 sm:p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-xs uppercase tracking-wider text-white/60">
+            Snel voorspellen
+          </div>
+          {predictions.saving && (
+            <span className="text-xs text-gold/80">Opslaan...</span>
+          )}
+        </div>
+        <div className="space-y-4">
+          {byDate.map(group => (
+            <div key={group.key}>
+              <div className="text-[11px] font-semibold text-gold/70 uppercase mb-2 capitalize tracking-wider">
+                {group.label}
+              </div>
+              <div className="space-y-2">
+                {group.matches.map(m => (
+                  <PanelMatchRow
+                    key={m.matchNumber}
+                    match={m}
+                    predictions={predictions}
+                    isPredicted={predictedMatchNumbers.has(m.matchNumber)}
+                    onNavigateToMatch={onNavigateToMatch}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PanelMatchRow({
+  match,
+  predictions,
+  isPredicted,
+  onNavigateToMatch,
+}: {
+  match: UpcomingMatch;
+  predictions: PredictionsState;
+  isPredicted: boolean;
+  onNavigateToMatch: (matchNumber: number, isKnockout: boolean) => void;
+}) {
+  const pred = predictions.scores.get(match.matchNumber);
+  const locked = predictions.lockedMatches.has(match.matchNumber) || predictions.userLocked;
+  const isJoker = predictions.jokers.has(match.matchNumber);
+  const time = formatTime(match.kickoff);
+  const teamsResolved = match.homeCode != null && match.awayCode != null;
+
+  // Knockout match with unresolved teams: navigate-only
+  if (match.isKnockout && !teamsResolved) {
+    return (
       <button
         type="button"
-        onClick={() => onNavigateToMatch(featured.matchNumber, featured.isKnockout)}
-        className="w-full text-left rounded-xl border px-4 py-3 pr-12 flex items-center justify-between gap-3 flex-wrap transition-transform active:scale-[0.99] hover:brightness-110 cursor-pointer"
-        style={{
-          background: isBel
-            ? 'linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(107,21,32,0.45) 50%, rgba(253,206,5,0.35) 100%)'
-            : 'linear-gradient(90deg, rgba(6,13,31,0.85) 0%, rgba(0,40,104,0.5) 100%)',
-          borderColor: isUrgent ? '#fdce05' : 'rgba(255,255,255,0.12)',
-        }}
+        onClick={() => onNavigateToMatch(match.matchNumber, true)}
+        className="w-full flex items-center gap-3 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 p-2.5 text-left transition-colors"
       >
-        <div className="flex flex-col gap-1">
-          <div className="text-xs uppercase tracking-wider text-white/70">
-            {headerText}{featured.isKnockout && featured.roundLabel ? ` · ${featured.roundLabel}` : ''}
-          </div>
-          <div className="text-lg font-bold text-white">{matchTitle}</div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-white/80">{formatKickoffLabel(featured.kickoff)}</span>
-            {predictionBadge}
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="text-[11px] text-white/70 uppercase">Aftrap over</div>
-          <div className={`font-mono font-bold text-xl ${isUrgent ? 'text-yellow-300' : 'text-white'}`}>
-            {formatCountdown(msUntil)}
-          </div>
-        </div>
+        <span className="text-xs text-white/50 w-12 tabular-nums shrink-0">{time}</span>
+        <span className="text-sm flex-1 text-white/70 truncate">
+          {match.homeLabel} – {match.awayLabel}
+        </span>
+        <span className="text-xs text-blue-300 shrink-0">Voorspel &rarr;</span>
       </button>
-      {minimizeButton}
+    );
+  }
+
+  return (
+    <div
+      className={`flex items-center gap-2 rounded-lg p-2.5 border transition-colors ${
+        locked
+          ? 'opacity-50 bg-white/[0.02] border-white/5'
+          : isJoker
+            ? 'ring-1 ring-purple-500/60 bg-purple-950/20 border-purple-500/30'
+            : isPredicted
+              ? 'bg-white/[0.04] border-emerald-500/10'
+              : 'bg-white/[0.03] border-white/5'
+      }`}
+    >
+      <span className="text-xs text-white/50 w-12 tabular-nums shrink-0">{time}</span>
+
+      <div className="flex-1 min-w-0 flex items-center justify-end gap-1.5">
+        <span className="text-sm font-medium truncate">{match.homeLabel}</span>
+        {match.homeCode && <FlagIcon teamCode={match.homeCode} size={18} />}
+      </div>
+
+      <div className="flex items-center gap-1 shrink-0">
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          className="score-input"
+          value={pred ? String(pred.homeScore) : ''}
+          disabled={locked}
+          onChange={e => {
+            const raw = e.target.value.replace(/\D/g, '');
+            const val = raw === '' ? 0 : parseInt(raw);
+            if (val > 20) return;
+            predictions.setScore(match.matchNumber, val, pred?.awayScore ?? 0);
+          }}
+          onFocus={e => e.target.select()}
+          placeholder="-"
+        />
+        <span className="text-gray-500 font-bold text-sm">-</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          className="score-input"
+          value={pred ? String(pred.awayScore) : ''}
+          disabled={locked}
+          onChange={e => {
+            const raw = e.target.value.replace(/\D/g, '');
+            const val = raw === '' ? 0 : parseInt(raw);
+            if (val > 20) return;
+            predictions.setScore(match.matchNumber, pred?.homeScore ?? 0, val);
+          }}
+          onFocus={e => e.target.select()}
+          placeholder="-"
+        />
+      </div>
+
+      <div className="flex-1 min-w-0 flex items-center gap-1.5">
+        {match.awayCode && <FlagIcon teamCode={match.awayCode} size={18} />}
+        <span className="text-sm font-medium truncate">{match.awayLabel}</span>
+      </div>
+
+      {!locked && (
+        <button
+          type="button"
+          onClick={() => predictions.toggleJoker(match.matchNumber)}
+          className={`text-base px-2 py-1 rounded shrink-0 transition-all ${
+            isJoker
+              ? 'bg-purple-600 text-white hover:bg-purple-700'
+              : 'bg-white/5 text-gray-500 hover:bg-purple-500/20 hover:text-purple-300'
+          }`}
+          title={isJoker ? 'Joker verwijderen' : 'Joker inzetten'}
+          aria-label={isJoker ? 'Joker verwijderen' : 'Joker inzetten'}
+        >
+          &#x1F0CF;
+        </button>
+      )}
     </div>
   );
 }
