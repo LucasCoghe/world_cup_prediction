@@ -444,7 +444,7 @@ function PanelMatchRow({
       <span className="text-xs text-white/50 w-12 tabular-nums shrink-0">{time}</span>
 
       <div className="flex-1 min-w-0 flex items-center justify-end gap-1.5">
-        <span className="text-sm font-medium leading-tight break-words text-right">{match.homeLabel}</span>
+        <span className="hidden sm:inline-block text-sm font-medium truncate min-w-0">{match.homeLabel}</span>
         {match.homeCode && <FlagIcon teamCode={match.homeCode} size={18} />}
       </div>
 
@@ -486,7 +486,7 @@ function PanelMatchRow({
 
       <div className="flex-1 min-w-0 flex items-center gap-1.5">
         {match.awayCode && <FlagIcon teamCode={match.awayCode} size={18} />}
-        <span className="text-sm font-medium leading-tight break-words">{match.awayLabel}</span>
+        <span className="hidden sm:inline-block text-sm font-medium truncate min-w-0">{match.awayLabel}</span>
       </div>
 
       {!locked && (
