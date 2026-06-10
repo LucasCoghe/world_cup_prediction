@@ -277,7 +277,7 @@ export default function NextMatchCountdown({ predictions, onNavigateToMatch }: P
       ? (isSoon ? 'België speelt vandaag' : 'Volgende match — Belgie!')
       : 'Volgende match';
 
-  const panelMatches = upcoming.slice(1, 1 + PANEL_SIZE);
+  const panelMatches = upcoming.slice(0, PANEL_SIZE);
   const canExpand = panelMatches.length > 0;
 
   return (
