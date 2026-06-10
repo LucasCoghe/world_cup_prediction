@@ -1,9 +1,6 @@
 name: Match Reminder
 
 on:
-  schedule:
-    # Every 15 minutes. Endpoint picks matches with kickoff in [now+45, now+75] min.
-    - cron: '*/15 * * * *'
   workflow_dispatch:
     inputs:
       test_user_id:

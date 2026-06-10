@@ -9,7 +9,7 @@ webpush.setVapidDetails(
   process.env.VAPID_PRIVATE_KEY!
 );
 
-// Cron runs every 15 min via GitHub Actions. For each match starting in
+// Cron runs every 15 min via cron-job.org. For each match starting in
 // ~1 hour (kickoff between now+45 and now+75 min) we send one push to every
 // non-admin user with at least one push subscription, regardless of whether
 // they already predicted — they may still want to adjust before lock.
