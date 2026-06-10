@@ -285,7 +285,7 @@ export default function NextMatchCountdown({ predictions, onNavigateToMatch }: P
       <div className={`mx-auto max-w-6xl px-4 my-3 relative ${isUrgent ? 'animate-pulse' : ''}`}>
         <button
           type="button"
-          onClick={() => onNavigateToMatch(featured.matchNumber, featured.isKnockout)}
+          onClick={() => canExpand ? toggleExpanded(!expanded) : onNavigateToMatch(featured.matchNumber, featured.isKnockout)}
           className="w-full text-left rounded-xl border px-4 py-3 pr-12 flex items-center justify-between gap-3 flex-wrap transition-transform active:scale-[0.99] hover:brightness-110 cursor-pointer"
           style={{
             background: isBel
@@ -293,10 +293,18 @@ export default function NextMatchCountdown({ predictions, onNavigateToMatch }: P
               : 'linear-gradient(90deg, rgba(6,13,31,0.85) 0%, rgba(0,40,104,0.5) 100%)',
             borderColor: isUrgent ? '#fdce05' : 'rgba(255,255,255,0.12)',
           }}
+          aria-expanded={canExpand ? expanded : undefined}
         >
           <div className="flex flex-col gap-1">
-            <div className="text-xs uppercase tracking-wider text-white/70">
-              {headerText}{featured.isKnockout && featured.roundLabel ? ` · ${featured.roundLabel}` : ''}
+            <div className="text-xs uppercase tracking-wider text-white/70 inline-flex items-center gap-2">
+              <span>
+                {headerText}{featured.isKnockout && featured.roundLabel ? ` · ${featured.roundLabel}` : ''}
+              </span>
+              {canExpand && (
+                <span className="text-white/50" aria-hidden>
+                  {expanded ? '▴' : '▾'}
+                </span>
+              )}
             </div>
             <div className="text-lg font-bold text-white">{matchTitle}</div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -313,20 +321,6 @@ export default function NextMatchCountdown({ predictions, onNavigateToMatch }: P
         </button>
         {minimizeButton}
       </div>
-
-      {canExpand && (
-        <div className="mx-auto max-w-6xl px-4 -mt-1 mb-2 flex justify-center">
-          <button
-            type="button"
-            onClick={() => toggleExpanded(!expanded)}
-            className="text-xs text-white/60 hover:text-white px-3 py-1.5 rounded-md hover:bg-white/5 transition-colors inline-flex items-center gap-1.5"
-            aria-expanded={expanded}
-          >
-            {expanded ? 'Verberg' : 'Toon'} volgende {panelMatches.length} matches
-            <span aria-hidden>{expanded ? '▴' : '▾'}</span>
-          </button>
-        </div>
-      )}
 
       {canExpand && expanded && (
         <UpcomingPanel
