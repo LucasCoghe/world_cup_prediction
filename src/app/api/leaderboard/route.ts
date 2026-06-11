@@ -183,8 +183,12 @@ export async function GET() {
     }
   }
 
-  // === BESCHAMENDE REEKS: 3x op rij 0 punten = extra bier (alleen groepsfase, alleen finals) ===
+  // === BESCHAMENDE REEKS / HATTRICK (alleen groepsfase, alleen finals) ===
+  //   3x op rij 0 punten = drink een pint
+  //   3x op rij juiste winnaar/gelijkspel = deel een pint uit (hattrick)
   const playedGroupMatches = [...finalResultMatchNumbers].filter(n => n <= TOTAL_GROUP_MATCHES).sort((a, b) => a - b);
+  const matchDateMap = new Map<number, string>();
+  for (const m of groupMatches) matchDateMap.set(m.matchNumber, m.date);
   const hotStreaks = new Map<string, number>();
   for (const u of users) {
     const predMap = userPredMaps.get(u.id)!;
@@ -204,6 +208,13 @@ export async function GET() {
       }
       if (consecutiveZeros > 0 && consecutiveZeros % 3 === 0) {
         beerReasons.get(u.id)!.push(`${consecutiveZeros}x op rij 0 punten`);
+      }
+      if (streak > 0 && streak % 3 === 0) {
+        const date = matchDateMap.get(matchNum);
+        const dateStr = date
+          ? new Date(date + 'T12:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })
+          : `match ${matchNum}`;
+        beerGiveReasons.get(u.id)!.push(`Hattrick op ${dateStr} (${streak} op rij)`);
       }
     }
     hotStreaks.set(u.id, streak);
