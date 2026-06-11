@@ -185,7 +185,7 @@ export async function GET() {
 
   // === BESCHAMENDE REEKS / HATTRICK (alleen groepsfase, alleen finals) ===
   //   3x op rij 0 punten = drink een pint
-  //   3x op rij juiste winnaar/gelijkspel = deel een pint uit (hattrick)
+  //   Elke 3 exacte scores (10pt) cumulatief = deel een pint uit (hattrick)
   const playedGroupMatches = [...finalResultMatchNumbers].filter(n => n <= TOTAL_GROUP_MATCHES).sort((a, b) => a - b);
   const matchDateMap = new Map<number, string>();
   for (const m of groupMatches) matchDateMap.set(m.matchNumber, m.date);
@@ -194,6 +194,7 @@ export async function GET() {
     const predMap = userPredMaps.get(u.id)!;
     let consecutiveZeros = 0;
     let streak = 0;
+    let exactCount = 0;
     for (const matchNum of playedGroupMatches) {
       const pred = predMap.get(matchNum);
       const actual = actualScoreMap.get(matchNum);
@@ -205,16 +206,21 @@ export async function GET() {
         const actualOutcome = Math.sign(actual.homeScore - actual.awayScore);
         streak = predOutcome === actualOutcome ? streak + 1 : 0;
         consecutiveZeros = calculateMatchPoints(pred, actual, pred.jokerUsed) <= 0 ? consecutiveZeros + 1 : 0;
+
+        const exactScore = pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore;
+        if (exactScore) {
+          exactCount++;
+          if (exactCount % 3 === 0) {
+            const date = matchDateMap.get(matchNum);
+            const dateStr = date
+              ? new Date(date + 'T12:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })
+              : `match ${matchNum}`;
+            beerGiveReasons.get(u.id)!.push(`Hattrick: ${exactCount} exacte scores (laatst ${dateStr})`);
+          }
+        }
       }
       if (consecutiveZeros > 0 && consecutiveZeros % 3 === 0) {
         beerReasons.get(u.id)!.push(`${consecutiveZeros}x op rij 0 punten`);
-      }
-      if (streak > 0 && streak % 3 === 0) {
-        const date = matchDateMap.get(matchNum);
-        const dateStr = date
-          ? new Date(date + 'T12:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })
-          : `match ${matchNum}`;
-        beerGiveReasons.get(u.id)!.push(`Hattrick op ${dateStr} (${streak} op rij)`);
       }
     }
     hotStreaks.set(u.id, streak);

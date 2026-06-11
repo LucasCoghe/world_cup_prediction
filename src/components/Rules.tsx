@@ -178,7 +178,7 @@ export default function Rules() {
             <span className="font-bold text-emerald-400">1 pint uitdelen</span>
           </div>
           <div className="flex justify-between py-1.5 border-b border-white/5">
-            <span className="text-gray-300">Hattrick: 3 op rij juiste winnaar/gelijkspel</span>
+            <span className="text-gray-300">Hattrick: elke 3 exacte scores (10pt elk)</span>
             <span className="font-bold text-emerald-400">1 pint uitdelen</span>
           </div>
         </div>
