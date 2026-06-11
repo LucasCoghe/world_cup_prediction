@@ -241,9 +241,9 @@ export default function GroupStage({ predictions, targetMatchNumber, targetNonce
                 {/* Expanded predictions + comments */}
                 {isExpanded && matchPreds && (
                   <div className="mx-1 mb-1 bg-white/5 rounded-b-lg border border-white/10 border-t-0 px-3 py-2">
-                    <div className="grid gap-1">
+                    <div className="divide-y divide-white/10">
                       {matchPreds.map((mp, i) => (
-                        <div key={i} className="flex items-center justify-between text-sm py-1">
+                        <div key={i} className="flex items-center justify-between text-sm py-1.5">
                           <span className="text-gray-400">
                             {mp.userName}
                             {mp.jokerUsed && <span className="ml-1 text-purple-400 font-bold text-xs">JOKER</span>}
