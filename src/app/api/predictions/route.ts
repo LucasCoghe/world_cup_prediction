@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getDBUser } from '@/lib/auth';
-import { isMatchLocked, TOTAL_GROUP_MATCHES, groupMatches } from '@/lib/tournament';
+import { isMatchLocked, isExtraLocked, TOTAL_GROUP_MATCHES, groupMatches } from '@/lib/tournament';
 
 const MAX_GROUP_JOKERS = 3;
 const MAX_KNOCKOUT_JOKERS = 2;
@@ -121,8 +121,8 @@ export async function POST(req: Request) {
 
   let extraLocked = false;
   if (extra) {
-    // Extra predictions lock before first match (match 1 kickoff)
-    if (isMatchLocked(1)) {
+    // Extra predictions lock at midnight after first match day (end of opening day)
+    if (isExtraLocked()) {
       extraLocked = true;
     } else {
     await prisma.extraPrediction.upsert({

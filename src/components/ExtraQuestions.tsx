@@ -1,6 +1,6 @@
 'use client';
 
-import { teams, getMatchKickoff } from '@/lib/tournament';
+import { teams, EXTRA_DEADLINE } from '@/lib/tournament';
 import type { PredictionsState } from '@/hooks/usePredictions';
 
 interface Props {
@@ -10,13 +10,10 @@ interface Props {
 const allTeamsList = Object.values(teams).sort((a, b) => a.name.localeCompare(b.name));
 
 export default function ExtraQuestions({ predictions }: Props) {
-  const { extra, setExtra, save, saving, lockedMatches, userLocked } = predictions;
-  const extraLocked = lockedMatches.has(1) || userLocked; // locked when match 1 has started or admin-lock
+  const { extra, setExtra, save, saving, userLocked } = predictions;
+  const extraLocked = new Date() >= EXTRA_DEADLINE || userLocked;
 
-  const kickoff = getMatchKickoff(1);
-  const deadlineStr = kickoff
-    ? `${kickoff.toLocaleDateString('nl-BE', { weekday: 'short', day: 'numeric', month: 'short' })} ${kickoff.toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' })}`
-    : '';
+  const deadlineStr = `${EXTRA_DEADLINE.toLocaleDateString('nl-BE', { weekday: 'short', day: 'numeric', month: 'short' })} 00:00`;
 
   return (
     <div className="space-y-6 animate-in">
@@ -39,7 +36,7 @@ export default function ExtraQuestions({ predictions }: Props) {
           <span className={extraLocked ? 'text-red-400' : 'text-amber-300'}>
             {extraLocked
               ? 'Deadline verstreken - extra vragen zijn vergrendeld.'
-              : `Deadline: voor de eerste match (${deadlineStr})`}
+              : `Deadline: middernacht na openingsdag (${deadlineStr})`}
           </span>
         </div>
       </div>

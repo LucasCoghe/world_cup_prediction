@@ -259,6 +259,17 @@ export const TOTAL_MATCHES = 104;
 // All predictions deadline = kickoff of match 1
 export const TOURNAMENT_DEADLINE = new Date(`${groupMatches[0].date}T${groupMatches[0].time}:00+02:00`);
 
+// Extra-vragen deadline = middernacht na de eerste matchdag (einde openingsdag, CEST)
+export const EXTRA_DEADLINE = (() => {
+  const d = new Date(`${groupMatches[0].date}T00:00:00+02:00`);
+  d.setDate(d.getDate() + 1);
+  return d;
+})();
+
+export function isExtraLocked(): boolean {
+  return new Date() >= EXTRA_DEADLINE;
+}
+
 export function getMatchKickoff(matchNumber: number): Date | null {
   const gm = groupMatches.find(m => m.matchNumber === matchNumber);
   if (gm) return new Date(`${gm.date}T${gm.time}:00+02:00`);
