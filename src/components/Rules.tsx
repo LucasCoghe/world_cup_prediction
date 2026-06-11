@@ -187,31 +187,34 @@ export default function Rules() {
       <div className="card space-y-3">
         <h3 className="text-xl font-semibold text-gold">Inleg &amp; Prijzen</h3>
         <p className="text-base text-gray-300">
-          <strong className="text-white">15 euro</strong> inleg per deelnemer.
+          <strong className="text-white">15 euro</strong> inleg per deelnemer &middot; <strong className="text-white">19 deelnemers</strong>
+        </p>
+        <p className="text-base text-gold">
+          Totale pot: <strong>€285</strong>
         </p>
         <p className="text-base text-gray-300">
           Alleen de <strong className="text-white">top 5</strong> valt in de prijzen!
         </p>
         <div className="space-y-1.5 pt-1">
           <div className="flex justify-between py-1.5 border-b border-white/5">
-            <span className="text-gray-300">1ste plaats</span>
-            <span className="font-bold text-gold">45% van de pot</span>
+            <span className="text-gray-300">1ste plaats <span className="text-gray-500 text-sm">(45%)</span></span>
+            <span className="font-bold text-gold">€128,25</span>
           </div>
           <div className="flex justify-between py-1.5 border-b border-white/5">
-            <span className="text-gray-300">2de plaats</span>
-            <span className="font-bold text-gold">25% van de pot</span>
+            <span className="text-gray-300">2de plaats <span className="text-gray-500 text-sm">(25%)</span></span>
+            <span className="font-bold text-gold">€71,25</span>
           </div>
           <div className="flex justify-between py-1.5 border-b border-white/5">
-            <span className="text-gray-300">3de plaats</span>
-            <span className="font-bold text-gold">15% van de pot</span>
+            <span className="text-gray-300">3de plaats <span className="text-gray-500 text-sm">(15%)</span></span>
+            <span className="font-bold text-gold">€42,75</span>
           </div>
           <div className="flex justify-between py-1.5 border-b border-white/5">
-            <span className="text-gray-300">4de plaats</span>
-            <span className="font-bold text-gold">10% van de pot</span>
+            <span className="text-gray-300">4de plaats <span className="text-gray-500 text-sm">(10%)</span></span>
+            <span className="font-bold text-gold">€28,50</span>
           </div>
           <div className="flex justify-between py-1.5 border-b border-white/5">
-            <span className="text-gray-300">5de plaats</span>
-            <span className="font-bold text-gold">5% van de pot</span>
+            <span className="text-gray-300">5de plaats <span className="text-gray-500 text-sm">(5%)</span></span>
+            <span className="font-bold text-gold">€14,25</span>
           </div>
         </div>
       </div>
