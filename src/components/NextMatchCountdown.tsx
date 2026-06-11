@@ -237,33 +237,57 @@ export default function NextMatchCountdown({ predictions, onNavigateToMatch }: P
     </button>
   );
 
+  // Panel matches (next N upcoming) — shared between live and pre-match state.
+  // We skip the live match since predicting it is already locked.
+  const panelMatches = upcoming.slice(isLive ? 1 : 0, (isLive ? 1 : 0) + PANEL_SIZE);
+  const canExpand = panelMatches.length > 0;
+
   // Live state
   if (isLive) {
     return (
-      <div className="mx-auto max-w-6xl px-4 my-3 relative">
-        <button
-          type="button"
-          onClick={() => onNavigateToMatch(featured.matchNumber, featured.isKnockout)}
-          className="w-full text-left rounded-xl border px-4 py-3 pr-12 flex items-center justify-between gap-3 flex-wrap animate-pulse transition-transform active:scale-[0.99] hover:brightness-110 cursor-pointer"
-          style={{
-            background: isBel
-              ? 'linear-gradient(90deg, rgba(107,21,32,0.6) 0%, rgba(0,0,0,0.6) 100%)'
-              : 'linear-gradient(90deg, rgba(0,40,104,0.6) 0%, rgba(0,0,0,0.6) 100%)',
-            borderColor: isBel ? 'rgba(239,68,68,0.5)' : 'rgba(253,206,5,0.4)',
-          }}
-        >
-          <div className="flex flex-col gap-1">
-            <div className={`text-xs uppercase tracking-wider inline-flex items-center gap-1.5 ${isBel ? 'text-red-300' : 'text-amber-300'}`}>
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" aria-hidden />
-              LIVE{featured.isKnockout && featured.roundLabel ? ` · ${featured.roundLabel}` : ''}
+      <>
+        <div className="mx-auto max-w-6xl px-4 my-3 relative">
+          <button
+            type="button"
+            onClick={() => canExpand ? toggleExpanded(!expanded) : onNavigateToMatch(featured.matchNumber, featured.isKnockout)}
+            className="w-full text-left rounded-xl border px-4 py-3 pr-12 flex items-center justify-between gap-3 flex-wrap animate-pulse transition-transform active:scale-[0.99] hover:brightness-110 cursor-pointer"
+            style={{
+              background: isBel
+                ? 'linear-gradient(90deg, rgba(107,21,32,0.6) 0%, rgba(0,0,0,0.6) 100%)'
+                : 'linear-gradient(90deg, rgba(0,40,104,0.6) 0%, rgba(0,0,0,0.6) 100%)',
+              borderColor: isBel ? 'rgba(239,68,68,0.5)' : 'rgba(253,206,5,0.4)',
+            }}
+            aria-expanded={canExpand ? expanded : undefined}
+          >
+            <div className="flex flex-col gap-1">
+              <div className={`text-xs uppercase tracking-wider inline-flex items-center gap-2 ${isBel ? 'text-red-300' : 'text-amber-300'}`}>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" aria-hidden />
+                  LIVE{featured.isKnockout && featured.roundLabel ? ` · ${featured.roundLabel}` : ''}
+                </span>
+                {canExpand && (
+                  <span className="text-white/50" aria-hidden>
+                    {expanded ? '▴' : '▾'}
+                  </span>
+                )}
+              </div>
+              <div className="text-lg font-bold text-white">{matchTitle}</div>
+              {predictionBadge && <div>{predictionBadge}</div>}
             </div>
-            <div className="text-lg font-bold text-white">{matchTitle}</div>
-            {predictionBadge && <div>{predictionBadge}</div>}
-          </div>
-          <div className="text-sm text-white/80">Voorspellingen vergrendeld</div>
-        </button>
-        {minimizeButton}
-      </div>
+            <div className="text-sm text-white/80">Voorspellingen vergrendeld</div>
+          </button>
+          {minimizeButton}
+        </div>
+
+        {canExpand && expanded && (
+          <UpcomingPanel
+            matches={panelMatches}
+            predictions={predictions}
+            predictedMatchNumbers={predictedMatchNumbers}
+            onNavigateToMatch={onNavigateToMatch}
+          />
+        )}
+      </>
     );
   }
 
@@ -276,9 +300,6 @@ export default function NextMatchCountdown({ predictions, onNavigateToMatch }: P
     : isBel
       ? (isSoon ? 'België speelt vandaag' : 'Volgende match — Belgie!')
       : 'Volgende match';
-
-  const panelMatches = upcoming.slice(0, PANEL_SIZE);
-  const canExpand = panelMatches.length > 0;
 
   return (
     <>
