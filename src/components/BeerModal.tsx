@@ -98,7 +98,9 @@ export default function BeerModal({ userId, userName, currentUserId, reasons, gi
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-gray-900 border border-amber-600/40 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-amber-300">🍺 {isMe ? 'Jouw' : `${userName}'s`} pintjes ({reasons.length})</h3>
+          <h3 className="text-xl font-bold text-amber-300">
+            🍺 {isMe ? 'Jouw' : `${userName}'s`} pintjes ({Math.max(0, reasons.length - confirmations.filter(c => c.witnessedAt).length)} / {reasons.length})
+          </h3>
           <button onClick={onClose} className="text-gray-500 hover:text-white text-xl">&times;</button>
         </div>
 
