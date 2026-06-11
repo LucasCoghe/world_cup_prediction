@@ -712,6 +712,7 @@ export default function KeepyUppy() {
     ballTrail: { x: number; y: number }[];
   } | null>(null);
   const inputRef = useRef<{ pointerX: number | null }>({ pointerX: null });
+  const sessionRef = useRef<{ startTime: number; nonce: string; signature: string } | null>(null);
 
   useEffect(() => { charModeRef.current = charMode; }, [charMode]);
   useEffect(() => { customConfigRef.current = customConfig; }, [customConfig]);
@@ -777,10 +778,13 @@ export default function KeepyUppy() {
 
   const submitScore = useCallback((s: number) => {
     if (s <= 0) return;
+    const session = sessionRef.current;
+    sessionRef.current = null; // one-shot: token gets invalidated server-side anyway
+    if (!session) return;
     fetch('/api/minigame', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ score: s }),
+      body: JSON.stringify({ score: s, ...session }),
     }).then(() => fetchLeaderboard());
   }, [fetchLeaderboard]);
 
@@ -791,6 +795,17 @@ export default function KeepyUppy() {
   const startGame = useCallback(() => {
     const config = charModeRef.current === 'kdb' ? { ...KDB_CONFIG } : { ...customConfigRef.current };
     const isKDB = charModeRef.current === 'kdb';
+
+    // Request a fresh signed session token. Score submission needs it.
+    sessionRef.current = null;
+    fetch('/api/minigame/start', { method: 'POST' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data && typeof data.startTime === 'number' && typeof data.nonce === 'string' && typeof data.signature === 'string') {
+          sessionRef.current = { startTime: data.startTime, nonce: data.nonce, signature: data.signature };
+        }
+      })
+      .catch(() => { sessionRef.current = null; });
 
     setGameState('playing');
     setScore(0);

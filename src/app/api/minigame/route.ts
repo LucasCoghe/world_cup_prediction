@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { prisma } from '@/lib/db';
 import { getUser } from '@/lib/auth';
 import { awardKeepyUppyCoins, getEquippedCosmeticsForUsers } from '@/lib/coins';
+
+const SECRET = process.env.JWT_SECRET || 'wk-pronostiek-2026-secret-key-change-me';
+const MAX_SESSION_AGE_MS = 30 * 60 * 1000; // 30 min between /start and /submit
 
 export async function GET() {
   const leaderboard = await prisma.minigameScore.findMany({
@@ -43,25 +47,57 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
   }
 
-  const { score } = await req.json();
+  const { score, startTime, nonce, signature } = await req.json();
   if (typeof score !== 'number' || !Number.isInteger(score) || score < 1 || score > MAX_SCORE) {
     return NextResponse.json({ error: 'Ongeldige score' }, { status: 400 });
   }
 
-  const lastSubmission = await prisma.minigameScore.findFirst({
-    where: { userId: user.userId },
-    orderBy: { createdAt: 'desc' },
-  });
+  // Verify HMAC-signed session token issued by /api/minigame/start.
+  // Prevents direct score submissions without playing the game.
+  if (typeof startTime !== 'number' || !Number.isInteger(startTime) || typeof nonce !== 'string' || typeof signature !== 'string') {
+    return NextResponse.json({ error: 'Ontbrekend sessie-token' }, { status: 400 });
+  }
 
-  if (lastSubmission) {
-    const secondsSince = (Date.now() - lastSubmission.createdAt.getTime()) / 1000;
-    if (secondsSince < score * MIN_SECONDS_PER_POINT) {
-      return NextResponse.json({ error: 'Te snel gespeeld' }, { status: 429 });
-    }
+  const payload = `${user.userId}:${startTime}:${nonce}`;
+  const expected = createHmac('sha256', SECRET).update(payload).digest('hex');
+  let signatureValid = false;
+  try {
+    const provided = Buffer.from(signature, 'hex');
+    const exp = Buffer.from(expected, 'hex');
+    signatureValid = provided.length === exp.length && timingSafeEqual(provided, exp);
+  } catch {
+    signatureValid = false;
+  }
+  if (!signatureValid) {
+    return NextResponse.json({ error: 'Ongeldig sessie-token' }, { status: 400 });
+  }
+
+  const now = Date.now();
+  if (startTime > now || now - startTime > MAX_SESSION_AGE_MS) {
+    return NextResponse.json({ error: 'Verlopen sessie' }, { status: 400 });
+  }
+
+  const elapsedSec = (now - startTime) / 1000;
+  if (elapsedSec < score * MIN_SECONDS_PER_POINT) {
+    return NextResponse.json({ error: 'Te snel gespeeld' }, { status: 429 });
+  }
+
+  // Replay prevention: each user's sessionStart must strictly increase.
+  // Replaying a captured (startTime, nonce, signature) trio fails this check.
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.userId },
+    select: { lastMinigameStart: true },
+  });
+  if (dbUser?.lastMinigameStart && startTime <= dbUser.lastMinigameStart.getTime()) {
+    return NextResponse.json({ error: 'Sessie al gebruikt' }, { status: 400 });
   }
 
   await prisma.minigameScore.create({
     data: { userId: user.userId, score },
+  });
+  await prisma.user.update({
+    where: { id: user.userId },
+    data: { lastMinigameStart: new Date(startTime) },
   });
   const result = await awardKeepyUppyCoins(user.userId, score);
 
