@@ -214,7 +214,7 @@ export default function Rules() {
           </div>
           <div className="flex justify-between py-1.5 border-b border-white/5">
             <span className="text-gray-300">5de plaats <span className="text-gray-500 text-sm">(5%)</span></span>
-            <span className="font-bold text-gold">€14,25</span>
+            <span className="font-bold text-gold">€15</span>
           </div>
         </div>
       </div>
