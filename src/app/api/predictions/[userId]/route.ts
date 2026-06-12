@@ -18,7 +18,7 @@ export async function GET(
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { name: true },
+    select: { name: true, avatarUrl: true },
   });
 
   if (!user) {
@@ -76,5 +76,5 @@ export async function GET(
 
   const cosmetics = await getEquippedCosmetics(userId);
 
-  return NextResponse.json({ predictions: matchPredictions, extra, userName: user.name, cosmetics });
+  return NextResponse.json({ predictions: matchPredictions, extra, userName: user.name, avatarUrl: user.avatarUrl, cosmetics });
 }

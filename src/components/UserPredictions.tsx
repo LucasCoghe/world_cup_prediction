@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { teams, getRoundName } from '@/lib/tournament';
 import FlagIcon from './FlagIcon';
+import Avatar from './Avatar';
 import { getCosmetic } from '@/lib/cosmetics';
 
 interface MatchPrediction {
@@ -71,6 +72,7 @@ export default function UserPredictions({ userId, onBack }: Props) {
   const [predictions, setPredictions] = useState<MatchPrediction[]>([]);
   const [extra, setExtra] = useState<ExtraPrediction | null>(null);
   const [userName, setUserName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [cosmetics, setCosmetics] = useState<{ nameColor: string | null; rowStyle: string | null; title: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -85,6 +87,7 @@ export default function UserPredictions({ userId, onBack }: Props) {
           setPredictions(data.predictions || []);
           setExtra(data.extra || null);
           setUserName(data.userName || '');
+          setAvatarUrl(data.avatarUrl || null);
           setCosmetics(data.cosmetics || null);
         }
         setLoading(false);
@@ -132,11 +135,12 @@ export default function UserPredictions({ userId, onBack }: Props) {
 
   return (
     <div className="space-y-6 animate-in">
-      <div className="flex items-center gap-4">
-        <button onClick={onBack} className="btn-secondary text-sm">&larr; Terug</button>
-        <div className="flex flex-col">
-          {titleCos?.title && <span className="cos-title">{titleCos.title}</span>}
-          <h2 className="text-2xl font-bold trophy-text">
+      <div className="flex items-center gap-3 sm:gap-4">
+        <button onClick={onBack} className="btn-secondary text-sm shrink-0">&larr; Terug</button>
+        <Avatar name={userName} avatarUrl={avatarUrl} size={56} />
+        <div className="flex flex-col min-w-0">
+          {titleCos?.title && <span className="cos-title truncate">{titleCos.title}</span>}
+          <h2 className="text-xl sm:text-2xl font-bold trophy-text truncate">
             Voorspellingen van{' '}
             <span className={hotStreak >= 2 ? 'fire-text' : ''}>{userName}</span>
           </h2>
