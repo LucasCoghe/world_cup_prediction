@@ -143,12 +143,13 @@ export default function Leaderboard({ currentUserId }: Props) {
                   }`}>
                     {entry.name}
                   </div>
-                  <div className="text-sm flex items-center gap-2 flex-wrap">
-                    {isCurrentUser && <span className="text-gold">(jij)</span>}
-                    {isLast && <span className="text-amber-400">schaamt u!</span>}
-                    {isH2hSelected && <span className="text-blue-400">geselecteerd</span>}
-                    <span className="text-gray-500">{entry.predictionsCount} voorspellingen</span>
-                  </div>
+                  {(isCurrentUser || isLast || isH2hSelected) && (
+                    <div className="text-sm flex items-center gap-2 flex-wrap">
+                      {isCurrentUser && <span className="text-gold">(jij)</span>}
+                      {isLast && <span className="text-amber-400">schaamt u!</span>}
+                      {isH2hSelected && <span className="text-blue-400">geselecteerd</span>}
+                    </div>
+                  )}
                 </div>
 
                 {/* Beer give count */}
