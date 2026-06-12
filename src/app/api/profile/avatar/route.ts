@@ -25,31 +25,37 @@ export async function POST(req: Request) {
   const ext = file.type.split('/')[1] || 'jpg';
   const key = `avatars/${user.userId}-${Date.now()}.${ext}`;
 
-  const blob = await put(key, file, {
-    access: 'public',
-    contentType: file.type,
-    addRandomSuffix: false,
-  });
+  try {
+    const blob = await put(key, file, {
+      access: 'public',
+      contentType: file.type,
+      addRandomSuffix: false,
+    });
 
-  const previous = await prisma.user.findUnique({
-    where: { id: user.userId },
-    select: { avatarUrl: true },
-  });
+    const previous = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { avatarUrl: true },
+    });
 
-  await prisma.user.update({
-    where: { id: user.userId },
-    data: { avatarUrl: blob.url },
-  });
+    await prisma.user.update({
+      where: { id: user.userId },
+      data: { avatarUrl: blob.url },
+    });
 
-  if (previous?.avatarUrl) {
-    try {
-      await del(previous.avatarUrl);
-    } catch {
-      // Old blob may already be gone — not fatal.
+    if (previous?.avatarUrl) {
+      try {
+        await del(previous.avatarUrl);
+      } catch {
+        // Old blob may already be gone — not fatal.
+      }
     }
-  }
 
-  return NextResponse.json({ avatarUrl: blob.url });
+    return NextResponse.json({ avatarUrl: blob.url });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Onbekende fout';
+    console.error('[avatar upload] failed:', err);
+    return NextResponse.json({ error: `Upload mislukt: ${msg}` }, { status: 500 });
+  }
 }
 
 export async function DELETE() {
