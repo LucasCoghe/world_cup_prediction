@@ -1,20 +1,5 @@
 'use client';
 
-const PALETTE = [
-  '#ef4444', '#f97316', '#f59e0b', '#eab308',
-  '#84cc16', '#22c55e', '#10b981', '#14b8a6',
-  '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1',
-  '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
-];
-
-function hashName(name: string): number {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) {
-    h = (h * 31 + name.charCodeAt(i)) | 0;
-  }
-  return Math.abs(h);
-}
-
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return '?';
@@ -38,16 +23,19 @@ export default function Avatar({ name, avatarUrl, size = 40, className = '' }: P
         src={avatarUrl}
         alt={name}
         style={dim}
-        className={`rounded-full object-cover border border-white/15 shrink-0 ${className}`}
+        className={`rounded-full object-cover border border-gold/40 shrink-0 ${className}`}
       />
     );
   }
-  const color = PALETTE[hashName(name) % PALETTE.length];
-  const fontSize = Math.max(10, Math.round(size * 0.4));
+  const fontSize = Math.max(10, Math.round(size * 0.42));
   return (
     <div
-      style={{ ...dim, background: color, fontSize }}
-      className={`rounded-full flex items-center justify-center font-bold text-white shrink-0 border border-white/15 ${className}`}
+      style={{
+        ...dim,
+        fontSize,
+        background: 'radial-gradient(circle at 30% 25%, rgba(212,175,55,0.18), rgba(6,13,31,0.85) 70%)',
+      }}
+      className={`rounded-full flex items-center justify-center font-bold shrink-0 border border-gold/40 trophy-text ${className}`}
       aria-label={name}
     >
       {initials(name)}
