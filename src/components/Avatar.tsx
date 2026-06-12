@@ -33,9 +33,11 @@ export default function Avatar({ name, avatarUrl, size = 40, className = '' }: P
       style={{
         ...dim,
         fontSize,
-        background: 'radial-gradient(circle at 30% 25%, rgba(212,175,55,0.18), rgba(6,13,31,0.85) 70%)',
+        background: 'radial-gradient(circle at 30% 25%, rgba(212,175,55,0.12), rgba(6,13,31,0.9) 75%)',
+        color: '#f5d77a',
+        textShadow: '0 0 8px rgba(212,175,55,0.35)',
       }}
-      className={`rounded-full flex items-center justify-center font-bold shrink-0 border border-gold/40 trophy-text ${className}`}
+      className={`rounded-full flex items-center justify-center font-bold shrink-0 border border-gold/40 tracking-wide ${className}`}
       aria-label={name}
     >
       {initials(name)}
