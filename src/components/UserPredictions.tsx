@@ -128,7 +128,6 @@ export default function UserPredictions({ userId, onBack }: Props) {
   ).length;
   const hatTricks = Math.floor(exactScoresCount / 3);
 
-  const nameCos = getCosmetic(cosmetics?.nameColor);
   const titleCos = getCosmetic(cosmetics?.title);
 
   return (
@@ -139,7 +138,7 @@ export default function UserPredictions({ userId, onBack }: Props) {
           {titleCos?.title && <span className="cos-title">{titleCos.title}</span>}
           <h2 className="text-2xl font-bold trophy-text">
             Voorspellingen van{' '}
-            <span className={nameCos?.nameClassName ?? ''}>{userName}</span>
+            <span className={hotStreak >= 2 ? 'fire-text' : ''}>{userName}</span>
           </h2>
         </div>
       </div>

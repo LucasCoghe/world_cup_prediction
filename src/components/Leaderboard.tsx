@@ -108,7 +108,6 @@ export default function Leaderboard({ currentUserId }: Props) {
             const isCurrentUser = entry.id === currentUserId;
             const isLast = isLastPlace(i);
             const isH2hSelected = h2hSelect === entry.id;
-            const nameCos = getCosmetic(entry.cosmetics?.nameColor);
             const rowCos = getCosmetic(entry.cosmetics?.rowStyle);
             const titleCos = getCosmetic(entry.cosmetics?.title);
             return (
@@ -136,7 +135,7 @@ export default function Leaderboard({ currentUserId }: Props) {
                     <div className="cos-title truncate">{titleCos.title}</div>
                   )}
                   <div className={`text-lg font-semibold truncate ${
-                    nameCos?.nameClassName ?? (entry.hotStreak >= 2 ? 'fire-text' : isH2hSelected ? 'text-blue-300' : 'text-white')
+                    entry.hotStreak >= 2 ? 'fire-text' : isH2hSelected ? 'text-blue-300' : 'text-white'
                   }`}>
                     {entry.name}
                   </div>

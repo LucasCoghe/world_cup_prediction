@@ -12,16 +12,6 @@ export interface Cosmetic {
 }
 
 export const COSMETICS: Cosmetic[] = [
-  // Name colors (sorted by price)
-  { id: 'name_silver',  category: 'name_color', name: 'Zilveren Naam',       description: 'Een subtiele glans',    price: 200,  nameClassName: 'cos-name-silver' },
-  { id: 'name_gold',    category: 'name_color', name: 'Gouden Naam',         description: 'Glanzend goud',         price: 350,  nameClassName: 'cos-name-gold' },
-  { id: 'name_fire',    category: 'name_color', name: 'Vuur Naam',           description: 'On fire',               price: 550,  nameClassName: 'cos-name-fire' },
-  { id: 'name_ice',     category: 'name_color', name: 'IJs Naam',            description: 'Koeler dan ijs',        price: 550,  nameClassName: 'cos-name-ice' },
-  { id: 'name_matrix',  category: 'name_color', name: 'Matrix',              description: 'Digitale code-vibe',    price: 700,  nameClassName: 'cos-name-matrix' },
-  { id: 'name_stars',   category: 'name_color', name: 'Sterrenhemel',        description: 'Twinkelende sterren',   price: 850,  nameClassName: 'cos-name-stars' },
-  { id: 'name_belgian', category: 'name_color', name: 'Belgische Driekleur', description: 'Voor de Duivels',       price: 1100, nameClassName: 'cos-name-belgian' },
-  { id: 'name_rainbow', category: 'name_color', name: 'Regenboog',           description: 'Legendarische status',  price: 3500, nameClassName: 'cos-name-rainbow' },
-
   // Row styles (sorted by price)
   { id: 'row_gold_border', category: 'row_style', name: 'Gouden Rand',     description: 'Subtiele gouden glow',               price: 400,  rowClassName: 'cos-row-gold' },
   { id: 'row_fire_glow',   category: 'row_style', name: 'Vurige Rand',     description: 'Vlammende gloed rond je rij',        price: 850,  rowClassName: 'cos-row-fire' },

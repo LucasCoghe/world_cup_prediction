@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { COSMETICS, Cosmetic, CosmeticCategory, getCosmeticsByCategory } from '@/lib/cosmetics';
+import { Cosmetic, CosmeticCategory, getCosmeticsByCategory } from '@/lib/cosmetics';
 
 interface Props {
   userName: string;
@@ -27,16 +27,9 @@ const CATEGORY_LABELS: Record<CosmeticCategory, string> = {
   title: 'Titels',
 };
 
-const CATEGORY_ORDER: CosmeticCategory[] = ['name_color', 'row_style', 'title'];
+const CATEGORY_ORDER: CosmeticCategory[] = ['row_style', 'title'];
 
 function CosmeticPreview({ cosmetic, userName }: { cosmetic: Cosmetic; userName: string }) {
-  if (cosmetic.category === 'name_color') {
-    return (
-      <div className="text-lg font-bold py-2">
-        <span className={cosmetic.nameClassName}>{userName}</span>
-      </div>
-    );
-  }
   if (cosmetic.category === 'row_style') {
     return (
       <div className={`card flex items-center gap-3 px-3 py-2 ${cosmetic.rowClassName}`}>
