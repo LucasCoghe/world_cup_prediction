@@ -8,9 +8,10 @@ interface Props {
   avatarUrl: string | null;
   onClose: () => void;
   onChange: (newUrl: string | null) => void;
+  onLogout?: () => void;
 }
 
-export default function AvatarUploadModal({ name, avatarUrl, onClose, onChange }: Props) {
+export default function AvatarUploadModal({ name, avatarUrl, onClose, onChange, onLogout }: Props) {
   const [preview, setPreview] = useState<string | null>(avatarUrl);
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -119,6 +120,15 @@ export default function AvatarUploadModal({ name, avatarUrl, onClose, onChange }
             {busy ? 'Bezig...' : 'Opslaan'}
           </button>
         </div>
+
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            className="sm:hidden w-full mt-3 text-sm text-gray-400 hover:text-white py-2"
+          >
+            Uitloggen
+          </button>
+        )}
       </div>
     </div>
   );

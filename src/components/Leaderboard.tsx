@@ -115,7 +115,7 @@ export default function Leaderboard({ currentUserId }: Props) {
             return (
               <div
                 key={entry.id}
-                className={`card flex items-center gap-4 cursor-pointer ${
+                className={`card !p-3 sm:!p-6 flex items-center gap-2 sm:gap-4 cursor-pointer ${
                   isCurrentUser ? 'card-gold' : ''
                 } ${i < 5 ? 'border-gold/30' : ''} ${
                   isLast ? 'border-amber-600/50 bg-amber-950/20' : ''
@@ -125,13 +125,13 @@ export default function Leaderboard({ currentUserId }: Props) {
                 onClick={() => handleNameClick(entry.id)}
               >
                 {/* Position */}
-                <div className="text-center w-10">
+                <div className="text-center w-6 sm:w-10 shrink-0">
                   <span className={`text-xl font-bold ${i < 5 ? 'trophy-text' : 'text-gray-500'}`}>
                     {i + 1}
                   </span>
                 </div>
 
-                <Avatar name={entry.name} avatarUrl={entry.avatarUrl} size={44} />
+                <Avatar name={entry.name} avatarUrl={entry.avatarUrl} size={36} />
 
                 {/* Name */}
                 <div className="flex-1 min-w-0">
@@ -155,23 +155,23 @@ export default function Leaderboard({ currentUserId }: Props) {
                 {entry.beerGivePending > 0 && (
                   <button
                     type="button"
-                    className="flex items-center gap-1 bg-emerald-900/40 px-3 py-1.5 rounded-lg border border-emerald-600/30 cursor-pointer hover:bg-emerald-900/60"
+                    className="flex items-center gap-1 bg-emerald-900/40 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-emerald-600/30 cursor-pointer hover:bg-emerald-900/60"
                     onClick={(e) => { e.stopPropagation(); e.preventDefault(); setBeerModalUser(entry.id); }}
                     title="Biertjes uit te delen"
                   >
-                    <span className="text-lg">🎁</span>
-                    <span className="font-bold text-lg text-emerald-400">{entry.beerGivePending}</span>
+                    <span className="text-base sm:text-lg">🎁</span>
+                    <span className="font-bold text-base sm:text-lg text-emerald-400">{entry.beerGivePending}</span>
                   </button>
                 )}
 
                 {/* Beer count - clickable for own user */}
                 <button
                   type="button"
-                  className="flex items-center gap-1 bg-amber-900/40 px-3 py-1.5 rounded-lg border border-amber-600/30 cursor-pointer hover:bg-amber-900/60"
+                  className="flex items-center gap-1 bg-amber-900/40 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-amber-600/30 cursor-pointer hover:bg-amber-900/60"
                   onClick={(e) => { e.stopPropagation(); e.preventDefault(); setBeerModalUser(entry.id); }}
                 >
-                  <span className="text-lg">🍺</span>
-                  <span className={`font-bold text-lg ${
+                  <span className="text-base sm:text-lg">🍺</span>
+                  <span className={`font-bold text-base sm:text-lg ${
                     entry.beerCount === maxBeers && maxBeers > 0 ? 'text-amber-300' : 'text-amber-400/80'
                   }`}>
                     {entry.beerCount}
@@ -195,9 +195,9 @@ export default function Leaderboard({ currentUserId }: Props) {
                 </div>
 
                 {/* Total */}
-                <div className="text-right">
-                  <div className="text-3xl font-bold trophy-text">{entry.totalPoints}</div>
-                  <div className="text-sm text-gray-500">punten</div>
+                <div className="text-right shrink-0">
+                  <div className="text-2xl sm:text-3xl font-bold trophy-text leading-none">{entry.totalPoints}</div>
+                  <div className="text-xs sm:text-sm text-gray-500">punten</div>
                 </div>
               </div>
             );

@@ -135,6 +135,7 @@ export default function Dashboard({ user, onLogout }: Props) {
           avatarUrl={avatarUrl}
           onClose={() => setAvatarModalOpen(false)}
           onChange={setAvatarUrl}
+          onLogout={handleLogout}
         />
       )}
       {/* Header */}
@@ -164,14 +165,14 @@ export default function Dashboard({ user, onLogout }: Props) {
               type="button"
               onClick={() => setAvatarModalOpen(true)}
               className="rounded-full hover:ring-2 hover:ring-gold/50 transition-all"
-              title="Profielfoto wijzigen"
+              title="Profiel"
             >
               <Avatar name={user.name} avatarUrl={avatarUrl} size={36} />
             </button>
-            <span className="text-base text-gray-400 hidden sm:inline">
+            <span className="text-base text-gray-400 hidden md:inline">
               {user.name} {user.isAdmin && '(admin)'}
             </span>
-            <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-white">
+            <button onClick={handleLogout} className="hidden sm:inline text-sm text-gray-500 hover:text-white">
               Uitloggen
             </button>
           </div>
