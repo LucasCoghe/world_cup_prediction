@@ -8,6 +8,7 @@ interface User {
   userId: string;
   name: string;
   isAdmin: boolean;
+  avatarUrl?: string | null;
 }
 
 export default function Home() {

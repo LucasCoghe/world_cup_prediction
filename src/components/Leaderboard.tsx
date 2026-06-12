@@ -5,11 +5,13 @@ import UserPredictions from './UserPredictions';
 import HeadToHead from './HeadToHead';
 import BeerToast from './BeerToast';
 import BeerModal from './BeerModal';
+import Avatar from './Avatar';
 import { getCosmetic } from '@/lib/cosmetics';
 
 interface LeaderboardEntry {
   id: string;
   name: string;
+  avatarUrl: string | null;
   totalPoints: number;
   groupPhasePoints: number;
   knockoutPoints: number;
@@ -128,6 +130,8 @@ export default function Leaderboard({ currentUserId }: Props) {
                     {i + 1}
                   </span>
                 </div>
+
+                <Avatar name={entry.name} avatarUrl={entry.avatarUrl} size={44} />
 
                 {/* Name */}
                 <div className="flex-1 min-w-0">

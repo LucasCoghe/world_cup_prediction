@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Avatar from './Avatar';
 import { getCosmetic } from '@/lib/cosmetics';
 
 interface Comment {
   id: string;
   userName: string;
+  avatarUrl: string | null;
   message: string;
   createdAt: string;
   cosmetics?: { nameColor: string | null; rowStyle: string | null; title: string | null };
@@ -80,6 +82,7 @@ export default function GroupChat() {
               const titleCos = getCosmetic(c.cosmetics?.title);
               return (
                 <div key={c.id} className="flex gap-2 text-sm py-1.5 px-2 rounded-lg hover:bg-white/5">
+                  <Avatar name={c.userName} avatarUrl={c.avatarUrl} size={28} className="self-start mt-0.5" />
                   <div className="shrink-0 flex flex-col">
                     {titleCos?.title && <span className="cos-title leading-none">{titleCos.title}</span>}
                     <span className={`font-medium ${nameCos?.nameClassName ?? 'text-amber-400'}`}>{c.userName}</span>

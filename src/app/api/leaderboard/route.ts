@@ -21,6 +21,7 @@ export async function GET() {
     const leaderboard = users.map(u => ({
       id: u.id,
       name: u.name,
+      avatarUrl: u.avatarUrl,
       totalPoints: 0,
       groupPhasePoints: 0,
       knockoutPoints: 0,
@@ -257,6 +258,7 @@ export async function GET() {
     return {
       id: u.id,
       name: u.name,
+      avatarUrl: u.avatarUrl,
       totalPoints: scoring.totalPoints,
       groupPhasePoints: scoring.groupPhasePoints,
       knockoutPoints: scoring.knockoutPoints,

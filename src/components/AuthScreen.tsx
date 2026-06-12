@@ -4,7 +4,7 @@ import { useState } from 'react';
 import InstallPrompt from './InstallPrompt';
 
 interface Props {
-  onLogin: (user: { userId: string; name: string; isAdmin: boolean }) => void;
+  onLogin: (user: { userId: string; name: string; isAdmin: boolean; avatarUrl?: string | null }) => void;
 }
 
 export default function AuthScreen({ onLogin }: Props) {

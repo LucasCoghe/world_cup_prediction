@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import Avatar from './Avatar';
+import AvatarUploadModal from './AvatarUploadModal';
 import GroupStage from './GroupStage';
 import KnockoutStage from './KnockoutStage';
 import ExtraQuestions from './ExtraQuestions';
@@ -21,7 +23,7 @@ import { usePredictions } from '@/hooks/usePredictions';
 import { groupMatches, knockoutStructure } from '@/lib/tournament';
 
 interface Props {
-  user: { userId: string; name: string; isAdmin: boolean };
+  user: { userId: string; name: string; isAdmin: boolean; avatarUrl?: string | null };
   onLogout: () => void;
 }
 
@@ -73,6 +75,8 @@ export default function Dashboard({ user, onLogout }: Props) {
   const [activeTab, setActiveTab] = useState('leaderboard');
   const [unreadCount, setUnreadCount] = useState(0);
   const [coinsBalance, setCoinsBalance] = useState<number | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(user.avatarUrl ?? null);
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false);
   const [targetMatchNumber, setTargetMatchNumber] = useState<number | null>(null);
   const [targetNonce, setTargetNonce] = useState(0); // bumps to force re-trigger even when same match clicked
   const predictions = usePredictions();
@@ -125,6 +129,14 @@ export default function Dashboard({ user, onLogout }: Props) {
     <div className={`min-h-screen ${belgianDay ? 'belgian-mode' : ''}`}>
       <PatchNotesModal onNavigate={tabId => setActiveTab(tabId)} />
       <NotificationOnboarding />
+      {avatarModalOpen && (
+        <AvatarUploadModal
+          name={user.name}
+          avatarUrl={avatarUrl}
+          onClose={() => setAvatarModalOpen(false)}
+          onChange={setAvatarUrl}
+        />
+      )}
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-lg border-b border-white/10" style={{ background: 'linear-gradient(90deg, rgba(0,40,104,0.85) 0%, rgba(6,13,31,0.95) 30%, rgba(6,13,31,0.95) 70%, rgba(107,21,32,0.85) 100%)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         {/* Belgian match day banner */}
@@ -148,6 +160,14 @@ export default function Dashboard({ user, onLogout }: Props) {
                 <span className="text-sm font-bold text-gold tabular-nums">{coinsBalance.toLocaleString('nl-BE')}</span>
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => setAvatarModalOpen(true)}
+              className="rounded-full hover:ring-2 hover:ring-gold/50 transition-all"
+              title="Profielfoto wijzigen"
+            >
+              <Avatar name={user.name} avatarUrl={avatarUrl} size={36} />
+            </button>
             <span className="text-base text-gray-400 hidden sm:inline">
               {user.name} {user.isAdmin && '(admin)'}
             </span>

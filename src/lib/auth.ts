@@ -9,6 +9,7 @@ export interface JWTPayload {
   userId: string;
   name: string;
   isAdmin: boolean;
+  avatarUrl?: string | null;
 }
 
 export function signToken(payload: JWTPayload): string {
@@ -34,11 +35,11 @@ export async function getUser(): Promise<JWTPayload | null> {
   if (!payload) return null;
   const dbUser = await prisma.user.findUnique({
     where: { id: payload.userId },
-    select: { id: true, name: true, isAdmin: true },
+    select: { id: true, name: true, isAdmin: true, avatarUrl: true },
   });
   if (!dbUser) return null;
   // Resync from DB so admin flag changes take effect without re-login
-  return { userId: dbUser.id, name: dbUser.name, isAdmin: dbUser.isAdmin };
+  return { userId: dbUser.id, name: dbUser.name, isAdmin: dbUser.isAdmin, avatarUrl: dbUser.avatarUrl };
 }
 
 // Same as getUser but returns the full Prisma User row (includes `locked`,

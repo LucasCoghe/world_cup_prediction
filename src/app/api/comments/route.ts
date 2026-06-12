@@ -20,7 +20,7 @@ export async function GET(req: Request) {
   const comments = await prisma.matchComment.findMany({
     where: { matchNumber },
     orderBy: { createdAt: 'asc' },
-    include: { user: { select: { id: true, name: true } } },
+    include: { user: { select: { id: true, name: true, avatarUrl: true } } },
   });
 
   const userIds = [...new Set(comments.map(c => c.user.id))];
@@ -29,7 +29,9 @@ export async function GET(req: Request) {
   return NextResponse.json({
     comments: comments.map(c => ({
       id: c.id,
+      userId: c.user.id,
       userName: c.user.name,
+      avatarUrl: c.user.avatarUrl,
       message: c.message,
       createdAt: c.createdAt.toISOString(),
       cosmetics: cosmeticsByUser.get(c.user.id) || { nameColor: null, rowStyle: null, title: null },
@@ -58,7 +60,7 @@ export async function POST(req: Request) {
       matchNumber,
       message: trimmed,
     },
-    include: { user: { select: { id: true, name: true } } },
+    include: { user: { select: { id: true, name: true, avatarUrl: true } } },
   });
 
   const cosmeticsByUser = await getEquippedCosmeticsForUsers([comment.user.id]);
@@ -66,7 +68,9 @@ export async function POST(req: Request) {
   return NextResponse.json({
     comment: {
       id: comment.id,
+      userId: comment.user.id,
       userName: comment.user.name,
+      avatarUrl: comment.user.avatarUrl,
       message: comment.message,
       createdAt: comment.createdAt.toISOString(),
       cosmetics: cosmeticsByUser.get(comment.user.id) || { nameColor: null, rowStyle: null, title: null },
