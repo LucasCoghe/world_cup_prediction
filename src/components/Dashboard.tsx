@@ -29,7 +29,7 @@ interface Props {
 
 const baseTabs = [
   { id: 'leaderboard', label: 'Klassement' },
-  { id: 'schandpaal', label: 'Schandpaal' },
+  { id: 'schandpaal', label: 'Café' },
   { id: 'groups', label: 'Groepsfase' },
   { id: 'knockout', label: 'Knockout' },
   { id: 'simulator', label: 'Simulator' },
