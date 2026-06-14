@@ -140,9 +140,9 @@ export default function UserPredictions({ userId, onBack }: Props) {
         <Avatar name={userName} avatarUrl={avatarUrl} size={56} />
         <div className="flex flex-col min-w-0">
           {titleCos?.title && <span className="cos-title truncate">{titleCos.title}</span>}
-          <h2 className="text-xl sm:text-2xl font-bold trophy-text truncate">
-            Voorspellingen van{' '}
-            <span className={hotStreak >= 2 ? 'fire-text' : ''}>{userName}</span>
+          <span className="text-xs text-gray-400 leading-tight">Voorspellingen van</span>
+          <h2 className={`text-xl sm:text-2xl font-bold trophy-text truncate ${hotStreak >= 2 ? 'fire-text' : ''}`}>
+            {userName}
           </h2>
         </div>
       </div>
