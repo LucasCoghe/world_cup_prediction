@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { put, del } from '@vercel/blob';
 import { prisma } from '@/lib/db';
 import { getUser } from '@/lib/auth';
 import webpush from 'web-push';
@@ -9,16 +10,19 @@ webpush.setVapidDetails(
   process.env.VAPID_PRIVATE_KEY!
 );
 
+const MAX_BYTES = 8 * 1024 * 1024;
+const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'];
+
 export async function GET() {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const confirmations = await prisma.beerConfirmation.findMany({
+    where: { photoUrl: { not: null } },
     include: {
-      drinker: { select: { id: true, name: true } },
-      witness: { select: { id: true, name: true } },
+      drinker: { select: { id: true, name: true, avatarUrl: true } },
     },
-    orderBy: { reason: 'asc' },
+    orderBy: { claimedAt: 'desc' },
   });
 
   const gifts = await prisma.beerGift.findMany({
@@ -36,40 +40,72 @@ export async function POST(req: Request) {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { action, drinkerId, reason, confirmationId, receiverId } = await req.json();
+  const contentType = req.headers.get('content-type') || '';
 
-  if (action === 'claim') {
-    if (user.userId !== drinkerId) {
-      return NextResponse.json({ error: 'Je kan alleen je eigen pintje claimen' }, { status: 403 });
+  if (contentType.includes('multipart/form-data')) {
+    const form = await req.formData();
+    const file = form.get('file');
+    const reason = form.get('reason');
+    const drinkerId = form.get('drinkerId');
+
+    if (typeof reason !== 'string' || typeof drinkerId !== 'string') {
+      return NextResponse.json({ error: 'Ongeldig verzoek' }, { status: 400 });
+    }
+    if (drinkerId !== user.userId) {
+      return NextResponse.json({ error: 'Je kan alleen je eigen pintje bevestigen' }, { status: 403 });
+    }
+    if (!(file instanceof Blob)) {
+      return NextResponse.json({ error: 'Geen foto ontvangen' }, { status: 400 });
+    }
+    if (file.size > MAX_BYTES) {
+      return NextResponse.json({ error: 'Foto te groot (max 8 MB)' }, { status: 400 });
+    }
+    if (!ALLOWED.includes(file.type)) {
+      return NextResponse.json({ error: 'Alleen JPG, PNG, WEBP, GIF of HEIC' }, { status: 400 });
     }
 
-    await prisma.beerConfirmation.upsert({
-      where: { drinkerId_reason: { drinkerId, reason } },
-      create: { drinkerId, reason, claimedAt: new Date() },
-      update: { claimedAt: new Date() },
-    });
+    const ext = file.type.split('/')[1] || 'jpg';
+    const safeReason = reason.replace(/[^a-z0-9]/gi, '-').slice(0, 40);
+    const key = `pints/${user.userId}-${safeReason}-${Date.now()}.${ext}`;
 
-    return NextResponse.json({ ok: true });
-  }
+    try {
+      const existing = await prisma.beerConfirmation.findUnique({
+        where: { drinkerId_reason: { drinkerId, reason } },
+      });
 
-  if (action === 'witness') {
-    const confirmation = await prisma.beerConfirmation.findUnique({
-      where: { id: confirmationId },
-    });
+      const blob = await put(key, file, {
+        access: 'public',
+        contentType: file.type,
+        addRandomSuffix: false,
+      });
 
-    if (!confirmation) return NextResponse.json({ error: 'Niet gevonden' }, { status: 404 });
-    if (!confirmation.claimedAt) return NextResponse.json({ error: 'Nog niet geclaimed' }, { status: 400 });
-    if (confirmation.drinkerId === user.userId) {
-      return NextResponse.json({ error: 'Je kan niet je eigen getuige zijn' }, { status: 403 });
+      await prisma.beerConfirmation.upsert({
+        where: { drinkerId_reason: { drinkerId, reason } },
+        create: {
+          drinkerId,
+          reason,
+          claimedAt: new Date(),
+          photoUrl: blob.url,
+        },
+        update: {
+          claimedAt: new Date(),
+          photoUrl: blob.url,
+        },
+      });
+
+      if (existing?.photoUrl && existing.photoUrl !== blob.url) {
+        try { await del(existing.photoUrl); } catch { /* old blob gone */ }
+      }
+
+      return NextResponse.json({ ok: true, photoUrl: blob.url });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Onbekende fout';
+      console.error('[pint photo upload] failed:', err);
+      return NextResponse.json({ error: `Upload mislukt: ${msg}` }, { status: 500 });
     }
-
-    await prisma.beerConfirmation.update({
-      where: { id: confirmationId },
-      data: { witnessId: user.userId, witnessedAt: new Date() },
-    });
-
-    return NextResponse.json({ ok: true });
   }
+
+  const { action, reason, receiverId } = await req.json();
 
   if (action === 'give') {
     if (!reason || !receiverId) {
