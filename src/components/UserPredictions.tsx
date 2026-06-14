@@ -147,20 +147,21 @@ export default function UserPredictions({ userId, onBack }: Props) {
         </div>
       </div>
 
-      <div className="card bg-white/5">
-        <div className="text-sm text-gray-400 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span>{predictions.length} voorspellingen &middot; {totalPoints} punten (uit gespeelde wedstrijden)</span>
-          {hotStreak >= 2 && (
-            <span className="fire-text font-bold">🔥 {hotStreak}x op rij juist</span>
-          )}
-          {exactScoresCount > 0 && (
-            <span className="text-emerald-300 font-medium">🎯 {exactScoresCount} exacte score{exactScoresCount > 1 ? 's' : ''}</span>
-          )}
-          {hatTricks > 0 && (
-            <span className="text-emerald-400 font-bold">🎩 {hatTricks} hattrick{hatTricks > 1 ? 's' : ''}</span>
-          )}
+      {(hotStreak >= 2 || exactScoresCount > 0 || hatTricks > 0) && (
+        <div className="card bg-white/5">
+          <div className="text-sm text-gray-400 flex flex-wrap items-center gap-x-3 gap-y-1">
+            {hotStreak >= 2 && (
+              <span className="fire-text font-bold">🔥 {hotStreak}x op rij juist</span>
+            )}
+            {exactScoresCount > 0 && (
+              <span className="text-emerald-300 font-medium">🎯 {exactScoresCount} exacte score{exactScoresCount > 1 ? 's' : ''}</span>
+            )}
+            {hatTricks > 0 && (
+              <span className="text-emerald-400 font-bold">🎩 {hatTricks} hattrick{hatTricks > 1 ? 's' : ''}</span>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Extra predictions */}
       {extra && (extra.topScorer || extra.worldChampion || extra.belgianTopScorer) && (
