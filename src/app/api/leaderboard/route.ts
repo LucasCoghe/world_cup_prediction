@@ -16,6 +16,15 @@ export async function GET() {
 
   const actualResults = await prisma.actualResult.findMany();
 
+  const confirmedCountByUser = new Map<string, number>();
+  const confirmedPints = await prisma.beerConfirmation.findMany({
+    where: { photoUrl: { not: null } },
+    select: { drinkerId: true },
+  });
+  for (const c of confirmedPints) {
+    confirmedCountByUser.set(c.drinkerId, (confirmedCountByUser.get(c.drinkerId) || 0) + 1);
+  }
+
   if (actualResults.length === 0) {
     const cosmetics0 = await getEquippedCosmeticsForUsers(users.map(u => u.id));
     const leaderboard = users.map(u => ({
@@ -28,6 +37,7 @@ export async function GET() {
       extraPoints: 0,
       predictionsCount: u.predictions.length,
       beerCount: 0,
+      beerConfirmedCount: confirmedCountByUser.get(u.id) || 0,
       beerReasons: [] as string[],
       hotStreak: 0,
       cosmetics: cosmetics0.get(u.id) || { nameColor: null, rowStyle: null, title: null },
@@ -265,6 +275,7 @@ export async function GET() {
       extraPoints: scoring.extraPoints,
       predictionsCount: u.predictions.length,
       beerCount: beerReasons.get(u.id)?.length || 0,
+      beerConfirmedCount: confirmedCountByUser.get(u.id) || 0,
       beerReasons: beerReasons.get(u.id) || [],
       beerGiveCount: beerGiveReasons.get(u.id)?.length || 0,
       beerGiveReasons: beerGiveReasons.get(u.id) || [],

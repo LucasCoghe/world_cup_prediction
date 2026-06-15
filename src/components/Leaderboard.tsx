@@ -18,6 +18,7 @@ interface LeaderboardEntry {
   extraPoints: number;
   predictionsCount: number;
   beerCount: number;
+  beerConfirmedCount: number;
   beerReasons: string[];
   beerGiveCount: number;
   beerGiveReasons: string[];
@@ -39,7 +40,7 @@ export default function Leaderboard({ currentUserId }: Props) {
   const [h2hSelect, setH2hSelect] = useState<string | null>(null);
   const [beerModalUser, setBeerModalUser] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchLeaderboard = () => {
     fetch('/api/leaderboard')
       .then(r => r.json())
       .then(data => {
@@ -48,6 +49,10 @@ export default function Leaderboard({ currentUserId }: Props) {
         setCompletedMatchdays(data.completedMatchdays || 0);
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchLeaderboard();
   }, []);
 
   if (loading) {
@@ -62,7 +67,8 @@ export default function Leaderboard({ currentUserId }: Props) {
     return <HeadToHead userA={h2hUsers[0]} userB={h2hUsers[1]} onBack={() => { setH2hUsers(null); setH2hSelect(null); }} />;
   }
 
-  const maxBeers = Math.max(...entries.map(e => e.beerCount), 0);
+  const remainingBeers = (e: LeaderboardEntry) => Math.max(0, e.beerCount - e.beerConfirmedCount);
+  const maxBeers = Math.max(...entries.map(remainingBeers), 0);
   const isLastPlace = (i: number) => i === entries.length - 1 && entries.length > 1;
   const myEntry = entries.find(e => e.id === currentUserId);
   const myBeerCount = myEntry?.beerCount ?? 0;
@@ -173,9 +179,9 @@ export default function Leaderboard({ currentUserId }: Props) {
                 >
                   <span className="text-base sm:text-lg">🍺</span>
                   <span className={`font-bold text-base sm:text-lg ${
-                    entry.beerCount === maxBeers && maxBeers > 0 ? 'text-amber-300' : 'text-amber-400/80'
+                    remainingBeers(entry) === maxBeers && maxBeers > 0 ? 'text-amber-300' : 'text-amber-400/80'
                   }`}>
-                    {entry.beerCount}
+                    {remainingBeers(entry)}
                   </span>
                 </button>
 
@@ -217,7 +223,7 @@ export default function Leaderboard({ currentUserId }: Props) {
             reasons={modalEntry.beerReasons}
             giveReasons={modalEntry.beerGiveReasons}
             allUsers={entries.map(e => ({ id: e.id, name: e.name }))}
-            onClose={() => setBeerModalUser(null)}
+            onClose={() => { setBeerModalUser(null); fetchLeaderboard(); }}
           />
         );
       })()}

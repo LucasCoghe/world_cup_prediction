@@ -208,6 +208,7 @@ export default function NextMatchCountdown({ predictions, onNavigateToMatch }: P
 
   // Knockout matches with unresolved teams aren't predictable yet — hide the badge in that case.
   const isPredictable = !featured.isKnockout || (featured.homeCode !== null && featured.awayCode !== null);
+  const userPrediction = predictions.scores.get(featured.matchNumber);
   const hasPredicted = predictedMatchNumbers.has(featured.matchNumber);
   const predictionBadge = isPredictable ? (
     <span
@@ -221,7 +222,9 @@ export default function NextMatchCountdown({ predictions, onNavigateToMatch }: P
         className={`inline-block w-1.5 h-1.5 rounded-full ${hasPredicted ? 'bg-emerald-400' : 'bg-amber-400'}`}
         aria-hidden
       />
-      {hasPredicted ? 'Voorspeld' : 'Nog niet voorspeld'}
+      {hasPredicted && userPrediction
+        ? `Voorspeld: ${userPrediction.homeScore}–${userPrediction.awayScore}`
+        : 'Nog niet voorspeld'}
     </span>
   ) : null;
 
