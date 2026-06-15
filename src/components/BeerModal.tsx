@@ -12,6 +12,11 @@ interface BeerConfirmation {
   drinker: { id: string; name: string; avatarUrl: string | null };
 }
 
+function isVideoUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return /\.(mp4|mov|webm|m4v|3gp|3gpp|quicktime)(\?|$)/i.test(url);
+}
+
 interface BeerGiftData {
   id: string;
   giverId: string;
@@ -134,19 +139,28 @@ export default function BeerModal({ userId, userName, currentUserId, reasons, gi
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => setZoomedPhoto(conf!.photoUrl!)}
-                          className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-green-700/40 hover:border-green-400 transition"
+                          className="shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-green-700/40 hover:border-green-400 transition relative bg-black/40"
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={conf!.photoUrl!} alt="Pint bewijs" className="w-full h-full object-cover" />
+                          {isVideoUrl(conf!.photoUrl) ? (
+                            <>
+                              <video src={conf!.photoUrl!} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                              <span className="absolute inset-0 flex items-center justify-center text-white text-2xl drop-shadow">▶</span>
+                            </>
+                          ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={conf!.photoUrl!} alt="Pint bewijs" className="w-full h-full object-cover" />
+                          )}
                         </button>
                         <div className="flex-1">
-                          <div className="text-green-400 text-xs">Gedronken — foto als bewijs</div>
+                          <div className="text-green-400 text-xs">
+                            Gedronken — {isVideoUrl(conf!.photoUrl) ? 'filmpje' : 'foto'} als bewijs
+                          </div>
                           {isMe && (
                             <button
                               onClick={() => fileInputRefs.current[reason]?.click()}
                               className="text-xs text-green-400/70 hover:text-green-300 underline mt-1"
                             >
-                              Vervang foto
+                              Vervang bewijs
                             </button>
                           )}
                         </div>
@@ -154,7 +168,7 @@ export default function BeerModal({ userId, userName, currentUserId, reasons, gi
                           <input
                             ref={el => { fileInputRefs.current[reason] = el; }}
                             type="file"
-                            accept="image/*"
+                            accept="image/*,video/*"
                             capture="environment"
                             className="hidden"
                             onChange={e => {
@@ -172,12 +186,12 @@ export default function BeerModal({ userId, userName, currentUserId, reasons, gi
                           onClick={() => fileInputRefs.current[reason]?.click()}
                           className="text-xs bg-amber-800/60 hover:bg-amber-700/60 disabled:opacity-50 text-amber-300 px-3 py-1.5 rounded-lg border border-amber-600/40"
                         >
-                          {uploading ? 'Uploaden...' : '📸 Foto van de pint'}
+                          {uploading ? 'Uploaden...' : '📸 Foto of filmpje van de pint'}
                         </button>
                         <input
                           ref={el => { fileInputRefs.current[reason] = el; }}
                           type="file"
-                          accept="image/*"
+                          accept="image/*,video/*"
                           capture="environment"
                           className="hidden"
                           onChange={e => {
@@ -283,8 +297,19 @@ export default function BeerModal({ userId, userName, currentUserId, reasons, gi
           className="fixed inset-0 z-[110] flex items-center justify-center bg-black/90 p-4"
           onClick={() => setZoomedPhoto(null)}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={zoomedPhoto} alt="Pint bewijs" className="max-w-full max-h-full rounded-lg" />
+          {isVideoUrl(zoomedPhoto) ? (
+            <video
+              src={zoomedPhoto}
+              className="max-w-full max-h-full rounded-lg"
+              controls
+              autoPlay
+              playsInline
+              onClick={e => e.stopPropagation()}
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={zoomedPhoto} alt="Pint bewijs" className="max-w-full max-h-full rounded-lg" />
+          )}
         </div>
       )}
     </>,

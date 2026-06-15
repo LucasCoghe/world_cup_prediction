@@ -10,8 +10,10 @@ webpush.setVapidDetails(
   process.env.VAPID_PRIVATE_KEY!
 );
 
-const MAX_BYTES = 8 * 1024 * 1024;
-const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'];
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
+const ALLOWED_IMAGES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'];
+const ALLOWED_VIDEOS = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-m4v', 'video/3gpp'];
 
 export async function GET() {
   const user = await getUser();
@@ -55,16 +57,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Je kan alleen je eigen pintje bevestigen' }, { status: 403 });
     }
     if (!(file instanceof Blob)) {
-      return NextResponse.json({ error: 'Geen foto ontvangen' }, { status: 400 });
+      return NextResponse.json({ error: 'Geen bestand ontvangen' }, { status: 400 });
     }
-    if (file.size > MAX_BYTES) {
-      return NextResponse.json({ error: 'Foto te groot (max 8 MB)' }, { status: 400 });
+    const isVideo = ALLOWED_VIDEOS.includes(file.type);
+    const isImage = ALLOWED_IMAGES.includes(file.type);
+    if (!isVideo && !isImage) {
+      return NextResponse.json({ error: 'Alleen foto (JPG/PNG/WEBP/GIF/HEIC) of video (MP4/MOV/WEBM)' }, { status: 400 });
     }
-    if (!ALLOWED.includes(file.type)) {
-      return NextResponse.json({ error: 'Alleen JPG, PNG, WEBP, GIF of HEIC' }, { status: 400 });
+    const maxBytes = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+    if (file.size > maxBytes) {
+      const limitMb = Math.round(maxBytes / (1024 * 1024));
+      return NextResponse.json({ error: `${isVideo ? 'Filmpje' : 'Foto'} te groot (max ${limitMb} MB)` }, { status: 400 });
     }
 
-    const ext = file.type.split('/')[1] || 'jpg';
+    const extMap: Record<string, string> = {
+      'video/quicktime': 'mov',
+      'video/x-m4v': 'm4v',
+      'video/3gpp': '3gp',
+    };
+    const ext = extMap[file.type] || file.type.split('/')[1] || 'jpg';
     const safeReason = reason.replace(/[^a-z0-9]/gi, '-').slice(0, 40);
     const key = `pints/${user.userId}-${safeReason}-${Date.now()}.${ext}`;
 

@@ -11,6 +11,11 @@ interface PintEntry {
   drinker: { id: string; name: string; avatarUrl: string | null };
 }
 
+function isVideoUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return /\.(mp4|mov|webm|m4v|3gp|3gpp|quicktime)(\?|$)/i.test(url);
+}
+
 function formatDateTime(iso: string | null): string {
   if (!iso) return '';
   const d = new Date(iso);
@@ -87,13 +92,26 @@ export default function Schandpaal() {
                   onClick={() => setZoomed(p)}
                   className="card !p-2 text-left hover:border-amber-600/60 transition group"
                 >
-                  <div className="aspect-square rounded overflow-hidden bg-black/40 mb-2">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={p.photoUrl}
-                      alt={`Pint van ${p.drinker.name}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition"
-                    />
+                  <div className="aspect-square rounded overflow-hidden bg-black/40 mb-2 relative">
+                    {isVideoUrl(p.photoUrl) ? (
+                      <>
+                        <video
+                          src={p.photoUrl}
+                          className="w-full h-full object-cover group-hover:scale-105 transition"
+                          muted
+                          playsInline
+                          preload="metadata"
+                        />
+                        <span className="absolute inset-0 flex items-center justify-center text-white text-4xl drop-shadow pointer-events-none">▶</span>
+                      </>
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={p.photoUrl}
+                        alt={`Pint van ${p.drinker.name}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition"
+                      />
+                    )}
                   </div>
                   <div className="flex items-center gap-1.5 mb-1">
                     <Avatar name={p.drinker.name} avatarUrl={p.drinker.avatarUrl} size={20} />
@@ -114,8 +132,18 @@ export default function Schandpaal() {
           onClick={() => setZoomed(null)}
         >
           <div className="max-w-2xl w-full" onClick={e => e.stopPropagation()}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={zoomed.photoUrl} alt={`Pint van ${zoomed.drinker.name}`} className="w-full rounded-lg" />
+            {isVideoUrl(zoomed.photoUrl) ? (
+              <video
+                src={zoomed.photoUrl}
+                className="w-full rounded-lg"
+                controls
+                autoPlay
+                playsInline
+              />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={zoomed.photoUrl} alt={`Pint van ${zoomed.drinker.name}`} className="w-full rounded-lg" />
+            )}
             <div className="mt-3 flex items-center gap-2 text-white">
               <Avatar name={zoomed.drinker.name} avatarUrl={zoomed.drinker.avatarUrl} size={28} />
               <div>
