@@ -53,7 +53,7 @@ interface OtherPrediction {
   jokerUsed: boolean;
 }
 
-type FilterKind = 'all' | 'live' | 'today' | 'upcoming' | 'played' | 'belgium';
+type FilterKind = 'all' | 'live' | 'played' | 'belgium';
 type ViewMode = 'timeline' | 'standen';
 
 const LIVE_BUFFER_MS = 150 * 60 * 1000;
@@ -165,9 +165,7 @@ export default function Matches({ predictions, targetMatchNumber, targetNonce }:
 
   const filteredMatches = useMemo(() => {
     return unifiedMatches.filter(m => {
-      if (filter === 'today') return m.date === todayStr;
       if (filter === 'live') return isLive(m);
-      if (filter === 'upcoming') return m.kickoff.getTime() > now.getTime();
       if (filter === 'played') {
         const r = results[m.matchNumber];
         return r && !r.live;
@@ -175,7 +173,7 @@ export default function Matches({ predictions, targetMatchNumber, targetNonce }:
       if (filter === 'belgium') return m.involvesBelgium;
       return true;
     });
-  }, [unifiedMatches, filter, results, todayStr, now, isLive]);
+  }, [unifiedMatches, filter, results, isLive]);
 
   const sections = useMemo(() => {
     const live: UnifiedMatch[] = [];
@@ -260,8 +258,6 @@ export default function Matches({ predictions, targetMatchNumber, targetNonce }:
   const FILTER_CHIPS: Array<{ id: FilterKind; label: string }> = [
     { id: 'all', label: 'Alles' },
     { id: 'live', label: 'Live' },
-    { id: 'today', label: 'Vandaag' },
-    { id: 'upcoming', label: 'Komend' },
     { id: 'played', label: 'Gespeeld' },
     { id: 'belgium', label: 'Belgie' },
   ];
