@@ -3,8 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import Avatar from './Avatar';
 import AvatarUploadModal from './AvatarUploadModal';
-import GroupStage from './GroupStage';
-import KnockoutStage from './KnockoutStage';
+import Matches from './Matches';
 import ExtraQuestions from './ExtraQuestions';
 import Leaderboard from './Leaderboard';
 import Schandpaal from './Schandpaal';
@@ -29,9 +28,8 @@ interface Props {
 
 const baseTabs = [
   { id: 'leaderboard', label: 'Klassement' },
+  { id: 'matches', label: 'Matchen' },
   { id: 'schandpaal', label: 'Café' },
-  { id: 'groups', label: 'Groepsfase' },
-  { id: 'knockout', label: 'Knockout' },
   { id: 'simulator', label: 'Simulator' },
   { id: 'extra', label: 'Extra' },
   { id: 'chat', label: 'Chat' },
@@ -203,16 +201,16 @@ export default function Dashboard({ user, onLogout }: Props) {
 
       <NextMatchCountdown
         predictions={predictions}
-        onNavigateToMatch={(matchNumber, isKnockout) => {
+        onNavigateToMatch={(matchNumber) => {
           setTargetMatchNumber(matchNumber);
           setTargetNonce(n => n + 1);
-          setActiveTab(isKnockout ? 'knockout' : 'groups');
+          setActiveTab('matches');
         }}
       />
 
       {/* Content */}
       <main className="max-w-6xl mx-auto px-4 py-6">
-        {predictions.userLocked && (activeTab === 'groups' || activeTab === 'knockout' || activeTab === 'extra') && (
+        {predictions.userLocked && (activeTab === 'matches' || activeTab === 'extra') && (
           <div className="card bg-red-950/30 border-red-600/40 mb-4">
             <div className="flex items-center gap-2 text-sm text-red-400">
               <span>🔒</span>
@@ -221,9 +219,8 @@ export default function Dashboard({ user, onLogout }: Props) {
           </div>
         )}
         {activeTab === 'leaderboard' && <Leaderboard currentUserId={user.userId} />}
+        {activeTab === 'matches' && <Matches predictions={predictions} targetMatchNumber={targetMatchNumber} targetNonce={targetNonce} />}
         {activeTab === 'schandpaal' && <Schandpaal />}
-        {activeTab === 'groups' && <GroupStage predictions={predictions} targetMatchNumber={targetMatchNumber} targetNonce={targetNonce} />}
-        {activeTab === 'knockout' && <KnockoutStage predictions={predictions} targetMatchNumber={targetMatchNumber} targetNonce={targetNonce} />}
         {activeTab === 'simulator' && <BracketSimulator groupPredictions={predictions.getScoresArray()} />}
         {activeTab === 'extra' && <ExtraQuestions predictions={predictions} />}
         {activeTab === 'chat' && <GroupChat />}
