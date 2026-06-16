@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   groupMatches,
   knockoutStructure,
@@ -86,9 +86,6 @@ export default function Matches({ predictions, targetMatchNumber, targetNonce }:
   const [koResolved, setKoResolved] = useState<Record<number, { homeTeam: string | null; awayTeam: string | null }>>({});
   const [results, setResults] = useState<ActualResultMap>({});
   const [allPredictions, setAllPredictions] = useState<Record<number, OtherPrediction[]>>({});
-
-  const timelineRef = useRef<HTMLDivElement | null>(null);
-  const initialScrollDone = useRef(false);
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30 * 1000);
@@ -238,31 +235,6 @@ export default function Matches({ predictions, targetMatchNumber, targetNonce }:
     return () => clearTimeout(id);
   }, [targetMatchNumber, targetNonce]);
 
-  // On first mount, scroll to live/today if no target match
-  useEffect(() => {
-    if (initialScrollDone.current) return;
-    if (targetMatchNumber != null) {
-      initialScrollDone.current = true;
-      return;
-    }
-    if (unifiedMatches.length === 0) return;
-    // Find live → today → next upcoming
-    const focusMatch =
-      unifiedMatches.find(m => isLive(m)) ??
-      unifiedMatches.find(m => m.date === todayStr) ??
-      unifiedMatches.find(m => m.kickoff.getTime() > now.getTime());
-    if (!focusMatch) {
-      initialScrollDone.current = true;
-      return;
-    }
-    const id = setTimeout(() => {
-      const el = document.getElementById(`m-row-${focusMatch.matchNumber}`);
-      if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
-      initialScrollDone.current = true;
-    }, 120);
-    return () => clearTimeout(id);
-  }, [unifiedMatches, isLive, todayStr, now, targetMatchNumber]);
-
   const groupJokersUsed = [...predictions.jokers].filter(m => m <= TOTAL_GROUP_MATCHES).length;
   const knockoutJokersUsed = [...predictions.jokers].filter(m => m > TOTAL_GROUP_MATCHES).length;
 
@@ -334,7 +306,7 @@ export default function Matches({ predictions, targetMatchNumber, targetNonce }:
             ))}
           </div>
 
-          <div ref={timelineRef} className="space-y-6">
+          <div className="space-y-6">
             {sections.live.length === 0 && sections.todays.length === 0 && sections.upcoming.length === 0 && sections.played.length === 0 && (
               <div className="card text-center text-gray-500 py-8">
                 Geen matchen gevonden met deze filter.
