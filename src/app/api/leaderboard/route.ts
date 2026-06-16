@@ -231,10 +231,36 @@ export async function GET() {
         }
       }
       if (consecutiveZeros > 0 && consecutiveZeros % 3 === 0) {
-        beerReasons.get(u.id)!.push(`${consecutiveZeros}x op rij 0 punten`);
+        const date = matchDateMap.get(matchNum);
+        const dateStr = date
+          ? new Date(date + 'T12:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })
+          : `match ${matchNum}`;
+        beerReasons.get(u.id)!.push(`${consecutiveZeros}x op rij 0 punten (tot ${dateStr})`);
       }
     }
     hotStreaks.set(u.id, streak);
+  }
+
+  // One-time migration: rename legacy "Nx op rij 0 punten" (no date suffix)
+  // confirmations to the first matching new-format reason for each user, so
+  // existing photos don't become orphaned by the format change.
+  const legacyStreakConfs = await prisma.beerConfirmation.findMany({
+    where: {
+      AND: [
+        { reason: { endsWith: 'x op rij 0 punten' } },
+        { NOT: { reason: { contains: '(tot ' } } },
+      ],
+    },
+  });
+  for (const conf of legacyStreakConfs) {
+    const userReasons = beerReasons.get(conf.drinkerId) || [];
+    const newReason = userReasons.find(r => r.startsWith(`${conf.reason} (tot `));
+    if (!newReason) continue;
+    try {
+      await prisma.beerConfirmation.update({ where: { id: conf.id }, data: { reason: newReason } });
+    } catch {
+      // Unique conflict — another row already owns the new reason; leave legacy as-is.
+    }
   }
 
   const beerGifts = await prisma.beerGift.findMany({
