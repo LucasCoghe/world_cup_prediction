@@ -85,6 +85,7 @@ export default function Matches({ predictions, targetMatchNumber, targetNonce }:
 
   const [koResolved, setKoResolved] = useState<Record<number, { homeTeam: string | null; awayTeam: string | null }>>({});
   const [results, setResults] = useState<ActualResultMap>({});
+  const [resultsLoaded, setResultsLoaded] = useState(false);
   const [allPredictions, setAllPredictions] = useState<Record<number, OtherPrediction[]>>({});
 
   useEffect(() => {
@@ -105,7 +106,7 @@ export default function Matches({ predictions, targetMatchNumber, targetNonce }:
         };
       }
       setResults(map);
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => setResultsLoaded(true));
     fetch('/api/all-predictions').then(r => r.ok ? r.json() : { predictions: {} }).then(d => setAllPredictions(d.predictions || {})).catch(() => {});
   }, []);
 
@@ -316,6 +317,9 @@ export default function Matches({ predictions, targetMatchNumber, targetNonce }:
             ))}
           </div>
 
+          {!resultsLoaded ? (
+            <div className="text-center text-gray-500 py-12 text-sm">Matchen laden...</div>
+          ) : (
           <div className="space-y-6">
             {sections.live.length === 0 && sections.todays.length === 0 && sections.upcoming.length === 0 && sections.played.length === 0 && (
               <div className="card text-center text-gray-500 py-8">
@@ -405,6 +409,7 @@ export default function Matches({ predictions, targetMatchNumber, targetNonce }:
               </Section>
             )}
           </div>
+          )}
         </>
       )}
 
