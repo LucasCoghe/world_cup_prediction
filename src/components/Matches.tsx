@@ -238,13 +238,23 @@ export default function Matches({ predictions, targetMatchNumber, targetNonce }:
   const groupJokersUsed = [...predictions.jokers].filter(m => m <= TOTAL_GROUP_MATCHES).length;
   const knockoutJokersUsed = [...predictions.jokers].filter(m => m > TOTAL_GROUP_MATCHES).length;
 
-  // Standen sub-view
-  const standings = useMemo(
-    () => calculateGroupStandings(predictions.getScoresArray()),
-    [predictions]
-  );
+  // Standen sub-view — gebaseerd op echte uitslagen, niet voorspellingen
+  const actualScores = useMemo(() => {
+    const list: { matchNumber: number; homeScore: number; awayScore: number; advancingTeam?: string }[] = [];
+    for (const [numStr, r] of Object.entries(results)) {
+      list.push({
+        matchNumber: Number(numStr),
+        homeScore: r.homeScore,
+        awayScore: r.awayScore,
+        advancingTeam: r.advancingTeam ?? undefined,
+      });
+    }
+    return list;
+  }, [results]);
+  const standings = useMemo(() => calculateGroupStandings(actualScores), [actualScores]);
   const bestThirds = useMemo(() => getBestThirdPlaced(standings), [standings]);
   const currentStanding = standings[activeGroup] || [];
+  const hasResults = actualScores.length > 0;
 
   const FILTER_CHIPS: Array<{ id: FilterKind; label: string }> = [
     { id: 'all', label: 'Alles' },
@@ -400,6 +410,14 @@ export default function Matches({ predictions, targetMatchNumber, targetNonce }:
 
       {view === 'standen' && (
         <div className="space-y-6">
+          <p className="text-sm text-gray-400">
+            Echte tussenstanden op basis van gespeelde uitslagen. Voor je eigen voorspelde stand: zie de Simulator.
+          </p>
+          {!hasResults && (
+            <div className="card text-center text-gray-500 py-6 text-sm">
+              Nog geen gespeelde matchen. Standen verschijnen zodra de eerste uitslagen binnen zijn.
+            </div>
+          )}
           {/* Group selector */}
           <div className="flex flex-wrap gap-2">
             {groupLabels.map(g => (
