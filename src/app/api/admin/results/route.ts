@@ -36,13 +36,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, live: true });
   }
 
-  // Final save: snapshot beer counts, write result (live=false), diff and push.
-  const beforeCounts = new Map<string, number>();
-  const beforeGiveCounts = new Map<string, number>();
+  // Final save: snapshot beer reasons, write result (live=false), diff and push.
+  // Reasons are unique per user (drinkerId_reason is unique), so we diff by the
+  // actual reason strings rather than by array index — beerReasons is rebuilt in
+  // a fixed order (group dates → knockout rounds → streaks → gifts), so a new
+  // reason can be inserted in the middle and a slice would grab the wrong text.
+  const beforeReasons = new Map<string, string[]>();
+  const beforeGiveReasons = new Map<string, string[]>();
   const leaderboardBefore = await fetchLeaderboard(req);
   for (const entry of leaderboardBefore) {
-    beforeCounts.set(entry.id, entry.beerCount);
-    beforeGiveCounts.set(entry.id, entry.beerGiveCount);
+    beforeReasons.set(entry.id, entry.beerReasons);
+    beforeGiveReasons.set(entry.id, entry.beerGiveReasons);
   }
 
   await prisma.actualResult.upsert({
@@ -51,22 +55,25 @@ export async function POST(req: Request) {
     create: { matchNumber, homeScore, awayScore, advancingTeam: advancingTeam || null, live: false },
   });
 
-  // Check beer counts after
+  // Check beer reasons after — notify on the reasons that are genuinely new.
   const leaderboardAfter = await fetchLeaderboard(req);
   for (const entry of leaderboardAfter) {
-    const before = beforeCounts.get(entry.id) || 0;
-    const newBeers = entry.beerCount - before;
-    if (newBeers > 0) {
-      const newReasons = entry.beerReasons.slice(before);
-      await sendPushToUser(entry.id, '🍺 Nieuw biertje!', newBeers === 1
+    // Gifts ("Cadeau van …") are notified separately at gift-creation time and
+    // don't change when a result is finalized, so exclude them here.
+    const prev = new Set(beforeReasons.get(entry.id) || []);
+    const newReasons = entry.beerReasons.filter(r => !prev.has(r) && !r.startsWith('Cadeau van '));
+    if (newReasons.length > 0) {
+      await sendPushToUser(entry.id, '🍺 Nieuw biertje!', newReasons.length === 1
         ? newReasons[0]
-        : `${newBeers} nieuwe pintjes! ${newReasons.join(', ')}`);
+        : `${newReasons.length} nieuwe pintjes! ${newReasons.join(', ')}`);
     }
 
-    const beforeGive = beforeGiveCounts.get(entry.id) || 0;
-    const newGives = entry.beerGiveCount - beforeGive;
-    if (newGives > 0) {
-      await sendPushToUser(entry.id, '🎁 Biertje uitdelen!', 'Je was de beste van de speeldag! Kies iemand die moet drinken.');
+    const prevGive = new Set(beforeGiveReasons.get(entry.id) || []);
+    const newGiveReasons = entry.beerGiveReasons.filter(r => !prevGive.has(r));
+    if (newGiveReasons.length > 0) {
+      await sendPushToUser(entry.id, '🎁 Biertje uitdelen!', newGiveReasons.length === 1
+        ? `${newGiveReasons[0]} — kies wie er moet drinken!`
+        : `${newGiveReasons.length}x mag je een biertje uitdelen: ${newGiveReasons.join(', ')}`);
     }
   }
 
