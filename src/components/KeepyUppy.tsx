@@ -22,6 +22,9 @@ const POWERUP_SPAWN_INTERVAL = 400;
 const POWERUP_SPAWN_CHANCE = 0.4;
 const POWERUP_R = 18;
 const POWERUP_FALL_SPEED = 1.5;
+// Pity system: after this many power-ups without a shield, the next one is
+// guaranteed to be a shield — so a full run is never shield-starved.
+const SHIELD_PITY_THRESHOLD = 3;
 
 type PowerUpType = 'wide' | 'slow' | 'magnet' | 'shield';
 
@@ -708,6 +711,7 @@ export default function KeepyUppy() {
     ballSkin: string;
     cosmetics: string[];
     shieldActive: boolean;
+    powerUpsSinceShield: number;
     triggeredMilestones: Set<number>;
     ballTrail: { x: number; y: number }[];
   } | null>(null);
@@ -834,6 +838,7 @@ export default function KeepyUppy() {
       ballSkin: selectedBallRef.current,
       cosmetics: [...selectedCosmeticsRef.current],
       shieldActive: false,
+      powerUpsSinceShield: 0,
       triggeredMilestones: new Set<number>(),
       ballTrail: [] as { x: number; y: number }[],
     };
@@ -995,14 +1000,28 @@ export default function KeepyUppy() {
       state.powerUpSpawnTimer += dt;
       if (!state.powerUp && state.powerUpSpawnTimer > POWERUP_SPAWN_INTERVAL && state.score >= 3) {
         if (Math.random() < POWERUP_SPAWN_CHANCE) {
-          const types: PowerUpType[] = [
-            'wide', 'wide', 'wide',
-            'slow', 'slow', 'slow',
-            'magnet', 'magnet', 'magnet',
-            'shield',
-          ];
+          // Guarantee a shield once the player has gone too long without one
+          // (unless one is already active, which would waste it).
+          const forceShield = state.powerUpsSinceShield >= SHIELD_PITY_THRESHOLD && !state.shieldActive;
+          let type: PowerUpType;
+          if (forceShield) {
+            type = 'shield';
+          } else {
+            const types: PowerUpType[] = [
+              'wide', 'wide', 'wide',
+              'slow', 'slow', 'slow',
+              'magnet', 'magnet', 'magnet',
+              'shield',
+            ];
+            type = types[Math.floor(Math.random() * types.length)];
+          }
+          if (type === 'shield') {
+            state.powerUpsSinceShield = 0;
+          } else {
+            state.powerUpsSinceShield++;
+          }
           state.powerUp = {
-            type: types[Math.floor(Math.random() * types.length)],
+            type,
             x: 30 + Math.random() * (CANVAS_W - 60),
             y: -POWERUP_R,
           };
