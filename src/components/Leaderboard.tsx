@@ -152,8 +152,8 @@ export default function Leaderboard({ currentUserId }: Props) {
                     {entry.name}
                   </div>
                   {streakTier?.label && (
-                    <div className={`text-[10px] font-bold tracking-widest ${streakTier.className}`}>
-                      {streakTier.emoji} {streakTier.label}
+                    <div className={`text-[10px] font-bold tracking-wide truncate ${streakTier.className}`}>
+                      {streakTier.emoji} {streakTier.label} · {entry.hotStreak}x
                     </div>
                   )}
                   {(isCurrentUser || isLast || isH2hSelected) && (

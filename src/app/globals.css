@@ -186,6 +186,22 @@ input[type="number"] {
   50% { filter: drop-shadow(0 0 11px rgba(168, 85, 247, 0.85)); }
 }
 
+/* Streak tier 10x+: mythic holografische regenboog met wisselende gloed */
+.mythic-text {
+  background: linear-gradient(135deg, #ff0080 0%, #ff8c00 20%, #ffd700 40%, #00e5ff 60%, #a855f7 80%, #ff0080 100%);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite, mythic-glow 1.6s ease-in-out infinite;
+}
+
+@keyframes mythic-glow {
+  0%, 100% { filter: drop-shadow(0 0 5px rgba(255, 0, 128, 0.55)); }
+  33% { filter: drop-shadow(0 0 9px rgba(0, 229, 255, 0.6)); }
+  66% { filter: drop-shadow(0 0 9px rgba(168, 85, 247, 0.6)); }
+}
+
 @keyframes shimmer {
   to { background-position: 200% center; }
 }

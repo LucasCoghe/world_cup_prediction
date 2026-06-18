@@ -8,6 +8,7 @@ export interface StreakTier {
 }
 
 export function getStreakTier(streak: number): StreakTier | null {
+  if (streak >= 10) return { className: 'mythic-text', emoji: '💎', label: 'GODLIKE' };
   if (streak >= 7) return { className: 'electric-text', emoji: '⚡', label: 'UNSTOPPABLE' };
   if (streak >= 5) return { className: 'legendary-text', emoji: '👑', label: 'LEGENDARY' };
   if (streak >= 2) return { className: 'fire-text', emoji: '🔥', label: null };

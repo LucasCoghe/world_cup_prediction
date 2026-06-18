@@ -113,15 +113,19 @@ export default function UserPredictions({ userId, onBack }: Props) {
     return sum + (pts?.points || 0);
   }, 0);
 
-  const hotStreak = (() => {
+  // Hot streak loopt door over groep én knockout (op matchnummer-volgorde).
+  const { hotStreak, bestStreak } = (() => {
     let streak = 0;
-    for (const p of groupPreds) {
+    let best = 0;
+    const ordered = predictions.slice().sort((a, b) => a.matchNumber - b.matchNumber);
+    for (const p of ordered) {
       if (p.actualHome === null || p.actualAway === null) continue;
       const predOut = Math.sign(p.homeScore - p.awayScore);
       const actOut = Math.sign(p.actualHome - p.actualAway);
       streak = predOut === actOut ? streak + 1 : 0;
+      if (streak > best) best = streak;
     }
-    return streak;
+    return { hotStreak: streak, bestStreak: best };
   })();
 
   const exactScoresCount = groupPreds.filter(p =>
@@ -134,6 +138,8 @@ export default function UserPredictions({ userId, onBack }: Props) {
 
   const titleCos = getCosmetic(cosmetics?.title);
   const streakTier = getStreakTier(hotStreak);
+  // Beste reeks ooit — tonen zodra die hoger is dan de lopende reeks (niet redundant).
+  const bestTier = bestStreak >= 2 && bestStreak > hotStreak ? getStreakTier(bestStreak) : null;
 
   return (
     <div className="space-y-6 animate-in">
@@ -149,12 +155,17 @@ export default function UserPredictions({ userId, onBack }: Props) {
         </div>
       </div>
 
-      {(streakTier || exactScoresCount > 0 || hatTricks > 0) && (
+      {(streakTier || bestTier || exactScoresCount > 0 || hatTricks > 0) && (
         <div className="card bg-white/5">
           <div className="text-sm text-gray-400 flex flex-wrap items-center gap-x-3 gap-y-1">
             {streakTier && (
               <span className={`${streakTier.className} font-bold`}>
                 {streakTier.emoji} {streakTier.label ? `${streakTier.label} · ` : ''}{hotStreak}x op rij juist
+              </span>
+            )}
+            {bestTier && (
+              <span className="font-semibold text-gray-500">
+                <span>{bestTier.emoji}</span> beste reeks: {bestStreak}x op rij
               </span>
             )}
             {exactScoresCount > 0 && (

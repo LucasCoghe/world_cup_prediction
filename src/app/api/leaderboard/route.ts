@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { calculatePoints, calculateMatchPoints } from '@/lib/scoring';
+import { calculatePoints, calculateMatchPoints, isCorrectWinner } from '@/lib/scoring';
 import { MatchScore, resolveKnockoutBracket } from '@/lib/standings';
 import { groupMatches, knockoutStructure, TOTAL_GROUP_MATCHES } from '@/lib/tournament';
 import { getEquippedCosmeticsForUsers } from '@/lib/coins';
@@ -40,6 +40,7 @@ export async function GET() {
       beerConfirmedCount: confirmedCountByUser.get(u.id) || 0,
       beerReasons: [] as string[],
       hotStreak: 0,
+      bestStreak: 0,
       cosmetics: cosmetics0.get(u.id) || { nameColor: null, rowStyle: null, title: null },
     }));
     return NextResponse.json({ leaderboard });
@@ -194,51 +195,72 @@ export async function GET() {
     }
   }
 
-  // === BESCHAMENDE REEKS / HATTRICK (alleen groepsfase, alleen finals) ===
-  //   3x op rij 0 punten = drink een pint
-  //   Elke 3 exacte scores (10pt) cumulatief = deel een pint uit (hattrick)
-  const playedGroupMatches = [...finalResultMatchNumbers].filter(n => n <= TOTAL_GROUP_MATCHES).sort((a, b) => a - b);
+  // === HOT STREAK (groep + knockout) + BESCHAMENDE REEKS / HATTRICK (groep) ===
+  //   Hot streak: juiste winnaar op rij, loopt door over groep én knockout.
+  //   3x op rij 0 punten = drink een pint (alleen groepsfase).
+  //   Elke 3 exacte scores (10pt) cumulatief = deel een pint uit (alleen groep).
+  const playedMatches = [...finalResultMatchNumbers].sort((a, b) => a - b);
   const matchDateMap = new Map<number, string>();
   for (const m of groupMatches) matchDateMap.set(m.matchNumber, m.date);
   const hotStreaks = new Map<string, number>();
+  const bestStreaks = new Map<string, number>();
   for (const u of users) {
     const predMap = userPredMaps.get(u.id)!;
     let consecutiveZeros = 0;
     let streak = 0;
+    let bestStreak = 0;
     let exactCount = 0;
-    for (const matchNum of playedGroupMatches) {
+    for (const matchNum of playedMatches) {
+      const isKnockout = matchNum > TOTAL_GROUP_MATCHES;
       const pred = predMap.get(matchNum);
       const actual = actualScoreMap.get(matchNum);
+
+      // Hot streak loopt door over groep + knockout
       if (!pred || !actual) {
-        consecutiveZeros++;
         streak = 0;
       } else {
-        const predOutcome = Math.sign(pred.homeScore - pred.awayScore);
-        const actualOutcome = Math.sign(actual.homeScore - actual.awayScore);
-        streak = predOutcome === actualOutcome ? streak + 1 : 0;
-        consecutiveZeros = calculateMatchPoints(pred, actual, pred.jokerUsed) <= 0 ? consecutiveZeros + 1 : 0;
+        const teams = isKnockout ? actualKoTeams.get(matchNum) : undefined;
+        const correct = isCorrectWinner(
+          { matchNumber: matchNum, homeScore: pred.homeScore, awayScore: pred.awayScore },
+          actual,
+          isKnockout,
+          teams?.home,
+          teams?.away,
+        );
+        streak = correct ? streak + 1 : 0;
+      }
+      if (streak > bestStreak) bestStreak = streak;
 
-        const exactScore = pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore;
-        if (exactScore) {
-          exactCount++;
-          if (exactCount % 3 === 0) {
-            const date = matchDateMap.get(matchNum);
-            const dateStr = date
-              ? new Date(date + 'T12:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })
-              : `match ${matchNum}`;
-            beerGiveReasons.get(u.id)!.push(`Hattrick: ${exactCount} exacte scores (laatst ${dateStr})`);
+      // Groepsfase-only: 0-punten-reeks (drinken) + hattrick (uitdelen)
+      if (!isKnockout) {
+        if (!pred || !actual) {
+          consecutiveZeros++;
+        } else {
+          consecutiveZeros = calculateMatchPoints(pred, actual, pred.jokerUsed) <= 0 ? consecutiveZeros + 1 : 0;
+
+          const exactScore = pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore;
+          if (exactScore) {
+            exactCount++;
+            if (exactCount % 3 === 0) {
+              const date = matchDateMap.get(matchNum);
+              const dateStr = date
+                ? new Date(date + 'T12:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })
+                : `match ${matchNum}`;
+              beerGiveReasons.get(u.id)!.push(`Hattrick: ${exactCount} exacte scores (laatst ${dateStr})`);
+            }
           }
         }
-      }
-      if (consecutiveZeros > 0 && consecutiveZeros % 3 === 0) {
-        const date = matchDateMap.get(matchNum);
-        const dateStr = date
-          ? new Date(date + 'T12:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })
-          : `match ${matchNum}`;
-        beerReasons.get(u.id)!.push(`${consecutiveZeros}x op rij 0 punten (tot ${dateStr})`);
+        if (consecutiveZeros > 0 && consecutiveZeros % 3 === 0) {
+          const date = matchDateMap.get(matchNum);
+          const dateStr = date
+            ? new Date(date + 'T12:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })
+            : `match ${matchNum}`;
+          beerReasons.get(u.id)!.push(`${consecutiveZeros}x op rij 0 punten (tot ${dateStr})`);
+        }
       }
     }
     hotStreaks.set(u.id, streak);
+    bestStreaks.set(u.id, bestStreak);
   }
 
   // One-time migration: rename legacy "Nx op rij 0 punten" (no date suffix)
@@ -307,6 +329,7 @@ export async function GET() {
       beerGiveReasons: beerGiveReasons.get(u.id) || [],
       beerGivePending: (beerGiveReasons.get(u.id) || []).filter(r => !beerGifts.some(g => g.giverId === u.id && g.reason === r)).length,
       hotStreak: hotStreaks.get(u.id) || 0,
+      bestStreak: bestStreaks.get(u.id) || 0,
       cosmetics: cosmeticsByUser.get(u.id) || { nameColor: null, rowStyle: null, title: null },
     };
   });

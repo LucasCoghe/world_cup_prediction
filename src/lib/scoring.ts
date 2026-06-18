@@ -63,6 +63,24 @@ function getAdvancingSide(score: MatchScore, homeTeam?: string, awayTeam?: strin
   return 0;
 }
 
+// Did the prediction get the winner/outcome right?
+//   Group:    same result sign (incl. a correctly predicted draw).
+//   Knockout: same advancing side (handles penalty shootouts via advancingTeam).
+export function isCorrectWinner(
+  pred: MatchScore,
+  actual: MatchScore,
+  isKnockout: boolean,
+  actualHomeTeam?: string,
+  actualAwayTeam?: string,
+): boolean {
+  if (isKnockout) {
+    const predSide = getAdvancingSide(pred, actualHomeTeam, actualAwayTeam);
+    const actualSide = getAdvancingSide(actual, actualHomeTeam, actualAwayTeam);
+    return predSide !== 0 && predSide === actualSide;
+  }
+  return getOutcome(pred.homeScore, pred.awayScore) === getOutcome(actual.homeScore, actual.awayScore);
+}
+
 // Sporza knockout scoring (cumulative):
 //   +10pt = correct winner (who advances, even after penalties)
 //    +6pt = exact score after 90/120 min
