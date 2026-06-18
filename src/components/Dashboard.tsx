@@ -220,7 +220,7 @@ export default function Dashboard({ user, onLogout }: Props) {
         )}
         {activeTab === 'leaderboard' && <Leaderboard currentUserId={user.userId} />}
         {activeTab === 'matches' && <Matches predictions={predictions} targetMatchNumber={targetMatchNumber} targetNonce={targetNonce} />}
-        {activeTab === 'schandpaal' && <Schandpaal />}
+        {activeTab === 'schandpaal' && <Schandpaal currentUserId={user.userId} />}
         {activeTab === 'simulator' && <BracketSimulator groupPredictions={predictions.getScoresArray()} />}
         {activeTab === 'extra' && <ExtraQuestions predictions={predictions} />}
         {activeTab === 'chat' && <GroupChat />}

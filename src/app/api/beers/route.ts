@@ -23,6 +23,10 @@ export async function GET() {
     where: { photoUrl: { not: null } },
     include: {
       drinker: { select: { id: true, name: true, avatarUrl: true } },
+      comments: {
+        orderBy: { createdAt: 'asc' },
+        include: { user: { select: { id: true, name: true, avatarUrl: true } } },
+      },
     },
     orderBy: { claimedAt: 'desc' },
   });
@@ -116,7 +120,61 @@ export async function POST(req: Request) {
     }
   }
 
-  const { action, reason, receiverId } = await req.json();
+  const { action, reason, receiverId, pintId, caption, message, commentId } = await req.json();
+
+  // Maker zet/bewerkt het bijschrift bij zijn eigen foto
+  if (action === 'caption') {
+    if (typeof pintId !== 'string') {
+      return NextResponse.json({ error: 'Ongeldig verzoek' }, { status: 400 });
+    }
+    const pint = await prisma.beerConfirmation.findUnique({ where: { id: pintId }, select: { drinkerId: true } });
+    if (!pint) return NextResponse.json({ error: 'Foto niet gevonden' }, { status: 404 });
+    if (pint.drinkerId !== user.userId) {
+      return NextResponse.json({ error: 'Alleen de maker kan een bijschrift toevoegen' }, { status: 403 });
+    }
+    const trimmed = typeof caption === 'string' ? caption.trim().slice(0, 200) : '';
+    await prisma.beerConfirmation.update({
+      where: { id: pintId },
+      data: { caption: trimmed || null },
+    });
+    return NextResponse.json({ ok: true, caption: trimmed || null });
+  }
+
+  // Iedereen mag reageren op een foto
+  if (action === 'comment') {
+    if (typeof pintId !== 'string' || !message?.trim()) {
+      return NextResponse.json({ error: 'Foto en bericht vereist' }, { status: 400 });
+    }
+    const pint = await prisma.beerConfirmation.findUnique({ where: { id: pintId }, select: { id: true } });
+    if (!pint) return NextResponse.json({ error: 'Foto niet gevonden' }, { status: 404 });
+    const comment = await prisma.pintComment.create({
+      data: { pintId, userId: user.userId, message: message.trim().slice(0, 500) },
+      include: { user: { select: { id: true, name: true, avatarUrl: true } } },
+    });
+    return NextResponse.json({
+      ok: true,
+      comment: {
+        id: comment.id,
+        message: comment.message,
+        createdAt: comment.createdAt.toISOString(),
+        user: comment.user,
+      },
+    });
+  }
+
+  // Eigen reactie (of admin) verwijderen
+  if (action === 'deleteComment') {
+    if (typeof commentId !== 'string') {
+      return NextResponse.json({ error: 'Ongeldig verzoek' }, { status: 400 });
+    }
+    const comment = await prisma.pintComment.findUnique({ where: { id: commentId }, select: { userId: true } });
+    if (!comment) return NextResponse.json({ error: 'Reactie niet gevonden' }, { status: 404 });
+    if (comment.userId !== user.userId && !user.isAdmin) {
+      return NextResponse.json({ error: 'Geen rechten' }, { status: 403 });
+    }
+    await prisma.pintComment.delete({ where: { id: commentId } });
+    return NextResponse.json({ ok: true });
+  }
 
   if (action === 'give') {
     if (!reason || !receiverId) {

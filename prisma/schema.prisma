@@ -29,6 +29,7 @@ model User {
   predictions        MatchPrediction[]
   extraPredictions   ExtraPrediction?
   comments           MatchComment[]
+  pintComments       PintComment[]
   pushSubscriptions  PushSubscription[]
   minigameScores     MinigameScore[]
   cosmetics          UserCosmetic[]
@@ -134,11 +135,26 @@ model BeerConfirmation {
   witnessId   String?
   witnessedAt DateTime?
   photoUrl    String?
+  caption     String?
 
-  drinker User  @relation("drinker", fields: [drinkerId], references: [id])
-  witness User? @relation("witness", fields: [witnessId], references: [id])
+  drinker  User          @relation("drinker", fields: [drinkerId], references: [id])
+  witness  User?         @relation("witness", fields: [witnessId], references: [id])
+  comments PintComment[]
 
   @@unique([drinkerId, reason])
+}
+
+model PintComment {
+  id        String   @id @default(cuid())
+  pintId    String
+  userId    String
+  message   String
+  createdAt DateTime @default(now())
+
+  pint BeerConfirmation @relation(fields: [pintId], references: [id], onDelete: Cascade)
+  user User             @relation(fields: [userId], references: [id])
+
+  @@index([pintId, createdAt])
 }
 
 model BeerGift {
