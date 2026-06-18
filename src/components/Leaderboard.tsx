@@ -7,6 +7,7 @@ import BeerToast from './BeerToast';
 import BeerModal from './BeerModal';
 import Avatar from './Avatar';
 import { getCosmetic } from '@/lib/cosmetics';
+import { getStreakTier } from '@/lib/streak';
 
 interface LeaderboardEntry {
   id: string;
@@ -118,6 +119,7 @@ export default function Leaderboard({ currentUserId }: Props) {
             const isH2hSelected = h2hSelect === entry.id;
             const rowCos = getCosmetic(entry.cosmetics?.rowStyle);
             const titleCos = getCosmetic(entry.cosmetics?.title);
+            const streakTier = getStreakTier(entry.hotStreak);
             return (
               <div
                 key={entry.id}
@@ -145,10 +147,15 @@ export default function Leaderboard({ currentUserId }: Props) {
                     <div className="cos-title truncate">{titleCos.title}</div>
                   )}
                   <div className={`text-lg font-semibold truncate ${
-                    entry.hotStreak >= 2 ? 'fire-text' : isH2hSelected ? 'text-blue-300' : 'text-white'
+                    streakTier ? streakTier.className : isH2hSelected ? 'text-blue-300' : 'text-white'
                   }`}>
                     {entry.name}
                   </div>
+                  {streakTier?.label && (
+                    <div className={`text-[10px] font-bold tracking-widest ${streakTier.className}`}>
+                      {streakTier.emoji} {streakTier.label}
+                    </div>
+                  )}
                   {(isCurrentUser || isLast || isH2hSelected) && (
                     <div className="text-sm flex items-center gap-2 flex-wrap">
                       {isCurrentUser && <span className="text-gold">(jij)</span>}

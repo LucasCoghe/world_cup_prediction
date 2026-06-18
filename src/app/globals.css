@@ -160,6 +160,32 @@ input[type="number"] {
   animation: shimmer 3s linear infinite;
 }
 
+/* Streak tier 5x+: legendary goud/wit met gouden gloed */
+.legendary-text {
+  background: linear-gradient(135deg, #fff8e1 0%, #ffd700 25%, #ffffff 50%, #ffd700 75%, #fff8e1 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 2s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6));
+}
+
+/* Streak tier 7x+: electric neon cyaan/paars met pulserende gloed */
+.electric-text {
+  background: linear-gradient(135deg, #00e5ff 0%, #a855f7 50%, #00e5ff 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 1.5s linear infinite, electric-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes electric-pulse {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.5)); }
+  50% { filter: drop-shadow(0 0 11px rgba(168, 85, 247, 0.85)); }
+}
+
 @keyframes shimmer {
   to { background-position: 200% center; }
 }

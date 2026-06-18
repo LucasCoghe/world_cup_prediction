@@ -5,6 +5,7 @@ import { teams, getRoundName } from '@/lib/tournament';
 import FlagIcon from './FlagIcon';
 import Avatar from './Avatar';
 import { getCosmetic } from '@/lib/cosmetics';
+import { getStreakTier } from '@/lib/streak';
 
 interface MatchPrediction {
   matchNumber: number;
@@ -132,6 +133,7 @@ export default function UserPredictions({ userId, onBack }: Props) {
   const hatTricks = Math.floor(exactScoresCount / 3);
 
   const titleCos = getCosmetic(cosmetics?.title);
+  const streakTier = getStreakTier(hotStreak);
 
   return (
     <div className="space-y-6 animate-in">
@@ -141,17 +143,19 @@ export default function UserPredictions({ userId, onBack }: Props) {
         <div className="flex flex-col min-w-0">
           {titleCos?.title && <span className="cos-title truncate">{titleCos.title}</span>}
           <span className="text-xs text-gray-400 leading-tight">Voorspellingen van</span>
-          <h2 className={`text-xl sm:text-2xl font-bold trophy-text truncate ${hotStreak >= 2 ? 'fire-text' : ''}`}>
+          <h2 className={`text-xl sm:text-2xl font-bold truncate ${streakTier ? streakTier.className : 'trophy-text'}`}>
             {userName}
           </h2>
         </div>
       </div>
 
-      {(hotStreak >= 2 || exactScoresCount > 0 || hatTricks > 0) && (
+      {(streakTier || exactScoresCount > 0 || hatTricks > 0) && (
         <div className="card bg-white/5">
           <div className="text-sm text-gray-400 flex flex-wrap items-center gap-x-3 gap-y-1">
-            {hotStreak >= 2 && (
-              <span className="fire-text font-bold">🔥 {hotStreak}x op rij juist</span>
+            {streakTier && (
+              <span className={`${streakTier.className} font-bold`}>
+                {streakTier.emoji} {streakTier.label ? `${streakTier.label} · ` : ''}{hotStreak}x op rij juist
+              </span>
             )}
             {exactScoresCount > 0 && (
               <span className="text-emerald-300 font-medium">🎯 {exactScoresCount} exacte score{exactScoresCount > 1 ? 's' : ''}</span>
