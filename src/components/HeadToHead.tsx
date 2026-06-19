@@ -122,7 +122,10 @@ export default function HeadToHead({ userA, userB, onBack }: Props) {
 
     return (
       <div key={mn} className="flex items-center gap-2 py-1.5 px-2 rounded bg-white/5 text-sm">
-        <span className="text-xs text-gray-600 w-7">#{mn}</span>
+        <div className="w-16 shrink-0 leading-tight">
+          <span className="text-xs text-gray-600">#{mn}</span>
+          <span className="block text-[10px] text-gray-700 truncate">{sectionLabel(mn)}</span>
+        </div>
         <div className={`w-12 text-center font-bold ${pointsColor(ptA)}`}>
           {pA ? `${pA.homeScore}-${pA.awayScore}` : '-'}
         </div>
@@ -160,7 +163,10 @@ export default function HeadToHead({ userA, userB, onBack }: Props) {
     return (
       <div key={mn} className="py-2 px-2 rounded bg-white/5 text-sm">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-600 w-7">#{mn}</span>
+          <div className="w-16 shrink-0 leading-tight">
+          <span className="text-xs text-gray-600">#{mn}</span>
+          <span className="block text-[10px] text-gray-700 truncate">{sectionLabel(mn)}</span>
+        </div>
 
           {/* Player A: team + score */}
           <div className="flex-1 text-right">
@@ -201,10 +207,27 @@ export default function HeadToHead({ userA, userB, onBack }: Props) {
     );
   }
 
-  const groupMatchNums = allMatchNumbers.filter(mn => (predMapA.get(mn) || predMapB.get(mn))?.group);
-  const knockoutMatchNums = allMatchNumbers.filter(mn => (predMapA.get(mn) || predMapB.get(mn))?.round);
-  const groupsList = [...new Set(groupMatchNums.map(mn => (predMapA.get(mn) || predMapB.get(mn))?.group).filter(Boolean))] as string[];
-  const roundsList = [...new Set(knockoutMatchNums.map(mn => (predMapA.get(mn) || predMapB.get(mn))?.round).filter(Boolean))] as string[];
+  function refOf(mn: number) {
+    return predMapA.get(mn) || predMapB.get(mn);
+  }
+  function isPlayed(mn: number) {
+    const ref = refOf(mn);
+    return !!ref && ref.actualHome !== null && ref.actualAway !== null;
+  }
+  function sectionLabel(mn: number): string {
+    const ref = refOf(mn);
+    if (!ref) return '';
+    if (ref.group) return `Groep ${ref.group}`;
+    if (ref.round) return getRoundName(ref.round);
+    return '';
+  }
+
+  // Gespeelde wedstrijden bovenaan (recentste eerst), daarna nog te spelen (eerstvolgende eerst).
+  const orderedMatchNums = [...allMatchNumbers].sort((a, b) => {
+    const aP = isPlayed(a), bP = isPlayed(b);
+    if (aP !== bP) return aP ? -1 : 1;
+    return aP ? b - a : a - b;
+  });
 
   const nameCosA = getCosmetic(dataA.cosmetics?.nameColor);
   const titleCosA = getCosmetic(dataA.cosmetics?.title);
@@ -248,35 +271,20 @@ export default function HeadToHead({ userA, userB, onBack }: Props) {
 
       {/* Column headers */}
       <div className="flex items-center gap-2 px-2 text-sm font-medium text-gray-400">
-        <span className="w-7"></span>
+        <span className="w-16"></span>
         <span className={`w-12 text-center ${nameCosA?.nameClassName ?? ''}`}>{dataA.userName}</span>
         <span className="flex-1 text-center">Wedstrijd</span>
         <span className={`w-12 text-center ${nameCosB?.nameClassName ?? ''}`}>{dataB.userName}</span>
       </div>
 
-      {/* Group matches */}
-      {groupsList.sort().map(group => (
-        <div key={group} className="card">
-          <h3 className="text-sm font-semibold text-gold mb-2">Groep {group}</h3>
-          <div className="space-y-1">
-            {groupMatchNums
-              .filter(mn => (predMapA.get(mn) || predMapB.get(mn))?.group === group)
-              .map(mn => renderGroupMatch(mn))}
-          </div>
+      {/* Alle wedstrijden — gespeeld bovenaan (recentste eerst), dan nog te spelen */}
+      <div className="card">
+        <div className="space-y-1.5">
+          {orderedMatchNums.map(mn =>
+            refOf(mn)?.group ? renderGroupMatch(mn) : renderKnockoutMatch(mn)
+          )}
         </div>
-      ))}
-
-      {/* Knockout matches */}
-      {roundsList.map(round => (
-        <div key={round} className="card">
-          <h3 className="text-sm font-semibold text-gold mb-2">{getRoundName(round)}</h3>
-          <div className="space-y-1.5">
-            {knockoutMatchNums
-              .filter(mn => (predMapA.get(mn) || predMapB.get(mn))?.round === round)
-              .map(mn => renderKnockoutMatch(mn))}
-          </div>
-        </div>
-      ))}
+      </div>
     </div>
   );
 }

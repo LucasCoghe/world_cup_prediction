@@ -103,10 +103,21 @@ export default function UserPredictions({ userId, onBack }: Props) {
     </div>
   );
 
-  const groupPreds = predictions.filter(p => p.group).sort((a, b) => a.matchNumber - b.matchNumber);
-  const knockoutPreds = predictions.filter(p => p.round).sort((a, b) => a.matchNumber - b.matchNumber);
-  const groups = [...new Set(groupPreds.map(p => p.group!))].sort();
-  const rounds = [...new Set(knockoutPreds.map(p => p.round!))];
+  const groupPreds = predictions.filter(p => p.group);
+
+  // Gespeelde wedstrijden bovenaan (recentste eerst), daarna nog te spelen (eerstvolgende eerst).
+  const ordered = [...predictions].sort((a, b) => {
+    const aPlayed = a.actualHome !== null && a.actualAway !== null;
+    const bPlayed = b.actualHome !== null && b.actualAway !== null;
+    if (aPlayed !== bPlayed) return aPlayed ? -1 : 1;
+    return aPlayed ? b.matchNumber - a.matchNumber : a.matchNumber - b.matchNumber;
+  });
+
+  function sectionLabel(p: MatchPrediction): string {
+    if (p.group) return `Groep ${p.group}`;
+    if (p.round) return getRoundName(p.round);
+    return '';
+  }
 
   const totalPoints = predictions.reduce((sum, p) => {
     const pts = getPointsForMatch(p);
@@ -202,85 +213,59 @@ export default function UserPredictions({ userId, onBack }: Props) {
         </div>
       )}
 
-      {/* Group stage predictions */}
-      {groups.map(group => {
-        const matches = groupPreds.filter(p => p.group === group);
-        return (
-          <div key={group} className="card">
-            <h3 className="text-sm font-semibold text-gold mb-3">Groep {group}</h3>
-            <div className="space-y-1.5">
-              {matches.map(p => {
-                const home = teams[p.home];
-                const away = teams[p.away];
-                const pts = getPointsForMatch(p);
-                return (
-                  <div key={p.matchNumber} className={`flex items-center gap-2 py-1.5 px-2 rounded ${
-                    pts ? (pts.points >= 10 ? 'bg-green-950/30' : pts.points >= 5 ? 'bg-yellow-950/20' : 'bg-red-950/20') : 'bg-white/5'
-                  } ${p.jokerUsed ? 'ring-1 ring-purple-500/40' : ''}`}>
-                    <span className="text-xs text-gray-500 w-7">
-                      {p.jokerUsed ? <span className="text-purple-400 font-bold" title="Joker">J</span> : `#${p.matchNumber}`}
-                    </span>
-                    <div className="flex items-center gap-1 flex-1 justify-end text-sm">
+      {/* Alle voorspellingen — gespeeld bovenaan (recentste eerst), dan nog te spelen */}
+      <div className="card">
+        <h3 className="text-sm font-semibold text-gold mb-3">Voorspellingen</h3>
+        <div className="space-y-1.5">
+          {ordered.map(p => {
+            const isGroup = !!p.group;
+            const home = teams[p.home];
+            const away = teams[p.away];
+            const pts = getPointsForMatch(p);
+            return (
+              <div key={p.matchNumber} className={`flex items-center gap-2 py-1.5 px-2 rounded ${
+                pts ? (pts.points >= 10 ? 'bg-green-950/30' : pts.points >= 5 ? 'bg-yellow-950/20' : 'bg-red-950/20') : 'bg-white/5'
+              } ${p.jokerUsed ? 'ring-1 ring-purple-500/40' : ''}`}>
+                <div className="w-16 shrink-0 leading-tight">
+                  <span className="text-xs text-gray-500">
+                    {p.jokerUsed ? <span className="text-purple-400 font-bold" title="Joker">J</span> : `#${p.matchNumber}`}
+                  </span>
+                  <span className="block text-[10px] text-gray-600 truncate">{sectionLabel(p)}</span>
+                </div>
+                <div className="flex items-center gap-1 flex-1 justify-end text-sm">
+                  {isGroup ? (
+                    <>
                       <span>{home?.name || p.home}</span>
                       <FlagIcon teamCode={p.home} size={16} />
-                    </div>
-                    <span className="font-bold w-14 text-center">{p.homeScore} - {p.awayScore}</span>
-                    <div className="flex items-center gap-1 flex-1 text-sm">
+                    </>
+                  ) : (
+                    <span className="text-gray-400">{p.home}</span>
+                  )}
+                </div>
+                <span className="font-bold w-14 text-center">{p.homeScore} - {p.awayScore}</span>
+                <div className="flex items-center gap-1 flex-1 text-sm">
+                  {isGroup ? (
+                    <>
                       <FlagIcon teamCode={p.away} size={16} />
                       <span>{away?.name || p.away}</span>
-                    </div>
-                    {pts !== null && (
-                      <div className="flex items-center gap-2 w-20 justify-end">
-                        <span className="text-xs text-gray-500">({p.actualHome}-{p.actualAway})</span>
-                        <span className={`text-xs font-bold ${
-                          pts.points >= 10 ? 'text-green-400' : pts.points >= 5 ? 'text-yellow-400' : 'text-red-400'
-                        }`}>{pts.label}</span>
-                      </div>
-                    )}
+                    </>
+                  ) : (
+                    <span className="text-gray-400">{p.away}</span>
+                  )}
+                </div>
+                {pts !== null && (
+                  <div className="flex items-center gap-2 w-20 justify-end">
+                    <span className="text-xs text-gray-500">({p.actualHome}-{p.actualAway})</span>
+                    <span className={`text-xs font-bold ${
+                      pts.points >= 10 ? 'text-green-400' : pts.points >= 5 ? 'text-yellow-400' : 'text-red-400'
+                    }`}>{pts.label}</span>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-
-      {/* Knockout predictions */}
-      {rounds.map(round => {
-        const matches = knockoutPreds.filter(p => p.round === round);
-        return (
-          <div key={round} className="card">
-            <h3 className="text-sm font-semibold text-gold mb-3">{getRoundName(round)}</h3>
-            <div className="space-y-1.5">
-              {matches.map(p => {
-                const pts = getPointsForMatch(p);
-                return (
-                  <div key={p.matchNumber} className={`flex items-center gap-2 py-1.5 px-2 rounded ${
-                    pts ? (pts.points >= 10 ? 'bg-green-950/30' : pts.points >= 5 ? 'bg-yellow-950/20' : 'bg-red-950/20') : 'bg-white/5'
-                  }`}>
-                    <span className="text-xs text-gray-500 w-7">#{p.matchNumber}</span>
-                    <div className="flex items-center gap-1 flex-1 justify-end text-sm">
-                      <span className="text-gray-400">{p.home}</span>
-                    </div>
-                    <span className="font-bold w-14 text-center">{p.homeScore} - {p.awayScore}</span>
-                    <div className="flex items-center gap-1 flex-1 text-sm">
-                      <span className="text-gray-400">{p.away}</span>
-                    </div>
-                    {pts !== null && (
-                      <div className="flex items-center gap-2 w-20 justify-end">
-                        <span className="text-xs text-gray-500">({p.actualHome}-{p.actualAway})</span>
-                        <span className={`text-xs font-bold ${
-                          pts.points >= 10 ? 'text-green-400' : pts.points >= 5 ? 'text-yellow-400' : 'text-red-400'
-                        }`}>{pts.label}</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
