@@ -232,29 +232,29 @@ export default function UserPredictions({ userId, onBack }: Props) {
                   </span>
                   <span className="block text-[10px] text-gray-600 truncate">{sectionLabel(p)}</span>
                 </div>
-                <div className="flex items-center gap-1 flex-1 justify-end text-sm">
+                <div className="flex items-center gap-1 flex-1 min-w-0 justify-end text-sm">
                   {isGroup ? (
                     <>
-                      <span>{home?.name || p.home}</span>
+                      <span className="truncate">{home?.name || p.home}</span>
                       <FlagIcon teamCode={p.home} size={16} />
                     </>
                   ) : (
-                    <span className="text-gray-400">{p.home}</span>
+                    <span className="text-gray-400 truncate">{p.home}</span>
                   )}
                 </div>
-                <span className="font-bold w-14 text-center">{p.homeScore} - {p.awayScore}</span>
-                <div className="flex items-center gap-1 flex-1 text-sm">
+                <span className="font-bold w-14 shrink-0 text-center whitespace-nowrap">{p.homeScore} - {p.awayScore}</span>
+                <div className="flex items-center gap-1 flex-1 min-w-0 text-sm">
                   {isGroup ? (
                     <>
                       <FlagIcon teamCode={p.away} size={16} />
-                      <span>{away?.name || p.away}</span>
+                      <span className="truncate">{away?.name || p.away}</span>
                     </>
                   ) : (
-                    <span className="text-gray-400">{p.away}</span>
+                    <span className="text-gray-400 truncate">{p.away}</span>
                   )}
                 </div>
                 {pts !== null && (
-                  <div className="flex items-center gap-2 w-20 justify-end">
+                  <div className="flex items-center gap-2 w-20 shrink-0 justify-end">
                     <span className="text-xs text-gray-500">({p.actualHome}-{p.actualAway})</span>
                     <span className={`text-xs font-bold ${
                       pts.points >= 10 ? 'text-green-400' : pts.points >= 5 ? 'text-yellow-400' : 'text-red-400'

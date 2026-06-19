@@ -63,9 +63,9 @@ function TeamLabel({ code, size = 14 }: { code: string; size?: number }) {
   const team = teams[code];
   if (!team) return <span className="text-gray-500">{code}</span>;
   return (
-    <span className="inline-flex items-center gap-1">
-      <FlagIcon teamCode={code} size={size} />
-      <span>{team.name}</span>
+    <span className="inline-flex items-center gap-1 min-w-0">
+      <span className="shrink-0"><FlagIcon teamCode={code} size={size} /></span>
+      <span className="truncate">{team.name}</span>
     </span>
   );
 }
@@ -126,20 +126,20 @@ export default function HeadToHead({ userA, userB, onBack }: Props) {
           <span className="text-xs text-gray-600">#{mn}</span>
           <span className="block text-[10px] text-gray-700 truncate">{sectionLabel(mn)}</span>
         </div>
-        <div className={`w-12 text-center font-bold ${pointsColor(ptA)}`}>
+        <div className={`w-12 shrink-0 text-center font-bold whitespace-nowrap ${pointsColor(ptA)}`}>
           {pA ? `${pA.homeScore}-${pA.awayScore}` : '-'}
         </div>
-        <div className="flex-1 text-center text-xs text-gray-400">
-          <span className="inline-flex items-center justify-center gap-1">
+        <div className="flex-1 min-w-0 text-center text-xs text-gray-400">
+          <span className="flex items-center justify-center gap-1 min-w-0">
             <TeamLabel code={ref.home} />
-            <span className="mx-1">vs</span>
+            <span className="shrink-0">vs</span>
             <TeamLabel code={ref.away} />
           </span>
           {ref.actualHome !== null && (
-            <span className="text-gray-600 ml-1">({ref.actualHome}-{ref.actualAway})</span>
+            <span className="text-gray-600">({ref.actualHome}-{ref.actualAway})</span>
           )}
         </div>
-        <div className={`w-12 text-center font-bold ${pointsColor(ptB)}`}>
+        <div className={`w-12 shrink-0 text-center font-bold whitespace-nowrap ${pointsColor(ptB)}`}>
           {pB ? `${pB.homeScore}-${pB.awayScore}` : '-'}
         </div>
       </div>
