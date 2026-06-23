@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getUser } from '@/lib/auth';
-import { resolveKnockoutBracket, MatchScore } from '@/lib/standings';
-import { TOTAL_GROUP_MATCHES, knockoutStructure } from '@/lib/tournament';
+import { resolveKnockoutBracket, calculateGroupStandings, clinchedGroupPositions, MatchScore } from '@/lib/standings';
+import { groupMatches, knockoutStructure } from '@/lib/tournament';
 
 export async function GET() {
   const user = await getUser();
@@ -13,14 +13,6 @@ export async function GET() {
   const actualResults = await prisma.actualResult.findMany();
   const resultSet = new Set(actualResults.map(r => r.matchNumber));
 
-  // R32 teams only available when all 72 group matches have results
-  const allGroupsComplete = Array.from({ length: TOTAL_GROUP_MATCHES }, (_, i) => i + 1)
-    .every(n => resultSet.has(n));
-
-  if (!allGroupsComplete) {
-    return NextResponse.json({ teams: {} });
-  }
-
   const actualScores: MatchScore[] = actualResults.map(r => ({
     matchNumber: r.matchNumber,
     homeScore: r.homeScore,
@@ -28,27 +20,59 @@ export async function GET() {
     advancingTeam: r.advancingTeam || undefined,
   }));
 
+  // Group completeness: all of a group's matches have a result.
+  const groupComplete: Record<string, boolean> = {};
+  const matchesByGroup: Record<string, number[]> = {};
+  for (const m of groupMatches) {
+    (matchesByGroup[m.group] ??= []).push(m.matchNumber);
+  }
+  for (const [group, nums] of Object.entries(matchesByGroup)) {
+    groupComplete[group] = nums.every(n => resultSet.has(n));
+  }
+  // Best-third assignment compares 3rd-placed teams across ALL groups, so it
+  // can only be resolved once every group is finished.
+  const allGroupsComplete = Object.values(groupComplete).every(Boolean);
+
+  // Resolve group positions (1X / 2X) that are already certain. A finished
+  // group uses its final standings; an unfinished group uses only positions
+  // that are mathematically clinched regardless of the remaining matches.
+  const standings = calculateGroupStandings(actualScores);
+  const positionTeam: Record<string, string> = {};
+  for (const group of Object.keys(matchesByGroup)) {
+    if (groupComplete[group]) {
+      const s = standings[group];
+      if (s[0]) positionTeam[`1${group}`] = s[0].code;
+      if (s[1]) positionTeam[`2${group}`] = s[1].code;
+    } else {
+      const { first, second } = clinchedGroupPositions(group, actualScores);
+      if (first) positionTeam[`1${group}`] = first;
+      if (second) positionTeam[`2${group}`] = second;
+    }
+  }
+
+  // resolveKnockoutBracket resolves 3RD_ / W## / L## sources; we override the
+  // group-position sides with the certain-only positionTeam map above.
   const bracket = resolveKnockoutBracket(actualScores);
 
+  function resolveSide(src: string, bracketTeam: string | null): string | null {
+    if (/^[12][A-L]$/.test(src)) return positionTeam[src] ?? null;
+    if (src.startsWith('3RD_')) return allGroupsComplete ? bracketTeam : null;
+    if (src.startsWith('W') || src.startsWith('L')) {
+      return resultSet.has(parseInt(src.slice(1))) ? bracketTeam : null;
+    }
+    return null;
+  }
+
+  // Fill each knockout match as soon as BOTH of its sides are certain.
   const teams: Record<number, { homeTeam: string | null; awayTeam: string | null }> = {};
   for (const b of bracket) {
-    if (!b.homeTeam || !b.awayTeam) continue;
-
     const km = knockoutStructure.find(m => m.matchNumber === b.matchNumber);
     if (!km) continue;
 
-    // Check source matches have results (for rounds after R32)
-    let sourcesReady = true;
-    for (const src of [km.homeSource, km.awaySource]) {
-      const refMatch = src.startsWith('W') || src.startsWith('L') ? parseInt(src.slice(1)) : null;
-      if (refMatch && !resultSet.has(refMatch)) {
-        sourcesReady = false;
-        break;
-      }
-    }
-
-    if (sourcesReady) {
-      teams[b.matchNumber] = { homeTeam: b.homeTeam, awayTeam: b.awayTeam };
+    const homeTeam = resolveSide(km.homeSource, b.homeTeam);
+    const awayTeam = resolveSide(km.awaySource, b.awayTeam);
+    if (homeTeam && awayTeam) {
+      teams[b.matchNumber] = { homeTeam, awayTeam };
     }
   }
 

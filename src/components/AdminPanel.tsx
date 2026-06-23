@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { groupMatches, knockoutStructure, teams, getRoundName, TOTAL_GROUP_MATCHES } from '@/lib/tournament';
+import type { GroupMatch, KnockoutMatch } from '@/lib/tournament';
 import FlagIcon from './FlagIcon';
 
 interface UserInfo {
@@ -37,6 +38,8 @@ export default function AdminPanel() {
   const [editAway, setEditAway] = useState('');
   const [editAdvancing, setEditAdvancing] = useState('');
   const [koTeams, setKoTeams] = useState<Record<number, KnockoutMatchTeams>>({});
+  const [resultsView, setResultsView] = useState<'chrono' | 'grouped'>('chrono');
+  const [hideCompleted, setHideCompleted] = useState(false);
 
   useEffect(() => {
     fetch('/api/admin/users').then(r => r.json()).then(d => setUsers(d.users || []));
@@ -142,6 +145,175 @@ export default function AdminPanel() {
 
   const allGroupMatches = groupMatches;
   const groups = [...new Set(allGroupMatches.map(m => m.group))].sort();
+
+  // Renders one editable match row, works for both group and knockout matches.
+  function renderMatchRow(
+    match: GroupMatch | KnockoutMatch,
+    opts: { showTime?: boolean } = {}
+  ) {
+    const isKnockout = match.matchNumber > TOTAL_GROUP_MATCHES;
+    const result = resultMap.get(match.matchNumber);
+    const isEditing = editingMatch === match.matchNumber;
+    const bg = result ? (result.live ? 'bg-amber-950/20 border border-amber-600/30' : 'bg-green-950/20 border border-green-600/20') : 'bg-white/5';
+
+    // Resolve team labels + flags
+    let homeLabel: string;
+    let awayLabel: string;
+    let homeFlag: string | null = null;
+    let awayFlag: string | null = null;
+    let labelClass = '';
+    if (isKnockout) {
+      const km = match as KnockoutMatch;
+      const resolved = koTeams[match.matchNumber];
+      homeFlag = resolved?.homeTeam || null;
+      awayFlag = resolved?.awayTeam || null;
+      homeLabel = resolved?.homeTeam ? (teams[resolved.homeTeam]?.name || resolved.homeTeam) : km.homeSource;
+      awayLabel = resolved?.awayTeam ? (teams[resolved.awayTeam]?.name || resolved.awayTeam) : km.awaySource;
+      labelClass = 'text-gray-400';
+    } else {
+      const gm = match as GroupMatch;
+      homeFlag = gm.home;
+      awayFlag = gm.away;
+      homeLabel = teams[gm.home]?.name || gm.home;
+      awayLabel = teams[gm.away]?.name || gm.away;
+    }
+
+    const resolved = isKnockout ? koTeams[match.matchNumber] : undefined;
+    const isDrawInput = isKnockout && isEditing && editHome !== '' && editHome === editAway;
+
+    const actions = isEditing ? (
+      <div className="flex gap-1">
+        <button
+          onClick={() => saveResult(match.matchNumber, true)}
+          className="text-xs px-2 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white font-semibold"
+          title="Tussenstand opslaan (geen pushes)"
+        >Live</button>
+        <button
+          onClick={() => saveResult(match.matchNumber, false)}
+          className="text-xs px-2 py-1 rounded bg-green-600 hover:bg-green-500 text-white font-semibold"
+          title="Eindscore: berekent biertjes + pushes"
+        >Finaal</button>
+        <button onClick={() => setEditingMatch(null)} className="btn-secondary text-xs px-2 py-1">X</button>
+      </div>
+    ) : (
+      <button
+        onClick={() => startEditing(match.matchNumber)}
+        className="btn-secondary text-xs px-2 py-1"
+      >
+        {result ? (result.live ? 'Live ✏️' : 'Wijzig') : 'Invullen'}
+      </button>
+    );
+
+    return (
+      <div key={match.matchNumber} className={`rounded-lg ${bg}`}>
+        <div className="flex items-center gap-2 py-2 px-2 sm:px-3">
+          <span className="text-[10px] sm:text-xs text-gray-500 w-6 sm:w-8 shrink-0">
+            #{match.matchNumber}
+            {opts.showTime && <span className="hidden sm:block text-[9px] text-gray-600">{match.time}</span>}
+          </span>
+
+          <div className="flex items-center gap-1 sm:gap-1.5 flex-1 min-w-0 justify-end">
+            <span className={`text-xs sm:text-sm truncate ${labelClass}`}>{homeLabel}</span>
+            {homeFlag && <FlagIcon teamCode={homeFlag} size={16} />}
+          </div>
+
+          {isEditing ? (
+            <div className="flex items-center gap-1 shrink-0">
+              <input
+                type="number"
+                min="0"
+                value={editHome}
+                onChange={e => setEditHome(e.target.value)}
+                placeholder="-"
+                className="score-input w-10 sm:w-12 text-center"
+                autoFocus
+              />
+              <span className="text-gray-500 font-bold">-</span>
+              <input
+                type="number"
+                min="0"
+                value={editAway}
+                onChange={e => setEditAway(e.target.value)}
+                placeholder="-"
+                className="score-input w-10 sm:w-12 text-center"
+              />
+            </div>
+          ) : (
+            <div className="shrink-0 w-12 sm:w-16 text-center">
+              {result ? (
+                <div className="flex flex-col items-center leading-tight">
+                  <span className={`text-sm sm:text-base font-bold ${result.live ? 'text-amber-300' : 'text-green-400'}`}>{result.homeScore} - {result.awayScore}</span>
+                  {result.live && <span className="text-[9px] text-amber-500 font-bold animate-pulse">LIVE</span>}
+                </div>
+              ) : (
+                <span className="text-gray-600 text-sm">- : -</span>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center gap-1 sm:gap-1.5 flex-1 min-w-0">
+            {awayFlag && <FlagIcon teamCode={awayFlag} size={16} />}
+            <span className={`text-xs sm:text-sm truncate ${labelClass}`}>{awayLabel}</span>
+          </div>
+
+          <div className="hidden sm:block shrink-0">{actions}</div>
+        </div>
+
+        <div className="flex sm:hidden px-2 pb-2 justify-end">{actions}</div>
+
+        {isDrawInput && (
+          <div className="px-2 sm:px-3 pb-2 flex flex-wrap items-center gap-2 text-xs border-t border-white/5 pt-2">
+            <span className="text-amber-400 font-semibold">Penalty&apos;s — wie ging door?</span>
+            {resolved?.homeTeam && resolved?.awayTeam ? (
+              <>
+                <button
+                  onClick={() => setEditAdvancing(resolved.homeTeam!)}
+                  className={`px-2 py-1 rounded font-semibold ${editAdvancing === resolved.homeTeam ? 'bg-green-600 text-white' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                >
+                  {teams[resolved.homeTeam]?.name || resolved.homeTeam}
+                </button>
+                <button
+                  onClick={() => setEditAdvancing(resolved.awayTeam!)}
+                  className={`px-2 py-1 rounded font-semibold ${editAdvancing === resolved.awayTeam ? 'bg-green-600 text-white' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                >
+                  {teams[resolved.awayTeam]?.name || resolved.awayTeam}
+                </button>
+              </>
+            ) : (
+              <input
+                type="text"
+                value={editAdvancing}
+                onChange={e => setEditAdvancing(e.target.value.toUpperCase())}
+                placeholder="Team code (bv. BEL)"
+                className="score-input px-2 py-1 w-32"
+                maxLength={3}
+              />
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Chronological list: all matches sorted by kickoff, grouped per day.
+  const chronoDays: { date: string; matches: (GroupMatch | KnockoutMatch)[] }[] = (() => {
+    const all: (GroupMatch | KnockoutMatch)[] = [...groupMatches, ...knockoutStructure];
+    all.sort((a, b) =>
+      `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`) || a.matchNumber - b.matchNumber
+    );
+    const byDay = new Map<string, (GroupMatch | KnockoutMatch)[]>();
+    for (const m of all) {
+      if (!byDay.has(m.date)) byDay.set(m.date, []);
+      byDay.get(m.date)!.push(m);
+    }
+    return [...byDay.entries()].map(([date, matches]) => ({ date, matches }));
+  })();
+
+  function formatDayHeader(dateStr: string): string {
+    const d = new Date(`${dateStr}T12:00:00`);
+    const s = d.toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long' });
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
 
   return (
     <div className="space-y-6 animate-in">
@@ -250,232 +422,90 @@ export default function AdminPanel() {
       )}
 
       {activeSection === 'results' && (
-        <div className="space-y-6">
-          {/* Group stage */}
-          {groups.map(group => (
-            <div key={group} className="card">
-              <h3 className="text-sm font-semibold text-gold mb-3">Groep {group}</h3>
-              <div className="space-y-2">
-                {allGroupMatches.filter(m => m.group === group).map(match => {
-                  const home = teams[match.home];
-                  const away = teams[match.away];
-                  const result = resultMap.get(match.matchNumber);
-                  const isEditing = editingMatch === match.matchNumber;
-                  const bg = result ? (result.live ? 'bg-amber-950/20 border border-amber-600/30' : 'bg-green-950/20 border border-green-600/20') : 'bg-white/5';
-
-                  const actions = isEditing ? (
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => saveResult(match.matchNumber, true)}
-                        className="text-xs px-2 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white font-semibold"
-                        title="Tussenstand opslaan (geen pushes)"
-                      >Live</button>
-                      <button
-                        onClick={() => saveResult(match.matchNumber, false)}
-                        className="text-xs px-2 py-1 rounded bg-green-600 hover:bg-green-500 text-white font-semibold"
-                        title="Eindscore: berekent biertjes + pushes"
-                      >Finaal</button>
-                      <button onClick={() => setEditingMatch(null)} className="btn-secondary text-xs px-2 py-1">X</button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => startEditing(match.matchNumber)}
-                      className="btn-secondary text-xs px-2 py-1"
-                    >
-                      {result ? (result.live ? 'Live ✏️' : 'Wijzig') : 'Invullen'}
-                    </button>
-                  );
-
-                  return (
-                    <div key={match.matchNumber} className={`rounded-lg ${bg}`}>
-                      <div className="flex items-center gap-2 py-2 px-2 sm:px-3">
-                        <span className="text-[10px] sm:text-xs text-gray-500 w-6 sm:w-8 shrink-0">#{match.matchNumber}</span>
-
-                        <div className="flex items-center gap-1 sm:gap-1.5 flex-1 min-w-0 justify-end">
-                          <span className="text-xs sm:text-sm truncate">{home?.name}</span>
-                          <FlagIcon teamCode={match.home} size={16} />
-                        </div>
-
-                        {isEditing ? (
-                          <div className="flex items-center gap-1 shrink-0">
-                            <input
-                              type="number"
-                              min="0"
-                              value={editHome}
-                              onChange={e => setEditHome(e.target.value)}
-                              placeholder="-"
-                              className="score-input w-10 sm:w-12 text-center"
-                              autoFocus
-                            />
-                            <span className="text-gray-500 font-bold">-</span>
-                            <input
-                              type="number"
-                              min="0"
-                              value={editAway}
-                              onChange={e => setEditAway(e.target.value)}
-                              placeholder="-"
-                              className="score-input w-10 sm:w-12 text-center"
-                            />
-                          </div>
-                        ) : (
-                          <div className="shrink-0 w-12 sm:w-16 text-center">
-                            {result ? (
-                              <div className="flex flex-col items-center leading-tight">
-                                <span className={`text-sm sm:text-base font-bold ${result.live ? 'text-amber-300' : 'text-green-400'}`}>{result.homeScore} - {result.awayScore}</span>
-                                {result.live && <span className="text-[9px] text-amber-500 font-bold animate-pulse">LIVE</span>}
-                              </div>
-                            ) : (
-                              <span className="text-gray-600 text-sm">- : -</span>
-                            )}
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-1 sm:gap-1.5 flex-1 min-w-0">
-                          <FlagIcon teamCode={match.away} size={16} />
-                          <span className="text-xs sm:text-sm truncate">{away?.name}</span>
-                        </div>
-
-                        <div className="hidden sm:block shrink-0">{actions}</div>
-                      </div>
-
-                      <div className="flex sm:hidden px-2 pb-2 justify-end">{actions}</div>
-                    </div>
-                  );
-                })}
-              </div>
+        <div className="space-y-4">
+          {/* View toggle + filter */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex gap-1 bg-white/5 rounded-lg p-1">
+              <button
+                onClick={() => setResultsView('chrono')}
+                className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium ${resultsView === 'chrono' ? 'bg-gold text-black' : 'text-gray-400 hover:text-white'}`}
+              >
+                Chronologisch
+              </button>
+              <button
+                onClick={() => setResultsView('grouped')}
+                className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium ${resultsView === 'grouped' ? 'bg-gold text-black' : 'text-gray-400 hover:text-white'}`}
+              >
+                Per groep / ronde
+              </button>
             </div>
-          ))}
+            <label className="flex items-center gap-2 text-xs sm:text-sm text-gray-400 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={hideCompleted}
+                onChange={e => setHideCompleted(e.target.checked)}
+                className="accent-gold"
+              />
+              Verberg ingevulde
+            </label>
+          </div>
 
-          {/* Knockout stage */}
-          {(() => {
-            const rounds = [...new Set(knockoutStructure.map(m => m.round))];
-            return rounds.map(round => (
-              <div key={round} className="card">
-                <h3 className="text-sm font-semibold text-gold mb-3">{getRoundName(round)}</h3>
-                <div className="space-y-2">
-                  {knockoutStructure.filter(m => m.round === round).map(match => {
-                    const result = resultMap.get(match.matchNumber);
-                    const isEditing = editingMatch === match.matchNumber;
-                    const resolved = koTeams[match.matchNumber];
-                    const homeLabel = resolved?.homeTeam ? (teams[resolved.homeTeam]?.name || resolved.homeTeam) : match.homeSource;
-                    const awayLabel = resolved?.awayTeam ? (teams[resolved.awayTeam]?.name || resolved.awayTeam) : match.awaySource;
-                    const isDrawInput = isEditing && editHome !== '' && editHome === editAway;
-                    const bg = result ? (result.live ? 'bg-amber-950/20 border border-amber-600/30' : 'bg-green-950/20 border border-green-600/20') : 'bg-white/5';
+          {resultsView === 'chrono' ? (
+            <div className="space-y-4">
+              {chronoDays.map(({ date, matches }) => {
+                const visible = hideCompleted
+                  ? matches.filter(m => !resultMap.has(m.matchNumber))
+                  : matches;
+                if (visible.length === 0) return null;
+                const done = matches.filter(m => resultMap.has(m.matchNumber)).length;
+                return (
+                  <div key={date} className="card">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-gold">{formatDayHeader(date)}</h3>
+                      <span className={`text-xs ${done === matches.length ? 'text-green-400' : 'text-gray-500'}`}>
+                        {done}/{matches.length} ingevuld
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {visible.map(match => renderMatchRow(match, { showTime: true }))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Group stage */}
+              {groups.map(group => {
+                const matches = allGroupMatches.filter(m => m.group === group);
+                const visible = hideCompleted ? matches.filter(m => !resultMap.has(m.matchNumber)) : matches;
+                if (visible.length === 0) return null;
+                return (
+                  <div key={group} className="card">
+                    <h3 className="text-sm font-semibold text-gold mb-3">Groep {group}</h3>
+                    <div className="space-y-2">
+                      {visible.map(match => renderMatchRow(match))}
+                    </div>
+                  </div>
+                );
+              })}
 
-                    const actions = isEditing ? (
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => saveResult(match.matchNumber, true)}
-                          className="text-xs px-2 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white font-semibold"
-                          title="Tussenstand opslaan (geen pushes)"
-                        >Live</button>
-                        <button
-                          onClick={() => saveResult(match.matchNumber, false)}
-                          className="text-xs px-2 py-1 rounded bg-green-600 hover:bg-green-500 text-white font-semibold"
-                          title="Eindscore: berekent biertjes + pushes"
-                        >Finaal</button>
-                        <button onClick={() => setEditingMatch(null)} className="btn-secondary text-xs px-2 py-1">X</button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => startEditing(match.matchNumber)}
-                        className="btn-secondary text-xs px-2 py-1"
-                      >
-                        {result ? (result.live ? 'Live ✏️' : 'Wijzig') : 'Invullen'}
-                      </button>
-                    );
-
-                    return (
-                      <div key={match.matchNumber} className={`rounded-lg ${bg}`}>
-                        <div className="flex items-center gap-2 py-2 px-2 sm:px-3">
-                          <span className="text-[10px] sm:text-xs text-gray-500 w-6 sm:w-8 shrink-0">#{match.matchNumber}</span>
-
-                          <div className="flex items-center gap-1 sm:gap-1.5 flex-1 min-w-0 justify-end">
-                            {resolved?.homeTeam && <FlagIcon teamCode={resolved.homeTeam} size={16} />}
-                            <span className="text-xs sm:text-sm text-gray-400 truncate">{homeLabel}</span>
-                          </div>
-
-                          {isEditing ? (
-                            <div className="flex items-center gap-1 shrink-0">
-                              <input
-                                type="number"
-                                min="0"
-                                value={editHome}
-                                onChange={e => setEditHome(e.target.value)}
-                                placeholder="-"
-                                className="score-input w-10 sm:w-12 text-center"
-                                autoFocus
-                              />
-                              <span className="text-gray-500 font-bold">-</span>
-                              <input
-                                type="number"
-                                min="0"
-                                value={editAway}
-                                onChange={e => setEditAway(e.target.value)}
-                                placeholder="-"
-                                className="score-input w-10 sm:w-12 text-center"
-                              />
-                            </div>
-                          ) : (
-                            <div className="shrink-0 w-12 sm:w-16 text-center">
-                              {result ? (
-                                <div className="flex flex-col items-center leading-tight">
-                                  <span className={`text-sm sm:text-base font-bold ${result.live ? 'text-amber-300' : 'text-green-400'}`}>{result.homeScore} - {result.awayScore}</span>
-                                  {result.live && <span className="text-[9px] text-amber-500 font-bold animate-pulse">LIVE</span>}
-                                </div>
-                              ) : (
-                                <span className="text-gray-600 text-sm">- : -</span>
-                              )}
-                            </div>
-                          )}
-
-                          <div className="flex items-center gap-1 sm:gap-1.5 flex-1 min-w-0">
-                            {resolved?.awayTeam && <FlagIcon teamCode={resolved.awayTeam} size={16} />}
-                            <span className="text-xs sm:text-sm text-gray-400 truncate">{awayLabel}</span>
-                          </div>
-
-                          <div className="hidden sm:block shrink-0">{actions}</div>
-                        </div>
-
-                        <div className="flex sm:hidden px-2 pb-2 justify-end">{actions}</div>
-
-                        {isDrawInput && (
-                          <div className="px-2 sm:px-3 pb-2 flex flex-wrap items-center gap-2 text-xs border-t border-white/5 pt-2">
-                            <span className="text-amber-400 font-semibold">Penalty&apos;s — wie ging door?</span>
-                            {resolved?.homeTeam && resolved?.awayTeam ? (
-                              <>
-                                <button
-                                  onClick={() => setEditAdvancing(resolved.homeTeam!)}
-                                  className={`px-2 py-1 rounded font-semibold ${editAdvancing === resolved.homeTeam ? 'bg-green-600 text-white' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
-                                >
-                                  {teams[resolved.homeTeam]?.name || resolved.homeTeam}
-                                </button>
-                                <button
-                                  onClick={() => setEditAdvancing(resolved.awayTeam!)}
-                                  className={`px-2 py-1 rounded font-semibold ${editAdvancing === resolved.awayTeam ? 'bg-green-600 text-white' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
-                                >
-                                  {teams[resolved.awayTeam]?.name || resolved.awayTeam}
-                                </button>
-                              </>
-                            ) : (
-                              <input
-                                type="text"
-                                value={editAdvancing}
-                                onChange={e => setEditAdvancing(e.target.value.toUpperCase())}
-                                placeholder="Team code (bv. BEL)"
-                                className="score-input px-2 py-1 w-32"
-                                maxLength={3}
-                              />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ));
-          })()}
+              {/* Knockout stage */}
+              {[...new Set(knockoutStructure.map(m => m.round))].map(round => {
+                const matches = knockoutStructure.filter(m => m.round === round);
+                const visible = hideCompleted ? matches.filter(m => !resultMap.has(m.matchNumber)) : matches;
+                if (visible.length === 0) return null;
+                return (
+                  <div key={round} className="card">
+                    <h3 className="text-sm font-semibold text-gold mb-3">{getRoundName(round)}</h3>
+                    <div className="space-y-2">
+                      {visible.map(match => renderMatchRow(match))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
       {activeSection === 'notify' && (

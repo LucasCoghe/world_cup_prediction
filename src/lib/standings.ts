@@ -83,38 +83,49 @@ export function calculateGroupStandings(
       t.goalDiff = t.goalsFor - t.goalsAgainst;
     }
 
-    // Head-to-head record between two teams in this group
-    function h2h(a: string, b: string) {
-      let aGoals = 0, bGoals = 0, aPoints = 0, bPoints = 0;
+    // Head-to-head mini-table among a set of teams level on points.
+    // Counts ONLY the matches played between members of that set
+    // (FIFA WK 2026: head-to-head is applied BEFORE overall goal difference).
+    function miniTable(tiedCodes: string[]): Record<string, { points: number; gf: number; ga: number }> {
+      const set = new Set(tiedCodes);
+      const stats: Record<string, { points: number; gf: number; ga: number }> = {};
+      for (const c of tiedCodes) stats[c] = { points: 0, gf: 0, ga: 0 };
       for (const match of groupGames) {
+        if (!set.has(match.home) || !set.has(match.away)) continue;
         const pred = scoreMap.get(match.matchNumber);
         if (!pred) continue;
-        if (match.home === a && match.away === b) {
-          aGoals += pred.homeScore; bGoals += pred.awayScore;
-          if (pred.homeScore > pred.awayScore) aPoints += 3;
-          else if (pred.homeScore < pred.awayScore) bPoints += 3;
-          else { aPoints += 1; bPoints += 1; }
-        } else if (match.home === b && match.away === a) {
-          bGoals += pred.homeScore; aGoals += pred.awayScore;
-          if (pred.homeScore > pred.awayScore) bPoints += 3;
-          else if (pred.homeScore < pred.awayScore) aPoints += 3;
-          else { aPoints += 1; bPoints += 1; }
-        }
+        stats[match.home].gf += pred.homeScore;
+        stats[match.home].ga += pred.awayScore;
+        stats[match.away].gf += pred.awayScore;
+        stats[match.away].ga += pred.homeScore;
+        if (pred.homeScore > pred.awayScore) stats[match.home].points += 3;
+        else if (pred.homeScore < pred.awayScore) stats[match.away].points += 3;
+        else { stats[match.home].points += 1; stats[match.away].points += 1; }
       }
-      return { aPoints, bPoints, aGoals, bGoals, aGD: aGoals - bGoals, bGD: bGoals - aGoals };
+      return stats;
     }
 
-    // Sort with FIFA tiebreakers
-    const sorted = Object.values(teamStats).sort((a, b) => {
+    // Sort with FIFA WK 2026 tiebreakers:
+    // 1. points → 2-4. head-to-head (points, GD, goals) among teams level on
+    // points → 5. overall GD → 6. overall goals → 7. deterministic fallback
+    // (fair-play / FIFA ranking can't be modelled from predictions).
+    const allTeams = Object.values(teamStats);
+    const sorted = allTeams.sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points;
+
+      // Head-to-head among ALL teams sharing this point total (handles 3-way ties).
+      const tied = allTeams.filter(t => t.points === a.points).map(t => t.code);
+      if (tied.length > 1) {
+        const mini = miniTable(tied);
+        const ma = mini[a.code], mb = mini[b.code];
+        if (mb.points !== ma.points) return mb.points - ma.points;
+        const aGD = ma.gf - ma.ga, bGD = mb.gf - mb.ga;
+        if (bGD !== aGD) return bGD - aGD;
+        if (mb.gf !== ma.gf) return mb.gf - ma.gf;
+      }
+
       if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff;
       if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
-      // Head-to-head
-      const hh = h2h(a.code, b.code);
-      if (hh.bPoints !== hh.aPoints) return hh.bPoints - hh.aPoints;
-      if (hh.bGD !== hh.aGD) return hh.bGD - hh.aGD;
-      if (hh.bGoals !== hh.aGoals) return hh.bGoals - hh.aGoals;
-      if (b.won !== a.won) return b.won - a.won;
       return a.code.localeCompare(b.code);
     });
 
@@ -135,17 +146,117 @@ export function getBestThirdPlaced(
     }
   }
 
-  // Sort 3rd placed teams (FIFA rules: no h2h since they're from different groups)
+  // Sort 3rd placed teams (FIFA WK 2026: no h2h since they're from different
+  // groups). Order: points → goal diff → goals scored → deterministic fallback
+  // (fair-play / FIFA ranking can't be modelled from predictions).
   thirdPlaced.sort((a, b) => {
     if (b.team.points !== a.team.points) return b.team.points - a.team.points;
     if (b.team.goalDiff !== a.team.goalDiff) return b.team.goalDiff - a.team.goalDiff;
     if (b.team.goalsFor !== a.team.goalsFor) return b.team.goalsFor - a.team.goalsFor;
-    if (b.team.won !== a.team.won) return b.team.won - a.team.won;
     return a.group.localeCompare(b.group); // group letter as final fallback
   });
 
   // Top 8 best 3rd placed teams qualify
   return thirdPlaced.slice(0, 8);
+}
+
+// Determine which final group positions are ALREADY mathematically guaranteed,
+// given the results entered so far, even if the group hasn't finished yet.
+//
+// Sound by construction: a position is only reported when the team holds it in
+// EVERY possible win/draw/loss completion of the group's remaining matches,
+// decided by points and head-to-head points (both derivable from W/D/L alone).
+// Positions that would hinge on goal difference are intentionally left
+// unresolved — with unbounded scorelines those can never be guaranteed early.
+export function clinchedGroupPositions(
+  group: string,
+  results: MatchScore[]
+): { first: string | null; second: string | null } {
+  const teamCodes = groups[group];
+  const groupGames = groupMatches.filter((m) => m.group === group);
+  const scoreMap = new Map<number, MatchScore>();
+  for (const r of results) scoreMap.set(r.matchNumber, r);
+
+  const remaining = groupGames.filter((m) => !scoreMap.has(m.matchNumber));
+  const n = remaining.length;
+
+  // Winner of a (possibly hypothetical) match: 0 = home win, 1 = draw, 2 = away win.
+  const decidedWinner = new Map<number, number>();
+  for (const m of groupGames) {
+    const s = scoreMap.get(m.matchNumber);
+    if (s) decidedWinner.set(m.matchNumber, s.homeScore > s.awayScore ? 0 : s.homeScore < s.awayScore ? 2 : 1);
+  }
+
+  // Across all completions: track which definite ranks each team can hold, and
+  // whether any completion left its rank ambiguous (a points+H2H tie).
+  const possibleRanks: Record<string, Set<number>> = {};
+  const everAmbiguous: Record<string, boolean> = {};
+  for (const c of teamCodes) {
+    possibleRanks[c] = new Set();
+    everAmbiguous[c] = false;
+  }
+
+  const winnerInCompletion = new Map<number, number>(decidedWinner);
+
+  for (let mask = 0; mask < 3 ** n; mask++) {
+    // Apply this completion's W/D/L to the remaining matches.
+    let x = mask;
+    for (let i = 0; i < n; i++) {
+      winnerInCompletion.set(remaining[i].matchNumber, x % 3);
+      x = Math.floor(x / 3);
+    }
+
+    const pts: Record<string, number> = {};
+    for (const c of teamCodes) pts[c] = 0;
+    for (const m of groupGames) {
+      const w = winnerInCompletion.get(m.matchNumber)!;
+      if (w === 0) pts[m.home] += 3;
+      else if (w === 2) pts[m.away] += 3;
+      else { pts[m.home] += 1; pts[m.away] += 1; }
+    }
+
+    // Head-to-head points among a set of teams level on points.
+    const miniPoints = (tied: string[]): Record<string, number> => {
+      const set = new Set(tied);
+      const mp: Record<string, number> = {};
+      for (const c of tied) mp[c] = 0;
+      for (const m of groupGames) {
+        if (!set.has(m.home) || !set.has(m.away)) continue;
+        const w = winnerInCompletion.get(m.matchNumber)!;
+        if (w === 0) mp[m.home] += 3;
+        else if (w === 2) mp[m.away] += 3;
+        else { mp[m.home] += 1; mp[m.away] += 1; }
+      }
+      return mp;
+    };
+
+    for (const t of teamCodes) {
+      const samePoints = teamCodes.filter((c) => c !== t && pts[c] === pts[t]);
+      let above = teamCodes.filter((c) => c !== t && pts[c] > pts[t]).length;
+      let ambiguous = 0;
+      if (samePoints.length > 0) {
+        const mp = miniPoints([t, ...samePoints]);
+        for (const c of samePoints) {
+          if (mp[c] > mp[t]) above++;
+          else if (mp[c] === mp[t]) ambiguous++; // separable only by goal diff
+        }
+      }
+      if (ambiguous > 0) everAmbiguous[t] = true;
+      else possibleRanks[t].add(above + 1);
+    }
+  }
+
+  // A team clinches rank k iff it was never ambiguous and always landed exactly k.
+  const clinchedAt = (k: number): string | null => {
+    for (const c of teamCodes) {
+      if (!everAmbiguous[c] && possibleRanks[c].size === 1 && possibleRanks[c].has(k)) {
+        return c;
+      }
+    }
+    return null;
+  };
+
+  return { first: clinchedAt(1), second: clinchedAt(2) };
 }
 
 export interface KnockoutTeams {
