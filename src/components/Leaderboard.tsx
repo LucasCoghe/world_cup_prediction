@@ -6,6 +6,7 @@ import HeadToHead from './HeadToHead';
 import BeerToast from './BeerToast';
 import BeerModal from './BeerModal';
 import Avatar from './Avatar';
+import PositionChart from './PositionChart';
 import { getCosmetic } from '@/lib/cosmetics';
 import { getStreakTier } from '@/lib/streak';
 
@@ -40,6 +41,7 @@ export default function Leaderboard({ currentUserId }: Props) {
   const [h2hUsers, setH2hUsers] = useState<[string, string] | null>(null);
   const [h2hSelect, setH2hSelect] = useState<string | null>(null);
   const [beerModalUser, setBeerModalUser] = useState<string | null>(null);
+  const [tab, setTab] = useState<'list' | 'chart'>('list');
 
   const fetchLeaderboard = () => {
     fetch('/api/leaderboard')
@@ -88,6 +90,26 @@ export default function Leaderboard({ currentUserId }: Props) {
       <BeerToast currentBeerCount={myBeerCount} reasons={myBeerReasons} />
       <h2 className="text-2xl font-bold trophy-text">Klassement</h2>
 
+      {/* View toggle */}
+      <div className="flex gap-1 bg-white/5 rounded-lg p-1 w-fit">
+        <button
+          onClick={() => setTab('list')}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium ${tab === 'list' ? 'bg-gold text-black' : 'text-gray-400 hover:text-white'}`}
+        >
+          Klassement
+        </button>
+        <button
+          onClick={() => setTab('chart')}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium ${tab === 'chart' ? 'bg-gold text-black' : 'text-gray-400 hover:text-white'}`}
+        >
+          Positiegrafiek
+        </button>
+      </div>
+
+      {tab === 'chart' && <PositionChart currentUserId={currentUserId} />}
+
+      {tab === 'list' && (
+      <>
       {/* Head-to-head button */}
       {entries.length >= 2 && (
         <div className="flex gap-2">
@@ -217,6 +239,8 @@ export default function Leaderboard({ currentUserId }: Props) {
             );
           })}
         </div>
+      )}
+      </>
       )}
       {/* Beer reasons modal */}
       {beerModalUser && (() => {
