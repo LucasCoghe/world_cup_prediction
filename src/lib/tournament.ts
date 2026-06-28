@@ -210,7 +210,7 @@ export const groupMatches: GroupMatch[] = [
 export const knockoutStructure: KnockoutMatch[] = [
   // Round of 32 (16 matches)
   { matchNumber: 73, date: '2026-06-28', time: '21:00', round: 'R32', homeSource: '2A', awaySource: '2B' },
-  { matchNumber: 74, date: '2026-06-29', time: '22:00', round: 'R32', homeSource: '1E', awaySource: '3RD_ABCDF' },
+  { matchNumber: 74, date: '2026-06-29', time: '22:30', round: 'R32', homeSource: '1E', awaySource: '3RD_ABCDF' },
   { matchNumber: 75, date: '2026-06-30', time: '03:00', round: 'R32', homeSource: '1F', awaySource: '2C' },
   { matchNumber: 76, date: '2026-06-29', time: '19:00', round: 'R32', homeSource: '1C', awaySource: '2F' },
   { matchNumber: 77, date: '2026-06-30', time: '23:00', round: 'R32', homeSource: '1I', awaySource: '3RD_CDFGH' },
@@ -221,7 +221,7 @@ export const knockoutStructure: KnockoutMatch[] = [
   { matchNumber: 82, date: '2026-07-01', time: '22:00', round: 'R32', homeSource: '1G', awaySource: '3RD_AEHIJ' },
   { matchNumber: 83, date: '2026-07-03', time: '01:00', round: 'R32', homeSource: '2K', awaySource: '2L' },
   { matchNumber: 84, date: '2026-07-02', time: '21:00', round: 'R32', homeSource: '1H', awaySource: '2J' },
-  { matchNumber: 85, date: '2026-07-03', time: '03:00', round: 'R32', homeSource: '1B', awaySource: '3RD_EFGIJ' },
+  { matchNumber: 85, date: '2026-07-03', time: '05:00', round: 'R32', homeSource: '1B', awaySource: '3RD_EFGIJ' },
   { matchNumber: 86, date: '2026-07-04', time: '00:00', round: 'R32', homeSource: '1J', awaySource: '2H' },
   { matchNumber: 87, date: '2026-07-04', time: '03:30', round: 'R32', homeSource: '1K', awaySource: '3RD_DEIJL' },
   { matchNumber: 88, date: '2026-07-03', time: '20:00', round: 'R32', homeSource: '2D', awaySource: '2G' },
