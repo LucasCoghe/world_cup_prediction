@@ -76,5 +76,31 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({ teams });
+  // Slot-level fills for the bracket simulator: every already-certain group
+  // position (1X/2X), the official best-third assignment (only once every
+  // group is finished), and the advancing team of every knockout match that
+  // has already been played. Lets the simulator start from reality.
+  const slots: Record<string, string> = { ...positionTeam };
+  if (allGroupsComplete) {
+    for (const km of knockoutStructure) {
+      const b = bracket.find(x => x.matchNumber === km.matchNumber);
+      if (km.homeSource.startsWith('3RD_') && b?.homeTeam) slots[km.homeSource] = b.homeTeam;
+      if (km.awaySource.startsWith('3RD_') && b?.awayTeam) slots[km.awaySource] = b.awayTeam;
+    }
+  }
+
+  const winners: Record<number, string> = {};
+  for (const km of knockoutStructure) {
+    if (!resultSet.has(km.matchNumber)) continue;
+    const b = bracket.find(x => x.matchNumber === km.matchNumber);
+    if (!b || !b.homeTeam || !b.awayTeam) continue;
+    const r = actualScores.find(x => x.matchNumber === km.matchNumber)!;
+    let w: string | null = null;
+    if (r.homeScore > r.awayScore) w = b.homeTeam;
+    else if (r.awayScore > r.homeScore) w = b.awayTeam;
+    else w = r.advancingTeam ?? null;
+    if (w) winners[km.matchNumber] = w;
+  }
+
+  return NextResponse.json({ teams, slots, winners });
 }

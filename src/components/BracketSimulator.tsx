@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { knockoutStructure, teams, groups, TOTAL_GROUP_MATCHES } from '@/lib/tournament';
-import { calculateGroupStandings, getBestThirdPlaced, type MatchScore } from '@/lib/standings';
+import { knockoutStructure, teams, groups } from '@/lib/tournament';
 import FlagIcon from './FlagIcon';
 
 const MATCH_W = 105;
@@ -18,83 +17,39 @@ function getRelevantTeams(source: string): string[] {
 
 const STORAGE_KEY = 'bracket_sim';
 
-interface Props {
-  groupPredictions: MatchScore[];
-}
-
-export default function BracketSimulator({ groupPredictions }: Props) {
+export default function BracketSimulator() {
   const [slotTeams, setSlotTeams] = useState<Record<string, string>>({});
   const [matchWinners, setMatchWinners] = useState<Record<number, string>>({});
   const [activePicker, setActivePicker] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const autoFilled = useRef(false);
-
-  function fillFromPredictions(): Record<string, string> {
-    const onlyGroup = groupPredictions.filter(p => p.matchNumber <= TOTAL_GROUP_MATCHES);
-    if (onlyGroup.length === 0) return {};
-
-    const standings = calculateGroupStandings(onlyGroup);
-    const bestThirds = getBestThirdPlaced(standings);
-    const newSlots: Record<string, string> = {};
-
-    for (const [group, sorted] of Object.entries(standings)) {
-      if (sorted[0]) newSlots[`1${group}`] = sorted[0].code;
-      if (sorted[1]) newSlots[`2${group}`] = sorted[1].code;
-    }
-
-    const thirdSlots: { source: string; allowedGroups: string[] }[] = [];
-    for (const km of knockoutStructure) {
-      for (const src of [km.homeSource, km.awaySource]) {
-        if (src.startsWith('3RD_')) {
-          thirdSlots.push({ source: src, allowedGroups: src.slice(4).split('') });
-        }
-      }
-    }
-
-    const thirdAssignment = new Map<string, string>();
-    function solve(idx: number, used: Set<string>): boolean {
-      if (idx >= thirdSlots.length) return true;
-      const slot = thirdSlots[idx];
-      for (const bt of bestThirds) {
-        if (slot.allowedGroups.includes(bt.group) && !used.has(bt.team.code)) {
-          used.add(bt.team.code);
-          thirdAssignment.set(slot.source, bt.team.code);
-          if (solve(idx + 1, used)) return true;
-          used.delete(bt.team.code);
-          thirdAssignment.delete(slot.source);
-        }
-      }
-      return false;
-    }
-    solve(0, new Set());
-
-    for (const [src, team] of thirdAssignment) {
-      newSlots[src] = team;
-    }
-
-    return newSlots;
-  }
+  // Teams already qualified / results already played (from the real results).
+  const [actualSlots, setActualSlots] = useState<Record<string, string>>({});
+  const [actualWinners, setActualWinners] = useState<Record<number, string>>({});
 
   useEffect(() => {
+    let saved: { slots?: Record<string, string>; winners?: Record<number, string> } = {};
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const data = JSON.parse(saved);
-        if (data.slots && Object.keys(data.slots).length > 0) {
-          setSlotTeams(data.slots);
-          if (data.winners) setMatchWinners(data.winners);
-          setLoaded(true);
-          return;
-        }
-      }
+      const s = localStorage.getItem(STORAGE_KEY);
+      if (s) saved = JSON.parse(s);
     } catch {}
 
-    if (!autoFilled.current && groupPredictions.length > 0) {
-      autoFilled.current = true;
-      const slots = fillFromPredictions();
-      if (Object.keys(slots).length > 0) setSlotTeams(slots);
-    }
-    setLoaded(true);
+    fetch('/api/knockout-teams')
+      .then(r => (r.ok ? r.json() : { slots: {}, winners: {} }))
+      .then(d => {
+        const aSlots: Record<string, string> = d.slots || {};
+        const aWinners: Record<number, string> = d.winners || {};
+        setActualSlots(aSlots);
+        setActualWinners(aWinners);
+        // Reality always takes precedence over a previously saved simulation.
+        setSlotTeams({ ...(saved.slots || {}), ...aSlots });
+        setMatchWinners({ ...(saved.winners || {}), ...aWinners });
+        setLoaded(true);
+      })
+      .catch(() => {
+        setSlotTeams(saved.slots || {});
+        setMatchWinners(saved.winners || {});
+        setLoaded(true);
+      });
   }, []);
 
   useEffect(() => {
@@ -204,8 +159,9 @@ export default function BracketSimulator({ groupPredictions }: Props) {
       }
     }
 
-    setSlotTeams(newSlots);
-    setMatchWinners({});
+    // Keep teams that are already really qualified; randomise only the rest.
+    setSlotTeams({ ...newSlots, ...actualSlots });
+    setMatchWinners({ ...actualWinners });
   }
 
   function autoSimulate() {
@@ -227,9 +183,12 @@ export default function BracketSimulator({ groupPredictions }: Props) {
   }
 
   function resetAll() {
-    setSlotTeams({});
-    setMatchWinners({});
+    // Reset back to reality: keep the already-qualified teams and played results.
+    setSlotTeams({ ...actualSlots });
+    setMatchWinners({ ...actualWinners });
   }
+
+  const hasActual = Object.keys(actualSlots).length > 0 || Object.keys(actualWinners).length > 0;
 
   const r32Complete = knockoutStructure
     .filter(m => m.round === 'R32')
@@ -385,18 +344,15 @@ export default function BracketSimulator({ groupPredictions }: Props) {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-2xl font-bold">Bracket Simulator</h2>
         <div className="flex gap-2 flex-wrap">
-          {groupPredictions.filter(p => p.matchNumber <= TOTAL_GROUP_MATCHES).length > 0 && (
+          {hasActual && (
             <button
               onClick={() => {
-                const slots = fillFromPredictions();
-                if (Object.keys(slots).length > 0) {
-                  setSlotTeams(slots);
-                  setMatchWinners({});
-                }
+                setSlotTeams(prev => ({ ...prev, ...actualSlots }));
+                setMatchWinners(prev => ({ ...prev, ...actualWinners }));
               }}
               className="btn-secondary text-sm !py-1.5 !px-3"
             >
-              Vanuit voorspellingen
+              Gekwalificeerde teams
             </button>
           )}
           <button onClick={randomFill} className="btn-secondary text-sm !py-1.5 !px-3">
@@ -414,7 +370,8 @@ export default function BracketSimulator({ groupPredictions }: Props) {
       </div>
 
       <p className="text-sm text-gray-400">
-        Klik op een positie om een team te kiezen. Klik daarna op een team om het door te laten gaan.
+        Teams die al gekwalificeerd zijn, staan automatisch ingevuld op de wedstrijd die ze spelen.
+        Klik op een lege positie om een team te kiezen, en daarna op een team om het door te laten gaan.
         Puur voor de fun — telt niet mee voor punten.
       </p>
 
