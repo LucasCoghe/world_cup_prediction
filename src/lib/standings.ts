@@ -1,5 +1,15 @@
 // Calculate group standings from predicted scores
 import { groups, groupMatches, knockoutStructure } from './tournament';
+import thirdPlaceAllocation from './thirdPlaceAllocation.json';
+
+// Official FIFA Annexe C table for assigning the 8 best third-placed teams.
+// Key = the 8 qualifying groups sorted alphabetically (e.g. "BDEFIJKL");
+// value maps each group-winner slot (1A,1B,1D,1E,1G,1I,1K,1L) to the group
+// letter of the third-placed team it faces in the Round of 32.
+const thirdAllocationTable = thirdPlaceAllocation as Record<
+  string,
+  Record<string, string>
+>;
 
 export interface TeamStanding {
   code: string;
@@ -284,33 +294,55 @@ export function resolveKnockoutBracket(
     if (standing[1]) positionToTeam[`2${group}`] = standing[1].code;
   }
 
-  // Pre-solve 3rd-place assignment using backtracking
-  // Collect all knockout slots that need a 3rd-placed team
-  const thirdSlots: { source: string; allowedGroups: string[] }[] = [];
-  for (const km of knockoutStructure) {
-    for (const src of [km.homeSource, km.awaySource]) {
-      if (src.startsWith('3RD_')) {
-        thirdSlots.push({ source: src, allowedGroups: src.slice(4).split('') });
-      }
-    }
-  }
-
+  // Assign the 8 best third-placed teams to their knockout slots.
+  // FIFA uses a FIXED official table (Annexe C): given which 8 groups
+  // provide a qualifying third, it determines exactly which group-winner each
+  // third faces. The previous backtracking only found *some* valid matching,
+  // which could differ from the official one (e.g. putting Algeria where
+  // Senegal belongs). We look up the official row keyed by the sorted set of
+  // qualifying groups; a 3RD_ slot's group-winner is always its home source.
   const thirdAssignment = new Map<string, string>(); // source -> team code
-  function solveThirds(idx: number, used: Set<string>): boolean {
-    if (idx >= thirdSlots.length) return true;
-    const slot = thirdSlots[idx];
-    for (const bt of bestThirds) {
-      if (slot.allowedGroups.includes(bt.group) && !used.has(bt.team.code)) {
-        used.add(bt.team.code);
-        thirdAssignment.set(slot.source, bt.team.code);
-        if (solveThirds(idx + 1, used)) return true;
-        used.delete(bt.team.code);
-        thirdAssignment.delete(slot.source);
+  const thirdTeamByGroup = new Map<string, string>(); // group letter -> team code
+  for (const bt of bestThirds) thirdTeamByGroup.set(bt.group, bt.team.code);
+
+  const allocationKey = bestThirds.map((bt) => bt.group).sort().join('');
+  const allocationRow = thirdAllocationTable[allocationKey];
+
+  if (allocationRow) {
+    for (const km of knockoutStructure) {
+      if (!km.awaySource.startsWith('3RD_')) continue;
+      const winnerSlot = km.homeSource; // e.g. "1G"
+      const thirdGroup = allocationRow[winnerSlot];
+      const teamCode = thirdGroup ? thirdTeamByGroup.get(thirdGroup) : undefined;
+      if (teamCode) thirdAssignment.set(km.awaySource, teamCode);
+    }
+  } else {
+    // Fallback (e.g. fewer than 8 thirds resolvable yet): backtracking that
+    // respects each slot's allowed-group constraint embedded in its source.
+    const thirdSlots: { source: string; allowedGroups: string[] }[] = [];
+    for (const km of knockoutStructure) {
+      for (const src of [km.homeSource, km.awaySource]) {
+        if (src.startsWith('3RD_')) {
+          thirdSlots.push({ source: src, allowedGroups: src.slice(4).split('') });
+        }
       }
     }
-    return false;
+    const solveThirds = (idx: number, used: Set<string>): boolean => {
+      if (idx >= thirdSlots.length) return true;
+      const slot = thirdSlots[idx];
+      for (const bt of bestThirds) {
+        if (slot.allowedGroups.includes(bt.group) && !used.has(bt.team.code)) {
+          used.add(bt.team.code);
+          thirdAssignment.set(slot.source, bt.team.code);
+          if (solveThirds(idx + 1, used)) return true;
+          used.delete(bt.team.code);
+          thirdAssignment.delete(slot.source);
+        }
+      }
+      return false;
+    };
+    solveThirds(0, new Set());
   }
-  solveThirds(0, new Set());
 
   const results: KnockoutTeams[] = [];
 
