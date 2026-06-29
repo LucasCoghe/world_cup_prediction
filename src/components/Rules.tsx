@@ -162,7 +162,7 @@ export default function Rules() {
 
         <div className="grid gap-1 text-base">
           <div className="flex justify-between py-1.5 border-b border-white/5">
-            <span className="text-gray-300">Onderste 3 op een speeldag (groepsfase)</span>
+            <span className="text-gray-300">Laatste op een speeldag (groepsfase)</span>
             <span className="font-bold text-amber-500">1 pint</span>
           </div>
           <div className="flex justify-between py-1.5 border-b border-white/5">

@@ -129,11 +129,13 @@ export async function GET() {
     if (standings.length < 2) continue;
 
     standings.sort((a, b) => a.points - b.points);
-    const threshold = standings.length >= 3 ? standings[2].points : standings[0].points;
+    // Enkel de laatste (laagste score) drinkt; bij gelijkspel onderaan drinken
+    // alle teams met die laagste score.
+    const threshold = standings[0].points;
     const formattedDate = new Date(date + 'T12:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' });
     for (const s of standings) {
       if (s.points <= threshold) {
-        beerReasons.get(s.id)!.push(`Onderste 3 op ${formattedDate} (${s.points}pt)`);
+        beerReasons.get(s.id)!.push(`Laatste op ${formattedDate} (${s.points}pt)`);
       }
     }
 
