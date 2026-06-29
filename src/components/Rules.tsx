@@ -166,7 +166,7 @@ export default function Rules() {
             <span className="font-bold text-amber-500">1 pint</span>
           </div>
           <div className="flex justify-between py-1.5 border-b border-white/5">
-            <span className="text-gray-300">Onderste 3 in een knockoutronde</span>
+            <span className="text-gray-300">Laatste in een knockoutronde</span>
             <span className="font-bold text-amber-500">1 pint</span>
           </div>
           <div className="flex justify-between py-1.5 border-b border-white/5">
