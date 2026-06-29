@@ -306,6 +306,29 @@ export function formatDeadline(date: string, time: string): string {
   return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]} ${time}`;
 }
 
+// Turn a raw knockout source code into a readable Dutch label, used when the
+// actual team isn't known yet. Examples:
+//   "1A"          -> "1e groep A"
+//   "2B"          -> "2e groep B"
+//   "3RD_ABCDF"   -> "Beste 3e (A/B/C/D/F)"
+//   "W73"         -> "Winnaar wedstrijd 73"
+//   "L101"        -> "Verliezer wedstrijd 101"
+export function formatSourceLabel(source: string): string {
+  if (/^[12][A-L]$/.test(source)) {
+    return `${source[0]}e groep ${source[1]}`;
+  }
+  if (source.startsWith('3RD_')) {
+    return `Beste 3e (${source.slice(4).split('').join('/')})`;
+  }
+  if (/^W\d+$/.test(source)) {
+    return `Winnaar wedstrijd ${source.slice(1)}`;
+  }
+  if (/^L\d+$/.test(source)) {
+    return `Verliezer wedstrijd ${source.slice(1)}`;
+  }
+  return source;
+}
+
 export function getRoundName(round: string): string {
   const names: Record<string, string> = {
     R32: 'Ronde van 32',

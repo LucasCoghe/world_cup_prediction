@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { teams, getRoundName } from '@/lib/tournament';
+import { teams, getRoundName, formatSourceLabel } from '@/lib/tournament';
 import FlagIcon from './FlagIcon';
 import Avatar from './Avatar';
 import { getCosmetic } from '@/lib/cosmetics';
@@ -17,6 +17,8 @@ interface MatchPrediction {
   round: string | null;
   home: string;
   away: string;
+  resolvedHome: string | null;
+  resolvedAway: string | null;
   actualHome: number | null;
   actualAway: number | null;
 }
@@ -219,8 +221,15 @@ export default function UserPredictions({ userId, onBack }: Props) {
         <div className="space-y-1.5">
           {ordered.map(p => {
             const isGroup = !!p.group;
-            const home = teams[p.home];
-            const away = teams[p.away];
+            // Group: team codes are direct. Knockout: use the team this user
+            // predicted to reach the slot (resolvedHome/Away); fall back to a
+            // readable Dutch label ("Winnaar wedstrijd 73") when not yet known.
+            const homeCode = isGroup ? p.home : p.resolvedHome;
+            const awayCode = isGroup ? p.away : p.resolvedAway;
+            const home = homeCode ? teams[homeCode] : undefined;
+            const away = awayCode ? teams[awayCode] : undefined;
+            const homeLabel = home?.name ?? homeCode ?? formatSourceLabel(p.home);
+            const awayLabel = away?.name ?? awayCode ?? formatSourceLabel(p.away);
             const pts = getPointsForMatch(p);
             return (
               <div key={p.matchNumber} className={`flex items-center gap-2 py-1.5 px-2 rounded ${
@@ -233,25 +242,13 @@ export default function UserPredictions({ userId, onBack }: Props) {
                   <span className="block text-[10px] text-gray-600 truncate">{sectionLabel(p)}</span>
                 </div>
                 <div className="flex items-center gap-1 flex-1 min-w-0 justify-end text-sm">
-                  {isGroup ? (
-                    <>
-                      <span className="truncate">{home?.name || p.home}</span>
-                      <FlagIcon teamCode={p.home} size={16} />
-                    </>
-                  ) : (
-                    <span className="text-gray-400 truncate">{p.home}</span>
-                  )}
+                  <span className={`truncate ${homeCode ? '' : 'text-gray-400'}`}>{homeLabel}</span>
+                  {homeCode && <FlagIcon teamCode={homeCode} size={16} />}
                 </div>
                 <span className="font-bold w-14 shrink-0 text-center whitespace-nowrap">{p.homeScore} - {p.awayScore}</span>
                 <div className="flex items-center gap-1 flex-1 min-w-0 text-sm">
-                  {isGroup ? (
-                    <>
-                      <FlagIcon teamCode={p.away} size={16} />
-                      <span className="truncate">{away?.name || p.away}</span>
-                    </>
-                  ) : (
-                    <span className="text-gray-400 truncate">{p.away}</span>
-                  )}
+                  {awayCode && <FlagIcon teamCode={awayCode} size={16} />}
+                  <span className={`truncate ${awayCode ? '' : 'text-gray-400'}`}>{awayLabel}</span>
                 </div>
                 {pts !== null && (
                   <div className="flex items-center gap-2 w-20 shrink-0 justify-end">

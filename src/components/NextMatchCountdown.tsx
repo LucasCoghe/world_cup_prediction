@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { groupMatches, knockoutStructure, teams, getRoundName } from '@/lib/tournament';
+import { groupMatches, knockoutStructure, teams, getRoundName, formatSourceLabel } from '@/lib/tournament';
 import type { PredictionsState } from '@/hooks/usePredictions';
 import FlagIcon from './FlagIcon';
 
@@ -53,8 +53,8 @@ function buildUpcoming(
       kickoff,
       homeCode,
       awayCode,
-      homeLabel: home?.name ?? homeCode ?? km.homeSource,
-      awayLabel: away?.name ?? awayCode ?? km.awaySource,
+      homeLabel: home?.name ?? homeCode ?? formatSourceLabel(km.homeSource),
+      awayLabel: away?.name ?? awayCode ?? formatSourceLabel(km.awaySource),
       involvesBelgium: homeCode === 'BEL' || awayCode === 'BEL',
       isKnockout: true,
       roundLabel: getRoundName(km.round),

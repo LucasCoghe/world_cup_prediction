@@ -7,6 +7,7 @@ import {
   teams,
   getRoundName,
   formatDeadline,
+  formatSourceLabel,
   TOTAL_GROUP_MATCHES,
 } from '@/lib/tournament';
 import { calculateGroupStandings, getBestThirdPlaced } from '@/lib/standings';
@@ -142,8 +143,8 @@ export default function Matches({ predictions, targetMatchNumber, targetNonce }:
         time: km.time,
         homeCode,
         awayCode,
-        homeName: home?.name ?? homeCode ?? km.homeSource,
-        awayName: away?.name ?? awayCode ?? km.awaySource,
+        homeName: home?.name ?? homeCode ?? formatSourceLabel(km.homeSource),
+        awayName: away?.name ?? awayCode ?? formatSourceLabel(km.awaySource),
         homeSource: km.homeSource,
         awaySource: km.awaySource,
         involvesBelgium: homeCode === 'BEL' || awayCode === 'BEL',
@@ -617,7 +618,7 @@ function MatchRow({
 
         {!teamsKnown && isKO ? (
           <div className="text-center text-gray-500 py-2 text-sm italic">
-            {match.homeSource} vs {match.awaySource} — teams nog niet bekend
+            {formatSourceLabel(match.homeSource!)} vs {formatSourceLabel(match.awaySource!)} — teams nog niet bekend
           </div>
         ) : (
           <>
