@@ -38,13 +38,17 @@ export async function GET(
   const actualResults = await prisma.actualResult.findMany();
   const resultMap = new Map(actualResults.map(r => [r.matchNumber, r]));
 
-  const predScores: MatchScore[] = predictions.map(p => ({
-    matchNumber: p.matchNumber,
-    homeScore: p.homeScore,
-    awayScore: p.awayScore,
-    advancingTeam: p.advancingTeam || undefined,
+  // Knockout slots (1A, 2B, W73, 3RD_...) resolve from the REAL results, not
+  // from this user's predicted bracket — a knockout prediction is a score for
+  // a fixed slot (e.g. match 73 = Canada vs Zuid-Afrika once the groups are
+  // done), so everyone's view of that match shows the same actual teams.
+  const actualScores: MatchScore[] = actualResults.map(r => ({
+    matchNumber: r.matchNumber,
+    homeScore: r.homeScore,
+    awayScore: r.awayScore,
+    advancingTeam: r.advancingTeam || undefined,
   }));
-  const bracket = resolveKnockoutBracket(predScores);
+  const bracket = resolveKnockoutBracket(actualScores);
   const bracketMap = new Map(bracket.map(b => [b.matchNumber, b]));
 
   const visiblePredictions = isOwnProfile
