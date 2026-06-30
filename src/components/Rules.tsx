@@ -30,89 +30,46 @@ export default function Rules() {
 
         <div className="space-y-2 text-base">
           <h4 className="font-semibold text-white mt-3">Groepsfase</h4>
-          <div className="grid gap-2">
-            <div className="py-2 border-b border-white/5">
-              <div className="flex justify-between">
-                <span className="text-gray-300">Exacte score (Bullseye!)</span>
-                <span className="font-bold text-gold">10 punten</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Vb: jij tipt <span className="text-white">2-1</span>, het wordt <span className="text-white">2-1</span>.
-              </p>
+          <div className="grid gap-1">
+            <div className="flex justify-between py-1.5 border-b border-white/5">
+              <span className="text-gray-300">Exacte score <span className="text-gray-500 text-sm">(2-1 → 2-1)</span></span>
+              <span className="font-bold text-gold">10</span>
             </div>
-            <div className="py-2 border-b border-white/5">
-              <div className="flex justify-between">
-                <span className="text-gray-300">Juist doelsaldo, verkeerde uitslag</span>
-                <span className="font-bold text-gold">7 punten</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Juiste winnaar &amp; juist verschil, maar niet de exacte cijfers.
-                Vb: jij tipt <span className="text-white">3-1</span> (verschil +2), het wordt <span className="text-white">2-0</span> (ook verschil +2).
-              </p>
+            <div className="flex justify-between py-1.5 border-b border-white/5">
+              <span className="text-gray-300">Juist doelsaldo <span className="text-gray-500 text-sm">(3-1 → 2-0)</span></span>
+              <span className="font-bold text-gold">7</span>
             </div>
-            <div className="py-2 border-b border-white/5">
-              <div className="flex justify-between">
-                <span className="text-gray-300">Juiste winnaar, verkeerd doelsaldo</span>
-                <span className="font-bold text-gold">5 punten</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Juiste winnaar, maar verschil klopt niet.
-                Vb: jij tipt <span className="text-white">3-0</span> (verschil +3), het wordt <span className="text-white">2-1</span> (verschil +1). Belgie wint in beide gevallen, maar niet met hetzelfde verschil.
-              </p>
+            <div className="flex justify-between py-1.5 border-b border-white/5">
+              <span className="text-gray-300">Juiste winnaar <span className="text-gray-500 text-sm">(3-0 → 2-1)</span></span>
+              <span className="font-bold text-gold">5</span>
             </div>
-            <div className="py-2 border-b border-white/5">
-              <div className="flex justify-between">
-                <span className="text-gray-300">Verkeerde winnaar</span>
-                <span className="font-bold text-gray-400">0 punten</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Vb: jij tipt <span className="text-white">2-1</span> winst, het wordt <span className="text-white">0-1</span> verlies (of gelijkspel).
-              </p>
+            <div className="flex justify-between py-1.5 border-b border-white/5">
+              <span className="text-gray-300">Verkeerde winnaar</span>
+              <span className="font-bold text-gray-400">0</span>
             </div>
           </div>
 
           <h4 className="font-semibold text-white mt-5">Knockout (vanaf 1/8e finales)</h4>
           <p className="text-sm text-gray-400 mb-2">
-            Punten stapelen: +10 voor de juiste winnaar, en daar los van bonus voor de score na 90/120 min. Een perfecte voorspelling = 20 punten.
+            Bonussen stapelen en de score-bonus telt los van de winnaar. Perfect = 20.
           </p>
-          <div className="grid gap-2">
-            <div className="py-2 border-b border-white/5">
-              <div className="flex justify-between">
-                <span className="text-gray-300">Juiste winnaar (ook na penalty&apos;s)</span>
-                <span className="font-bold text-gold">+10 punten</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Vb: jij tipt Belgie wint, Belgie gaat door (ook al was het via strafschoppen).
-              </p>
+          <div className="grid gap-1">
+            <div className="flex justify-between py-1.5 border-b border-white/5">
+              <span className="text-gray-300">Juiste winnaar (ook na penalty&apos;s)</span>
+              <span className="font-bold text-gold">+10</span>
             </div>
-            <div className="py-2 border-b border-white/5">
-              <div className="flex justify-between">
-                <span className="text-gray-300">Exacte score (na 90 of 120 min)</span>
-                <span className="font-bold text-gold">+6 punten</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Telt los van de winnaar. Een exacte score is ook altijd het juiste doelsaldo, dus exact + juiste winnaar = <span className="text-white">20 punten totaal</span>.
-              </p>
+            <div className="flex justify-between py-1.5 border-b border-white/5">
+              <span className="text-gray-300">Exacte score (na 90/120 min)</span>
+              <span className="font-bold text-gold">+6</span>
             </div>
-            <div className="py-2 border-b border-white/5">
-              <div className="flex justify-between">
-                <span className="text-gray-300">Juist doelsaldo (niet exact)</span>
-                <span className="font-bold text-gold">+4 punten</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Telt los van de winnaar. Vb: jij tipt 3-1, het wordt 2-0 → +4 (samen met juiste winnaar 14 punten).
-              </p>
-            </div>
-            <div className="py-2 border-b border-white/5">
-              <div className="flex justify-between">
-                <span className="text-gray-300">Gelijkspel juist getipt, verkeerde penalty-winnaar</span>
-                <span className="font-bold text-gold">+6/+4</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Je mist enkel de +10. Vb: jij tipt 1-1 met Belgie door, het wordt 1-1 maar de tegenstander wint de strafschoppen → +6 (exact) +4 (doelsaldo) = 10 punten.
-              </p>
+            <div className="flex justify-between py-1.5 border-b border-white/5">
+              <span className="text-gray-300">Juist doelsaldo (na 90/120 min)</span>
+              <span className="font-bold text-gold">+4</span>
             </div>
           </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Bij een gelijkspel kies je wie doorgaat. Tip je de score juist maar de verkeerde penaltywinnaar, dan hou je +6/+4 en mis je enkel de +10.
+          </p>
 
           <h4 className="font-semibold text-white mt-5">Jokers</h4>
           <div className="grid gap-1">
