@@ -35,11 +35,12 @@ export async function GET() {
       homeScore: true,
       awayScore: true,
       jokerUsed: true,
+      advancingTeam: true,
     },
   });
 
   // Group predictions by match number
-  const byMatch: Record<number, { userName: string; homeScore: number; awayScore: number; jokerUsed: boolean }[]> = {};
+  const byMatch: Record<number, { userName: string; homeScore: number; awayScore: number; jokerUsed: boolean; advancingTeam: string | null }[]> = {};
   const userMap = new Map(users.map(u => [u.id, u.name]));
 
   for (const p of predictions) {
@@ -49,6 +50,7 @@ export async function GET() {
       homeScore: p.homeScore,
       awayScore: p.awayScore,
       jokerUsed: p.jokerUsed,
+      advancingTeam: p.advancingTeam ?? null,
     });
   }
 

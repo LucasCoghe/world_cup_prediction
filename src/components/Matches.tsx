@@ -52,6 +52,7 @@ interface OtherPrediction {
   homeScore: number;
   awayScore: number;
   jokerUsed: boolean;
+  advancingTeam: string | null;
 }
 
 type FilterKind = 'all' | 'live' | 'played' | 'belgium';
@@ -749,17 +750,32 @@ function MatchRow({
       {expanded && otherPredictions && (
         <div className="mx-1 mb-1 bg-white/5 rounded-b-lg border border-white/10 border-t-0 px-3 py-2">
           <div className="divide-y divide-white/10">
-            {otherPredictions.map((mp, i) => (
-              <div key={i} className="flex items-center justify-between text-sm py-1.5">
-                <span className="text-gray-400">
-                  {mp.userName}
-                  {mp.jokerUsed && <span className="ml-1 text-purple-400 font-bold text-xs">JOKER</span>}
-                </span>
-                <span className="font-mono font-medium text-white">
-                  {mp.homeScore} - {mp.awayScore}
-                </span>
-              </div>
-            ))}
+            {otherPredictions.map((mp, i) => {
+              // Bij een voorspeld gelijkspel in een knockout: toon welke ploeg
+              // deze speler liet doorgaan (penalty-keuze).
+              const showAdvancing = isKO && mp.homeScore === mp.awayScore && !!mp.advancingTeam;
+              const advTeam = mp.advancingTeam ? teams[mp.advancingTeam] : undefined;
+              return (
+                <div key={i} className="flex items-center justify-between gap-2 text-sm py-1.5">
+                  <span className="text-gray-400 min-w-0 truncate">
+                    {mp.userName}
+                    {mp.jokerUsed && <span className="ml-1 text-purple-400 font-bold text-xs">JOKER</span>}
+                  </span>
+                  <span className="flex items-center gap-2 shrink-0">
+                    {showAdvancing && (
+                      <span className="inline-flex items-center gap-1 text-xs text-gray-400" title="Gaat door">
+                        <span aria-hidden>→</span>
+                        {mp.advancingTeam && <FlagIcon teamCode={mp.advancingTeam} size={14} />}
+                        <span>{advTeam?.name ?? mp.advancingTeam}</span>
+                      </span>
+                    )}
+                    <span className="font-mono font-medium text-white">
+                      {mp.homeScore} - {mp.awayScore}
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
