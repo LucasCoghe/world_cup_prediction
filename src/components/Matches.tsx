@@ -578,7 +578,7 @@ function MatchRow({
 
   const earnedPoints = isPlayed && pred
     ? calculateMatchPoints(
-        { matchNumber: match.matchNumber, homeScore: pred.homeScore, awayScore: pred.awayScore },
+        { matchNumber: match.matchNumber, homeScore: pred.homeScore, awayScore: pred.awayScore, advancingTeam: pred.advancingTeam },
         { matchNumber: match.matchNumber, homeScore: result.homeScore, awayScore: result.awayScore, advancingTeam: result.advancingTeam ?? undefined },
         isJoker,
         isKO,

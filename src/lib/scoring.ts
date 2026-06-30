@@ -81,11 +81,13 @@ export function isCorrectWinner(
   return getOutcome(pred.homeScore, pred.awayScore) === getOutcome(actual.homeScore, actual.awayScore);
 }
 
-// Sporza knockout scoring (cumulative):
-//   +10pt = correct winner (who advances, even after penalties)
-//    +6pt = exact score after 90/120 min
-//    +4pt = correct goal difference (but not exact score)
-//    +1pt = participation
+// Sporza knockout scoring (cumulatief, de bonussen stapelen):
+//   +10pt = juiste winnaar (wie doorgaat, ook na penalty's)
+//    +6pt = exacte score na 90/120 min — los van de (penalty)winnaar
+//    +4pt = juist doelsaldo na 90/120 min — los van de winnaar
+// Een exacte score impliceert een juist doelsaldo, dus een perfecte
+// voorspelling met de juiste winnaar levert 10+6+4 = 20 op. Een correct
+// getipt gelijkspel met de verkeerde penaltywinnaar levert nog 6+4 = 10 op.
 function scoreKnockoutMatch(
   pred: MatchScore,
   actual: MatchScore,
@@ -94,28 +96,28 @@ function scoreKnockoutMatch(
 ): { points: number; reason: string; correctWinner: boolean } {
   let points = 0;
   const reasons: string[] = [];
-  let correctWinner = false;
 
   const predSide = getAdvancingSide(pred, actualHomeTeam, actualAwayTeam);
   const actualSide = getAdvancingSide(actual, actualHomeTeam, actualAwayTeam);
+  const correctWinner = predSide !== 0 && predSide === actualSide;
 
-  if (predSide !== 0 && predSide === actualSide) {
+  if (correctWinner) {
     points += 10;
-    reasons.unshift('Juiste winnaar');
-    correctWinner = true;
+    reasons.push('Juiste winnaar');
+  }
 
-    const exactScore = pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore;
-    if (exactScore) {
-      points += 6;
-      reasons.splice(1, 0, 'Exacte score');
-    } else {
-      const predDiff = goalDiff(pred.homeScore, pred.awayScore);
-      const actualDiff = goalDiff(actual.homeScore, actual.awayScore);
-      if (predDiff === actualDiff) {
-        points += 4;
-        reasons.splice(1, 0, 'Juist doelsaldo');
-      }
-    }
+  // Score-bonussen op basis van de stand na 90/120 min, onafhankelijk van wie
+  // er na de penalty's doorgaat. Exacte score en juist doelsaldo stapelen.
+  const exactScore = pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore;
+  if (exactScore) {
+    points += 6;
+    reasons.push('Exacte score');
+  }
+  const predDiff = goalDiff(pred.homeScore, pred.awayScore);
+  const actualDiff = goalDiff(actual.homeScore, actual.awayScore);
+  if (predDiff === actualDiff) {
+    points += 4;
+    reasons.push('Juist doelsaldo');
   }
 
   return { points, reason: reasons.length > 0 ? reasons.join(' + ') : 'Fout', correctWinner };

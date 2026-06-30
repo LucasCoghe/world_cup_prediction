@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { teams, getRoundName, formatSourceLabel } from '@/lib/tournament';
+import { calculateMatchPoints } from '@/lib/scoring';
 import FlagIcon from './FlagIcon';
 import Avatar from './Avatar';
 import { getCosmetic } from '@/lib/cosmetics';
@@ -21,6 +22,7 @@ interface MatchPrediction {
   resolvedAway: string | null;
   actualHome: number | null;
   actualAway: number | null;
+  actualAdvancingTeam: string | null;
 }
 
 interface ExtraPrediction {
@@ -36,39 +38,20 @@ interface Props {
   onBack: () => void;
 }
 
+// Gebruikt de gedeelde scoringlogica (incl. doorgaande ploeg / penalty-keuze),
+// zodat de weergegeven punten exact gelijklopen met het klassement.
 function getPointsForMatch(pred: MatchPrediction): { points: number; label: string } | null {
   if (pred.actualHome === null || pred.actualAway === null) return null;
-  const predOutcome = Math.sign(pred.homeScore - pred.awayScore);
-  const actualOutcome = Math.sign(pred.actualHome - pred.actualAway);
   const isKnockout = pred.round !== null;
-
-  if (isKnockout) {
-    let pts = 0;
-    if (predOutcome === actualOutcome) {
-      pts += 10;
-      const exact = pred.homeScore === pred.actualHome && pred.awayScore === pred.actualAway;
-      if (exact) {
-        pts += 6;
-      } else if ((pred.homeScore - pred.awayScore) === (pred.actualHome - pred.actualAway)) {
-        pts += 4;
-      }
-    }
-    if (pred.jokerUsed) pts += predOutcome === actualOutcome ? 5 : -5;
-    return { points: pts, label: `${pts} pt` };
-  }
-
-  if (predOutcome !== actualOutcome) {
-    const pts = pred.jokerUsed ? -5 : 0;
-    return { points: pts, label: `${pts} pt` };
-  }
-  const exact = pred.homeScore === pred.actualHome && pred.awayScore === pred.actualAway;
-  const predDiff = pred.homeScore - pred.awayScore;
-  const actualDiff = pred.actualHome - pred.actualAway;
-  let base = 5;
-  if (exact) base = 10;
-  else if (predDiff === actualDiff) base = 7;
-  const pts = pred.jokerUsed ? base + 5 : base;
-  return { points: pts, label: `${pts} pt` };
+  const points = calculateMatchPoints(
+    { matchNumber: pred.matchNumber, homeScore: pred.homeScore, awayScore: pred.awayScore, advancingTeam: pred.advancingTeam ?? undefined },
+    { matchNumber: pred.matchNumber, homeScore: pred.actualHome, awayScore: pred.actualAway, advancingTeam: pred.actualAdvancingTeam ?? undefined },
+    pred.jokerUsed,
+    isKnockout,
+    pred.resolvedHome ?? undefined,
+    pred.resolvedAway ?? undefined,
+  );
+  return { points, label: `${points} pt` };
 }
 
 export default function UserPredictions({ userId, onBack }: Props) {

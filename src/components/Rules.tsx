@@ -73,13 +73,13 @@ export default function Rules() {
 
           <h4 className="font-semibold text-white mt-5">Knockout (vanaf 1/8e finales)</h4>
           <p className="text-sm text-gray-400 mb-2">
-            Punten zijn cumulatief: juiste winnaar is de basis, bovenop krijg je bonus voor score of doelsaldo.
+            Punten stapelen: +10 voor de juiste winnaar, en daar los van bonus voor de score na 90/120 min. Een perfecte voorspelling = 20 punten.
           </p>
           <div className="grid gap-2">
             <div className="py-2 border-b border-white/5">
               <div className="flex justify-between">
                 <span className="text-gray-300">Juiste winnaar (ook na penalty&apos;s)</span>
-                <span className="font-bold text-gold">10 punten</span>
+                <span className="font-bold text-gold">+10 punten</span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
                 Vb: jij tipt Belgie wint, Belgie gaat door (ook al was het via strafschoppen).
@@ -91,7 +91,7 @@ export default function Rules() {
                 <span className="font-bold text-gold">+6 punten</span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Bovenop de 10 voor juiste winnaar = <span className="text-white">16 punten totaal</span>. Vb: jij tipt 2-1, het wordt 2-1.
+                Telt los van de winnaar. Een exacte score is ook altijd het juiste doelsaldo, dus exact + juiste winnaar = <span className="text-white">20 punten totaal</span>.
               </p>
             </div>
             <div className="py-2 border-b border-white/5">
@@ -100,7 +100,16 @@ export default function Rules() {
                 <span className="font-bold text-gold">+4 punten</span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Bovenop de 10 voor juiste winnaar = <span className="text-white">14 punten totaal</span>. Vb: jij tipt 3-1, het wordt 2-0.
+                Telt los van de winnaar. Vb: jij tipt 3-1, het wordt 2-0 → +4 (samen met juiste winnaar 14 punten).
+              </p>
+            </div>
+            <div className="py-2 border-b border-white/5">
+              <div className="flex justify-between">
+                <span className="text-gray-300">Gelijkspel juist getipt, verkeerde penalty-winnaar</span>
+                <span className="font-bold text-gold">+6/+4</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Je mist enkel de +10. Vb: jij tipt 1-1 met Belgie door, het wordt 1-1 maar de tegenstander wint de strafschoppen → +6 (exact) +4 (doelsaldo) = 10 punten.
               </p>
             </div>
           </div>

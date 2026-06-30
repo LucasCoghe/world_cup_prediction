@@ -75,6 +75,7 @@ export async function GET(
       resolvedAway: resolved?.awayTeam || null,
       actualHome: actual?.homeScore ?? null,
       actualAway: actual?.awayScore ?? null,
+      actualAdvancingTeam: actual?.advancingTeam ?? null,
     };
   });
 

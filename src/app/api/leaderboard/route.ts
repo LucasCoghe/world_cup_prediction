@@ -74,11 +74,11 @@ export async function GET() {
     .sort();
 
   // Pre-build prediction lookup maps for performance
-  const userPredMaps = new Map<string, Map<number, { matchNumber: number; homeScore: number; awayScore: number; jokerUsed: boolean }>>();
+  const userPredMaps = new Map<string, Map<number, { matchNumber: number; homeScore: number; awayScore: number; jokerUsed: boolean; advancingTeam?: string }>>();
   for (const u of users) {
-    const predMap = new Map<number, { matchNumber: number; homeScore: number; awayScore: number; jokerUsed: boolean }>();
+    const predMap = new Map<number, { matchNumber: number; homeScore: number; awayScore: number; jokerUsed: boolean; advancingTeam?: string }>();
     for (const p of u.predictions) {
-      predMap.set(p.matchNumber, { matchNumber: p.matchNumber, homeScore: p.homeScore, awayScore: p.awayScore, jokerUsed: p.jokerUsed });
+      predMap.set(p.matchNumber, { matchNumber: p.matchNumber, homeScore: p.homeScore, awayScore: p.awayScore, jokerUsed: p.jokerUsed, advancingTeam: p.advancingTeam || undefined });
     }
     userPredMaps.set(u.id, predMap);
   }
@@ -173,7 +173,7 @@ export async function GET() {
         if (pred) {
           const teams = actualKoTeams.get(actual.matchNumber);
           roundPoints += calculateMatchPoints(
-            { matchNumber: pred.matchNumber, homeScore: pred.homeScore, awayScore: pred.awayScore },
+            { matchNumber: pred.matchNumber, homeScore: pred.homeScore, awayScore: pred.awayScore, advancingTeam: pred.advancingTeam },
             actual,
             pred.jokerUsed,
             true,
