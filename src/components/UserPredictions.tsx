@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { teams, getRoundName, formatSourceLabel } from '@/lib/tournament';
-import { calculateMatchPoints } from '@/lib/scoring';
+import { calculateMatchPoints, isCorrectWinner } from '@/lib/scoring';
 import FlagIcon from './FlagIcon';
 import Avatar from './Avatar';
 import { getCosmetic } from '@/lib/cosmetics';
@@ -88,8 +88,6 @@ export default function UserPredictions({ userId, onBack }: Props) {
     </div>
   );
 
-  const groupPreds = predictions.filter(p => p.group);
-
   // Gespeelde wedstrijden bovenaan (recentste eerst), daarna nog te spelen (eerstvolgende eerst).
   const ordered = [...predictions].sort((a, b) => {
     const aPlayed = a.actualHome !== null && a.actualAway !== null;
@@ -116,15 +114,22 @@ export default function UserPredictions({ userId, onBack }: Props) {
     const ordered = predictions.slice().sort((a, b) => a.matchNumber - b.matchNumber);
     for (const p of ordered) {
       if (p.actualHome === null || p.actualAway === null) continue;
-      const predOut = Math.sign(p.homeScore - p.awayScore);
-      const actOut = Math.sign(p.actualHome - p.actualAway);
-      streak = predOut === actOut ? streak + 1 : 0;
+      const isKnockout = p.round !== null;
+      const correct = isCorrectWinner(
+        { matchNumber: p.matchNumber, homeScore: p.homeScore, awayScore: p.awayScore, advancingTeam: p.advancingTeam ?? undefined },
+        { matchNumber: p.matchNumber, homeScore: p.actualHome, awayScore: p.actualAway, advancingTeam: p.actualAdvancingTeam ?? undefined },
+        isKnockout,
+        p.resolvedHome ?? undefined,
+        p.resolvedAway ?? undefined,
+      );
+      streak = correct ? streak + 1 : 0;
       if (streak > best) best = streak;
     }
     return { hotStreak: streak, bestStreak: best };
   })();
 
-  const exactScoresCount = groupPreds.filter(p =>
+  // Exacte scores tellen door over groep én knockout (hattrick per 3).
+  const exactScoresCount = predictions.filter(p =>
     p.actualHome !== null &&
     p.actualAway !== null &&
     p.homeScore === p.actualHome &&

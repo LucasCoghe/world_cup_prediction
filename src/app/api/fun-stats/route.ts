@@ -101,7 +101,7 @@ export async function GET() {
   for (const user of users) {
     const predMap = new Map<number, MatchScore>();
     for (const p of user.predictions) {
-      predMap.set(p.matchNumber, { matchNumber: p.matchNumber, homeScore: p.homeScore, awayScore: p.awayScore });
+      predMap.set(p.matchNumber, { matchNumber: p.matchNumber, homeScore: p.homeScore, awayScore: p.awayScore, advancingTeam: p.advancingTeam ?? undefined });
     }
 
     let consecutiveZeros = 0;

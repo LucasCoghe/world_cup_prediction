@@ -199,13 +199,15 @@ export async function GET() {
     }
   }
 
-  // === HOT STREAK (groep + knockout) + BESCHAMENDE REEKS / HATTRICK (groep) ===
-  //   Hot streak: juiste winnaar op rij, loopt door over groep én knockout.
-  //   3x op rij 0 punten = drink een pint (alleen groepsfase).
-  //   Elke 3 exacte scores (10pt) cumulatief = deel een pint uit (alleen groep).
+  // === HOT STREAK + BESCHAMENDE REEKS / HATTRICK ===
+  // Alles loopt door over groep én knockout:
+  //   Hot streak: juiste winnaar op rij.
+  //   3x op rij 0 punten = drink een pint.
+  //   Elke 3 exacte scores cumulatief = deel een pint uit.
   const playedMatches = [...finalResultMatchNumbers].sort((a, b) => a - b);
   const matchDateMap = new Map<number, string>();
   for (const m of groupMatches) matchDateMap.set(m.matchNumber, m.date);
+  for (const m of knockoutStructure) matchDateMap.set(m.matchNumber, m.date);
   const hotStreaks = new Map<string, number>();
   const bestStreaks = new Map<string, number>();
   for (const u of users) {
@@ -216,51 +218,45 @@ export async function GET() {
     let exactCount = 0;
     for (const matchNum of playedMatches) {
       const isKnockout = matchNum > TOTAL_GROUP_MATCHES;
+      const teams = isKnockout ? actualKoTeams.get(matchNum) : undefined;
       const pred = predMap.get(matchNum);
       const actual = actualScoreMap.get(matchNum);
 
-      // Hot streak loopt door over groep + knockout
       if (!pred || !actual) {
         streak = 0;
+        consecutiveZeros++;
       } else {
-        const teams = isKnockout ? actualKoTeams.get(matchNum) : undefined;
         const correct = isCorrectWinner(
-          { matchNumber: matchNum, homeScore: pred.homeScore, awayScore: pred.awayScore },
+          { matchNumber: matchNum, homeScore: pred.homeScore, awayScore: pred.awayScore, advancingTeam: pred.advancingTeam },
           actual,
           isKnockout,
           teams?.home,
           teams?.away,
         );
         streak = correct ? streak + 1 : 0;
-      }
-      if (streak > bestStreak) bestStreak = streak;
 
-      // Groepsfase-only: 0-punten-reeks (drinken) + hattrick (uitdelen)
-      if (!isKnockout) {
-        if (!pred || !actual) {
-          consecutiveZeros++;
-        } else {
-          consecutiveZeros = calculateMatchPoints(pred, actual, pred.jokerUsed) <= 0 ? consecutiveZeros + 1 : 0;
+        const pts = calculateMatchPoints(pred, actual, pred.jokerUsed, isKnockout, teams?.home, teams?.away);
+        consecutiveZeros = pts <= 0 ? consecutiveZeros + 1 : 0;
 
-          const exactScore = pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore;
-          if (exactScore) {
-            exactCount++;
-            if (exactCount % 3 === 0) {
-              const date = matchDateMap.get(matchNum);
-              const dateStr = date
-                ? new Date(date + 'T12:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })
-                : `match ${matchNum}`;
-              beerGiveReasons.get(u.id)!.push(`Hattrick: ${exactCount} exacte scores (laatst ${dateStr})`);
-            }
+        const exactScore = pred.homeScore === actual.homeScore && pred.awayScore === actual.awayScore;
+        if (exactScore) {
+          exactCount++;
+          if (exactCount % 3 === 0) {
+            const date = matchDateMap.get(matchNum);
+            const dateStr = date
+              ? new Date(date + 'T12:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })
+              : `match ${matchNum}`;
+            beerGiveReasons.get(u.id)!.push(`Hattrick: ${exactCount} exacte scores (laatst ${dateStr})`);
           }
         }
-        if (consecutiveZeros > 0 && consecutiveZeros % 3 === 0) {
-          const date = matchDateMap.get(matchNum);
-          const dateStr = date
-            ? new Date(date + 'T12:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })
-            : `match ${matchNum}`;
-          beerReasons.get(u.id)!.push(`${consecutiveZeros}x op rij 0 punten (tot ${dateStr})`);
-        }
+      }
+      if (streak > bestStreak) bestStreak = streak;
+      if (consecutiveZeros > 0 && consecutiveZeros % 3 === 0) {
+        const date = matchDateMap.get(matchNum);
+        const dateStr = date
+          ? new Date(date + 'T12:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })
+          : `match ${matchNum}`;
+        beerReasons.get(u.id)!.push(`${consecutiveZeros}x op rij 0 punten (tot ${dateStr})`);
       }
     }
     hotStreaks.set(u.id, streak);
