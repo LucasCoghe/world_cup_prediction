@@ -1,12 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { teams, getRoundName, formatSourceLabel } from '@/lib/tournament';
+import { teams, getRoundName, formatSourceLabel, groupMatches, knockoutStructure } from '@/lib/tournament';
 import { calculateMatchPoints, isCorrectWinner } from '@/lib/scoring';
 import FlagIcon from './FlagIcon';
 import Avatar from './Avatar';
 import { getCosmetic } from '@/lib/cosmetics';
 import { getStreakTier } from '@/lib/streak';
+
+// Aftraptijd per matchnummer, voor chronologische sortering (knockout-nummers
+// staan niet chronologisch).
+const KICKOFF_MS = new Map<number, number>();
+for (const m of [...groupMatches, ...knockoutStructure]) {
+  KICKOFF_MS.set(m.matchNumber, new Date(`${m.date}T${m.time}:00+02:00`).getTime());
+}
+const kickoffMs = (matchNumber: number): number => KICKOFF_MS.get(matchNumber) ?? 0;
 
 interface MatchPrediction {
   matchNumber: number;
@@ -88,12 +96,16 @@ export default function UserPredictions({ userId, onBack }: Props) {
     </div>
   );
 
-  // Gespeelde wedstrijden bovenaan (recentste eerst), daarna nog te spelen (eerstvolgende eerst).
+  // Gespeelde wedstrijden bovenaan (recentste aftrap eerst), daarna nog te
+  // spelen (eerstvolgende aftrap eerst). Sorteren op aftraptijd, niet op
+  // matchnummer — knockout-nummers staan niet chronologisch.
   const ordered = [...predictions].sort((a, b) => {
     const aPlayed = a.actualHome !== null && a.actualAway !== null;
     const bPlayed = b.actualHome !== null && b.actualAway !== null;
     if (aPlayed !== bPlayed) return aPlayed ? -1 : 1;
-    return aPlayed ? b.matchNumber - a.matchNumber : a.matchNumber - b.matchNumber;
+    const ak = kickoffMs(a.matchNumber);
+    const bk = kickoffMs(b.matchNumber);
+    return aPlayed ? bk - ak : ak - bk;
   });
 
   function sectionLabel(p: MatchPrediction): string {
