@@ -4,13 +4,8 @@ import { calculateMatchPoints } from '@/lib/scoring';
 import { MatchScore, resolveKnockoutBracket } from '@/lib/standings';
 import { groupMatches, knockoutStructure, TOTAL_GROUP_MATCHES } from '@/lib/tournament';
 
-const ROUND_ORDER = ['R32', 'R16', 'QF', 'SF', '3P', 'F'] as const;
-const ROUND_LABELS: Record<string, string> = {
-  R32: '1/16', R16: '1/8', QF: 'KF', SF: 'HF', '3P': 'Troost', F: 'Finale',
-};
-
 // Position-over-time history: each player's rank after every completed
-// matchday (group phase) and every completed knockout round.
+// calendar day (group phase and knockout), once all that day's matches are final.
 export async function GET() {
   const users = await prisma.user.findMany({
     where: { isAdmin: false },
@@ -37,28 +32,19 @@ export async function GET() {
     actualKoTeams.set(b.matchNumber, { home: b.homeTeam ?? undefined, away: b.awayTeam ?? undefined });
   }
 
-  // Build ordered checkpoints, each contributing a set of match numbers.
+  // Eén checkpoint per kalenderdag (groep én knockout), zodra álle matchen van
+  // die dag een definitieve uitslag hebben.
   const checkpoints: { label: string; matchNumbers: number[] }[] = [];
-
-  // Group phase: one checkpoint per date where ALL that date's group matches are final.
-  const groupByDate = new Map<string, number[]>();
-  for (const m of groupMatches) {
-    if (!groupByDate.has(m.date)) groupByDate.set(m.date, []);
-    groupByDate.get(m.date)!.push(m.matchNumber);
+  const byDate = new Map<string, number[]>();
+  for (const m of [...groupMatches, ...knockoutStructure]) {
+    if (!byDate.has(m.date)) byDate.set(m.date, []);
+    byDate.get(m.date)!.push(m.matchNumber);
   }
-  const groupDates = [...groupByDate.keys()].sort();
-  for (const date of groupDates) {
-    const nums = groupByDate.get(date)!;
+  for (const date of [...byDate.keys()].sort()) {
+    const nums = byDate.get(date)!;
     if (!nums.every(n => finalSet.has(n))) continue;
     const label = new Date(date + 'T12:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' });
     checkpoints.push({ label, matchNumbers: nums });
-  }
-
-  // Knockout: one checkpoint per round where ALL round matches are final.
-  for (const round of ROUND_ORDER) {
-    const nums = knockoutStructure.filter(m => m.round === round).map(m => m.matchNumber);
-    if (nums.length === 0 || !nums.every(n => finalSet.has(n))) continue;
-    checkpoints.push({ label: ROUND_LABELS[round], matchNumbers: nums });
   }
 
   // Pre-build prediction lookup per user.
