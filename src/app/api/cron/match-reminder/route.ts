@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import webpush from 'web-push';
-import { groupMatches, knockoutStructure, teams } from '@/lib/tournament';
+import { groupMatches, knockoutStructure, teams, formatSourceLabel } from '@/lib/tournament';
+import { resolveKnockoutBracket, MatchScore } from '@/lib/standings';
 
 webpush.setVapidDetails(
   'mailto:admin@wk2026.be',
@@ -37,8 +38,8 @@ export async function GET(req: Request) {
   const windowEnd = new Date(now.getTime() + 75 * 60 * 1000);
 
   const allMatches = [
-    ...groupMatches.map(m => ({ matchNumber: m.matchNumber, date: m.date, time: m.time, home: m.home, away: m.away, knockout: false })),
-    ...knockoutStructure.map(m => ({ matchNumber: m.matchNumber, date: m.date, time: m.time, home: '', away: '', knockout: true })),
+    ...groupMatches.map(m => ({ matchNumber: m.matchNumber, date: m.date, time: m.time, home: m.home, away: m.away, knockout: false, homeSource: '', awaySource: '' })),
+    ...knockoutStructure.map(m => ({ matchNumber: m.matchNumber, date: m.date, time: m.time, home: '', away: '', knockout: true, homeSource: m.homeSource, awaySource: m.awaySource })),
   ];
 
   let dueMatches;
@@ -74,6 +75,20 @@ export async function GET(req: Request) {
     return NextResponse.json({ sent: 0, message: 'Alle reminders al verstuurd' });
   }
 
+  // Resolve de echte ploegen voor knockoutmatchen, zodat de notificatie de
+  // officiele teamnamen toont i.p.v. "Knockout #nr".
+  const koTeams = new Map<number, { home: string | null; away: string | null }>();
+  if (todo.some(m => m.knockout)) {
+    const actualResults = await prisma.actualResult.findMany();
+    const actualScores: MatchScore[] = actualResults.map(r => ({
+      matchNumber: r.matchNumber, homeScore: r.homeScore, awayScore: r.awayScore,
+      advancingTeam: r.advancingTeam || undefined,
+    }));
+    for (const b of resolveKnockoutBracket(actualScores)) {
+      koTeams.set(b.matchNumber, { home: b.homeTeam, away: b.awayTeam });
+    }
+  }
+
   const users = await prisma.user.findMany({
     where: testUserId
       ? { id: testUserId }
@@ -85,9 +100,15 @@ export async function GET(req: Request) {
   const recipientCount = users.reduce((sum, u) => sum + u.pushSubscriptions.length, 0);
 
   for (const match of todo) {
-    const label = match.knockout
-      ? `Knockout #${match.matchNumber}`
-      : `${teams[match.home]?.name || match.home} - ${teams[match.away]?.name || match.away}`;
+    let label: string;
+    if (match.knockout) {
+      const r = koTeams.get(match.matchNumber);
+      const homeName = r?.home ? (teams[r.home]?.name ?? r.home) : formatSourceLabel(match.homeSource);
+      const awayName = r?.away ? (teams[r.away]?.name ?? r.away) : formatSourceLabel(match.awaySource);
+      label = `${homeName} - ${awayName}`;
+    } else {
+      label = `${teams[match.home]?.name || match.home} - ${teams[match.away]?.name || match.away}`;
+    }
 
     const body = `${label} begint over een uur — laatste kans om je voorspelling aan te passen!`;
     const payload = JSON.stringify({ title: 'Deadline over 1 uur!', body });
