@@ -52,14 +52,16 @@ function scoreGroupMatch(pred: MatchScore, actual: MatchScore): { points: number
 }
 
 // Determine which side advances (1 = home, -1 = away, 0 = unresolved).
-// Uses advancingTeam when set (handles penalty shootouts where score is a draw).
+// Een beslissende score bepaalt de winnaar; advancingTeam telt enkel bij een
+// echt gelijkspel (penalty's). Zo overschrijft een achtergebleven
+// advancingTeam-keuze (van toen het nog een gelijkspel was) nooit de score.
 function getAdvancingSide(score: MatchScore, homeTeam?: string, awayTeam?: string): 1 | -1 | 0 {
+  if (score.homeScore > score.awayScore) return 1;
+  if (score.awayScore > score.homeScore) return -1;
   if (score.advancingTeam && homeTeam && awayTeam) {
     if (score.advancingTeam === homeTeam) return 1;
     if (score.advancingTeam === awayTeam) return -1;
   }
-  if (score.homeScore > score.awayScore) return 1;
-  if (score.awayScore > score.homeScore) return -1;
   return 0;
 }
 

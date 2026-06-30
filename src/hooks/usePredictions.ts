@@ -134,7 +134,10 @@ export function usePredictions(): PredictionsState {
   const setScore = useCallback((matchNumber: number, homeScore: number, awayScore: number, advancingTeam?: string) => {
     setScores(prev => {
       const next = new Map(prev);
-      next.set(matchNumber, { matchNumber, homeScore, awayScore, advancingTeam });
+      // De doorgaande-ploeg-keuze geldt enkel bij een gelijkspel; wis ze bij
+      // een beslissende score zodat er geen tegenstrijdige keuze blijft hangen.
+      const adv = homeScore === awayScore ? advancingTeam : undefined;
+      next.set(matchNumber, { matchNumber, homeScore, awayScore, advancingTeam: adv });
       return next;
     });
     debouncedSave();

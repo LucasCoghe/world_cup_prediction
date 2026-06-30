@@ -10,7 +10,7 @@ import {
   formatSourceLabel,
   TOTAL_GROUP_MATCHES,
 } from '@/lib/tournament';
-import { calculateGroupStandings, getBestThirdPlaced } from '@/lib/standings';
+import { calculateGroupStandings, getBestThirdPlaced, resolveKnockoutBracket } from '@/lib/standings';
 import { calculateMatchPoints } from '@/lib/scoring';
 import type { PredictionsState } from '@/hooks/usePredictions';
 import FlagIcon from './FlagIcon';
@@ -131,10 +131,23 @@ export default function Matches({ predictions, targetMatchNumber, targetNonce }:
         group: m.group,
       });
     }
+    // Voor al gespeelde knockoutmatchen liggen de ploegen vast: resolve ze
+    // rechtstreeks uit de echte uitslagen (zoals het klassement), los van de
+    // conservatieve /api/knockout-teams. Zo kan de puntenberekening de
+    // penaltywinnaar van een gelijkspel altijd bepalen.
+    const koScores = Object.entries(results).map(([n, r]) => ({
+      matchNumber: Number(n), homeScore: r.homeScore, awayScore: r.awayScore, advancingTeam: r.advancingTeam ?? undefined,
+    }));
+    const bracketTeams = new Map<number, { home: string | null; away: string | null }>();
+    for (const b of resolveKnockoutBracket(koScores)) bracketTeams.set(b.matchNumber, { home: b.homeTeam, away: b.awayTeam });
+
     for (const km of knockoutStructure) {
       const resolved = koResolved[km.matchNumber];
-      const homeCode = resolved?.homeTeam ?? null;
-      const awayCode = resolved?.awayTeam ?? null;
+      const r = results[km.matchNumber];
+      const isPlayedKo = !!r && !r.live;
+      const bt = isPlayedKo ? bracketTeams.get(km.matchNumber) : undefined;
+      const homeCode = resolved?.homeTeam ?? bt?.home ?? null;
+      const awayCode = resolved?.awayTeam ?? bt?.away ?? null;
       const home = homeCode ? teams[homeCode] : null;
       const away = awayCode ? teams[awayCode] : null;
       list.push({
@@ -154,7 +167,7 @@ export default function Matches({ predictions, targetMatchNumber, targetNonce }:
       });
     }
     return list.sort((a, b) => a.kickoff.getTime() - b.kickoff.getTime());
-  }, [koResolved]);
+  }, [koResolved, results]);
 
   const isLive = useCallback((m: UnifiedMatch): boolean => {
     const r = results[m.matchNumber];
