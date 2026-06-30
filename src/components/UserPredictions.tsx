@@ -231,31 +231,44 @@ export default function UserPredictions({ userId, onBack }: Props) {
             const homeLabel = home?.name ?? homeCode ?? formatSourceLabel(p.home);
             const awayLabel = away?.name ?? awayCode ?? formatSourceLabel(p.away);
             const pts = getPointsForMatch(p);
+            // Bij een voorspeld gelijkspel in een knockout: welke ploeg liet
+            // deze speler doorgaan (penalty-keuze)?
+            const advCode = !isGroup && p.homeScore === p.awayScore ? p.advancingTeam : null;
+            const advTeam = advCode ? teams[advCode] : undefined;
             return (
-              <div key={p.matchNumber} className={`flex items-center gap-2 py-1.5 px-2 rounded ${
+              <div key={p.matchNumber} className={`flex flex-col gap-1 py-1.5 px-2 rounded ${
                 pts ? (pts.points >= 10 ? 'bg-green-950/30' : pts.points >= 5 ? 'bg-yellow-950/20' : 'bg-red-950/20') : 'bg-white/5'
               } ${p.jokerUsed ? 'ring-1 ring-purple-500/40' : ''}`}>
-                <div className="w-16 shrink-0 leading-tight">
-                  <span className="text-xs text-gray-500">
-                    {p.jokerUsed ? <span className="text-purple-400 font-bold" title="Joker">J</span> : `#${p.matchNumber}`}
-                  </span>
-                  <span className="block text-[10px] text-gray-600 truncate">{sectionLabel(p)}</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-16 shrink-0 leading-tight">
+                    <span className="text-xs text-gray-500">
+                      {p.jokerUsed ? <span className="text-purple-400 font-bold" title="Joker">J</span> : `#${p.matchNumber}`}
+                    </span>
+                    <span className="block text-[10px] text-gray-600 truncate">{sectionLabel(p)}</span>
+                  </div>
+                  <div className="flex items-center gap-1 flex-1 min-w-0 justify-end text-sm">
+                    <span className={`truncate ${homeCode ? '' : 'text-gray-400'}`}>{homeLabel}</span>
+                    {homeCode && <FlagIcon teamCode={homeCode} size={16} />}
+                  </div>
+                  <span className="font-bold w-14 shrink-0 text-center whitespace-nowrap">{p.homeScore} - {p.awayScore}</span>
+                  <div className="flex items-center gap-1 flex-1 min-w-0 text-sm">
+                    {awayCode && <FlagIcon teamCode={awayCode} size={16} />}
+                    <span className={`truncate ${awayCode ? '' : 'text-gray-400'}`}>{awayLabel}</span>
+                  </div>
+                  {pts !== null && (
+                    <div className="flex items-center gap-2 w-20 shrink-0 justify-end">
+                      <span className="text-xs text-gray-500">({p.actualHome}-{p.actualAway})</span>
+                      <span className={`text-xs font-bold ${
+                        pts.points >= 10 ? 'text-green-400' : pts.points >= 5 ? 'text-yellow-400' : 'text-red-400'
+                      }`}>{pts.label}</span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-1 flex-1 min-w-0 justify-end text-sm">
-                  <span className={`truncate ${homeCode ? '' : 'text-gray-400'}`}>{homeLabel}</span>
-                  {homeCode && <FlagIcon teamCode={homeCode} size={16} />}
-                </div>
-                <span className="font-bold w-14 shrink-0 text-center whitespace-nowrap">{p.homeScore} - {p.awayScore}</span>
-                <div className="flex items-center gap-1 flex-1 min-w-0 text-sm">
-                  {awayCode && <FlagIcon teamCode={awayCode} size={16} />}
-                  <span className={`truncate ${awayCode ? '' : 'text-gray-400'}`}>{awayLabel}</span>
-                </div>
-                {pts !== null && (
-                  <div className="flex items-center gap-2 w-20 shrink-0 justify-end">
-                    <span className="text-xs text-gray-500">({p.actualHome}-{p.actualAway})</span>
-                    <span className={`text-xs font-bold ${
-                      pts.points >= 10 ? 'text-green-400' : pts.points >= 5 ? 'text-yellow-400' : 'text-red-400'
-                    }`}>{pts.label}</span>
+                {advCode && (
+                  <div className="flex items-center gap-1 text-[10px] text-gray-400 pl-16">
+                    <span>Gaat door:</span>
+                    <FlagIcon teamCode={advCode} size={12} />
+                    <span>{advTeam?.name ?? advCode}</span>
                   </div>
                 )}
               </div>
