@@ -755,6 +755,17 @@ function MatchRow({
               // deze speler liet doorgaan (penalty-keuze).
               const showAdvancing = isKO && mp.homeScore === mp.awayScore && !!mp.advancingTeam;
               const advTeam = mp.advancingTeam ? teams[mp.advancingTeam] : undefined;
+              // Behaalde punten per persoon, enkel voor gespeelde matchen.
+              const mpPoints = isPlayed
+                ? calculateMatchPoints(
+                    { matchNumber: match.matchNumber, homeScore: mp.homeScore, awayScore: mp.awayScore, advancingTeam: mp.advancingTeam ?? undefined },
+                    { matchNumber: match.matchNumber, homeScore: result.homeScore, awayScore: result.awayScore, advancingTeam: result.advancingTeam ?? undefined },
+                    mp.jokerUsed,
+                    isKO,
+                    match.homeCode ?? undefined,
+                    match.awayCode ?? undefined,
+                  )
+                : null;
               return (
                 <div key={i} className="flex items-center justify-between gap-2 text-sm py-1.5">
                   <span className="text-gray-400 min-w-0 truncate">
@@ -772,6 +783,13 @@ function MatchRow({
                     <span className="font-mono font-medium text-white">
                       {mp.homeScore} - {mp.awayScore}
                     </span>
+                    {mpPoints !== null && (
+                      <span className={`text-xs font-bold w-10 text-right ${
+                        mpPoints > 0 ? 'text-gold' : 'text-gray-500'
+                      }`}>
+                        {mpPoints > 0 ? '+' : ''}{mpPoints} pt
+                      </span>
+                    )}
                   </span>
                 </div>
               );
