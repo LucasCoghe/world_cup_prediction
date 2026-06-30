@@ -69,8 +69,16 @@ export async function GET() {
     const km = knockoutStructure.find(m => m.matchNumber === b.matchNumber);
     if (!km) continue;
 
-    const homeTeam = resolveSide(km.homeSource, b.homeTeam);
-    const awayTeam = resolveSide(km.awaySource, b.awayTeam);
+    let homeTeam = resolveSide(km.homeSource, b.homeTeam);
+    let awayTeam = resolveSide(km.awaySource, b.awayTeam);
+    // Een match die al gespeeld is: de ploegen liggen vast. Toon ze sowieso,
+    // ook als de "certain only"-guards (bv. allGroupsComplete voor 3e-plaats)
+    // ze anders nog zouden verbergen. Anders kan de puntenberekening de
+    // penaltywinnaar van een gelijkspel niet bepalen → ten onrechte 0 punten.
+    if (resultSet.has(b.matchNumber)) {
+      homeTeam = homeTeam ?? b.homeTeam;
+      awayTeam = awayTeam ?? b.awayTeam;
+    }
     if (homeTeam && awayTeam) {
       teams[b.matchNumber] = { homeTeam, awayTeam };
     }
