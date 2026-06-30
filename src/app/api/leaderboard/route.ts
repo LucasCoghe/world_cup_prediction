@@ -96,10 +96,23 @@ export async function GET() {
   // Beer counter with reasons
   const beerReasons = new Map<string, string[]>();
   const beerGiveReasons = new Map<string, string[]>();
+  // Datum (YYYY-MM-DD) per uitdeel-reden, om de 🎁-badge te laten verdwijnen
+  // na de dag na de speeldag. De reden zelf blijft toewijsbaar in de bier-popup.
+  const beerGiveDates = new Map<string, Map<string, string>>();
   for (const userId of users.map(u => u.id)) {
     beerReasons.set(userId, []);
     beerGiveReasons.set(userId, []);
+    beerGiveDates.set(userId, new Map());
   }
+
+  // Een uitdeel-pint is "vers" (badge zichtbaar) op de speeldag zelf en de dag
+  // erna; vanaf de dag daarna verdwijnt de badge (maar blijft toewijsbaar).
+  const todayBrussels = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Brussels' });
+  const isRecentGive = (date?: string): boolean => {
+    if (!date) return true; // geen datum bekend → altijd tonen
+    const diffDays = (Date.parse(`${todayBrussels}T12:00:00Z`) - Date.parse(`${date}T12:00:00Z`)) / 86400000;
+    return diffDays <= 1;
+  };
 
   // Group phase: per matchday, lowest scorer drinks
   const groupDates = completedDates.filter(date => {
@@ -142,7 +155,9 @@ export async function GET() {
     const maxPoints = Math.max(...standings.map(s => s.points));
     for (const s of standings) {
       if (s.points === maxPoints) {
-        beerGiveReasons.get(s.id)!.push(`Beste op ${formattedDate} (${maxPoints}pt)`);
+        const reason = `Beste op ${formattedDate} (${maxPoints}pt)`;
+        beerGiveReasons.get(s.id)!.push(reason);
+        beerGiveDates.get(s.id)!.set(reason, date);
       }
     }
   }
@@ -246,7 +261,9 @@ export async function GET() {
             const dateStr = date
               ? new Date(date + 'T12:00:00').toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })
               : `match ${matchNum}`;
-            beerGiveReasons.get(u.id)!.push(`Hattrick: ${exactCount} exacte scores (laatst ${dateStr})`);
+            const reason = `Hattrick: ${exactCount} exacte scores (laatst ${dateStr})`;
+            beerGiveReasons.get(u.id)!.push(reason);
+            if (date) beerGiveDates.get(u.id)!.set(reason, date);
           }
         }
       }
@@ -327,7 +344,13 @@ export async function GET() {
       beerReasons: beerReasons.get(u.id) || [],
       beerGiveCount: beerGiveReasons.get(u.id)?.length || 0,
       beerGiveReasons: beerGiveReasons.get(u.id) || [],
-      beerGivePending: (beerGiveReasons.get(u.id) || []).filter(r => !beerGifts.some(g => g.giverId === u.id && g.reason === r)).length,
+      // Badge-teller: enkel nog niet-uitgedeelde én verse uitdeel-pinten (de
+      // dag na de speeldag verdwijnt de badge; toewijzen blijft kunnen via de
+      // bier-popup op beerGiveReasons).
+      beerGivePending: (beerGiveReasons.get(u.id) || []).filter(r =>
+        !beerGifts.some(g => g.giverId === u.id && g.reason === r) &&
+        isRecentGive(beerGiveDates.get(u.id)?.get(r))
+      ).length,
       hotStreak: hotStreaks.get(u.id) || 0,
       bestStreak: bestStreaks.get(u.id) || 0,
       cosmetics: cosmeticsByUser.get(u.id) || { nameColor: null, rowStyle: null, title: null },
