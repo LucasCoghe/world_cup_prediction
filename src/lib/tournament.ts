@@ -233,7 +233,7 @@ export const knockoutStructure: KnockoutMatch[] = [
   { matchNumber: 92, date: '2026-07-06', time: '02:00', round: 'R16', homeSource: 'W79', awaySource: 'W80' },
   { matchNumber: 93, date: '2026-07-06', time: '21:00', round: 'R16', homeSource: 'W83', awaySource: 'W84' },
   { matchNumber: 94, date: '2026-07-07', time: '02:00', round: 'R16', homeSource: 'W81', awaySource: 'W82' },
-  { matchNumber: 95, date: '2026-07-06', time: '18:00', round: 'R16', homeSource: 'W86', awaySource: 'W88' },
+  { matchNumber: 95, date: '2026-07-07', time: '18:00', round: 'R16', homeSource: 'W86', awaySource: 'W88' },
   { matchNumber: 96, date: '2026-07-07', time: '22:00', round: 'R16', homeSource: 'W85', awaySource: 'W87' },
 
   // Quarter-finals (4 matches)
