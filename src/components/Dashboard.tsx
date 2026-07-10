@@ -19,7 +19,6 @@ import Shop from './Shop';
 import PatchNotesModal from './PatchNotesModal';
 import NextMatchCountdown from './NextMatchCountdown';
 import { usePredictions } from '@/hooks/usePredictions';
-import { groupMatches, knockoutStructure } from '@/lib/tournament';
 
 interface Props {
   user: { userId: string; name: string; isAdmin: boolean; avatarUrl?: string | null };
