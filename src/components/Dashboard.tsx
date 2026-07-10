@@ -1,6 +1,6 @@
 'use client';
-
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { groupMatches, knockoutStructure, teams } from '@/lib/tournament';
+import { useState, useEffect, useCallback } from 'react';
 import Avatar from './Avatar';
 import AvatarUploadModal from './AvatarUploadModal';
 import Matches from './Matches';
@@ -48,23 +48,29 @@ function getLocalDate(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function isBelgianMatchDay(): boolean {
+// Knockout homeSource/awaySource zijn positiecodes (bv. "W93"), geen
+// teamcodes, dus of België speelt hangt af van de echte uitslagen. Dat
+// wordt apart opgelost via /api/knockout-teams zodra de component mount.
+function isBelgianGroupOrExtraMatchDay(): boolean {
   const today = getLocalDate();
   const belgianDates = [
     ...groupMatches.filter(m => m.home === 'BEL' || m.away === 'BEL').map(m => m.date),
-    ...knockoutStructure.filter(m => m.homeSource.includes('BEL') || m.awaySource.includes('BEL')).map(m => m.date),
     ...Object.keys(extraBelgianDates),
   ];
   return belgianDates.includes(today);
 }
 
-function getBelgianMatchToday(): string | null {
+function getBelgianGroupOrExtraOpponentToday(): string | null {
   const today = getLocalDate();
   if (extraBelgianDates[today]) return extraBelgianDates[today];
   const match = groupMatches.find(m => m.date === today && (m.home === 'BEL' || m.away === 'BEL'));
   if (!match) return null;
   const opponent = match.home === 'BEL' ? match.away : match.home;
-  return opponent;
+  return teams[opponent]?.name ?? opponent;
+}
+
+function isForcedBelgianMode(): boolean {
+  return typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('bel');
 }
 
 const CHAT_SEEN_KEY = 'chat_last_seen';
@@ -112,11 +118,29 @@ export default function Dashboard({ user, onLogout }: Props) {
   }, [activeTab]);
 
   // ?bel=1 in URL forceert Belgisch thema voor testing
-  const belgianDay = useMemo(() => {
-    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('bel')) return true;
-    return isBelgianMatchDay();
-  }, []);
-  const belgianOpponent = useMemo(() => getBelgianMatchToday(), []);
+  const [belgianDay, setBelgianDay] = useState(() => isForcedBelgianMode() || isBelgianGroupOrExtraMatchDay());
+  const [belgianOpponent, setBelgianOpponent] = useState<string | null>(() => getBelgianGroupOrExtraOpponentToday());
+
+  // Check of Rode Duivels vandaag een knockoutmatch spelen (afhankelijk van
+  // echte uitslagen, dus opgehaald via de API i.p.v. statische matchdata).
+  useEffect(() => {
+    if (isForcedBelgianMode() || belgianDay) return;
+    const today = getLocalDate();
+    const todayKnockout = knockoutStructure.find(m => m.date === today);
+    if (!todayKnockout) return;
+    fetch('/api/knockout-teams')
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        const match = data?.teams?.[todayKnockout.matchNumber];
+        if (!match) return;
+        if (match.homeTeam === 'BEL' || match.awayTeam === 'BEL') {
+          const opponent = match.homeTeam === 'BEL' ? match.awayTeam : match.homeTeam;
+          setBelgianDay(true);
+          setBelgianOpponent(teams[opponent]?.name ?? opponent);
+        }
+      })
+      .catch(() => {});
+  }, [belgianDay]);
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
