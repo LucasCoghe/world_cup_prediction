@@ -100,6 +100,18 @@ model ActualResult {
   live          Boolean @default(false)
 }
 
+// De echte antwoorden op de extra vragen, ingegeven door de admin. Singleton:
+// er is maar één rij (id = "singleton"). De schiftingsvragen (topScorerGoals,
+// topScorerFirstGoalMin) bepalen de volgorde in het klassement bij gelijke punten.
+model ActualExtraResult {
+  id                    String @id @default("singleton")
+  topScorer             String @default("")
+  belgianTopScorer      String @default("")
+  worldChampion         String @default("")
+  topScorerGoals        Int    @default(0)
+  topScorerFirstGoalMin Int    @default(0)
+}
+
 model MatchReminderSent {
   matchNumber Int      @id
   sentAt      DateTime @default(now())

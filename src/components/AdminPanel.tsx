@@ -28,10 +28,22 @@ interface KnockoutMatchTeams {
   awayTeam: string | null;
 }
 
+interface ExtraResult {
+  topScorer: string;
+  belgianTopScorer: string;
+  worldChampion: string;
+  topScorerGoals: number;
+  topScorerFirstGoalMin: number;
+}
+
+const allTeamsList = Object.values(teams).sort((a, b) => a.name.localeCompare(b.name));
+
 export default function AdminPanel() {
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [results, setResults] = useState<Result[]>([]);
-  const [activeSection, setActiveSection] = useState<'users' | 'results' | 'notify'>('users');
+  const [activeSection, setActiveSection] = useState<'users' | 'results' | 'extra' | 'notify'>('users');
+  const [extra, setExtra] = useState<ExtraResult>({ topScorer: '', belgianTopScorer: '', worldChampion: '', topScorerGoals: 0, topScorerFirstGoalMin: 0 });
+  const [extraStatus, setExtraStatus] = useState('');
   const [notifyStatus, setNotifyStatus] = useState('');
   const [editingMatch, setEditingMatch] = useState<number | null>(null);
   const [editHome, setEditHome] = useState('');
@@ -45,7 +57,28 @@ export default function AdminPanel() {
     fetch('/api/admin/users').then(r => r.json()).then(d => setUsers(d.users || []));
     fetch('/api/admin/results').then(r => r.json()).then(d => setResults(d.results || []));
     fetch('/api/knockout-teams').then(r => r.json()).then(d => setKoTeams(d.teams || {}));
+    fetch('/api/admin/extra-results').then(r => r.json()).then(d => {
+      if (d.result) {
+        setExtra({
+          topScorer: d.result.topScorer || '',
+          belgianTopScorer: d.result.belgianTopScorer || '',
+          worldChampion: d.result.worldChampion || '',
+          topScorerGoals: d.result.topScorerGoals || 0,
+          topScorerFirstGoalMin: d.result.topScorerFirstGoalMin || 0,
+        });
+      }
+    });
   }, []);
+
+  async function saveExtra() {
+    setExtraStatus('Opslaan...');
+    const res = await fetch('/api/admin/extra-results', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(extra),
+    });
+    setExtraStatus(res.ok ? 'Opgeslagen!' : 'Fout bij opslaan.');
+  }
 
   async function lockAll() {
     if (!confirm('Alle deelnemers vergrendelen? Ze kunnen dan niet meer wijzigen.')) return;
@@ -333,6 +366,12 @@ export default function AdminPanel() {
           Uitslagen ({results.length}/{groupMatches.length + knockoutStructure.length})
         </button>
         <button
+          onClick={() => setActiveSection('extra')}
+          className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm ${activeSection === 'extra' ? 'tab-active' : 'bg-white/5'}`}
+        >
+          Extra vragen
+        </button>
+        <button
           onClick={() => setActiveSection('notify')}
           className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm ${activeSection === 'notify' ? 'tab-active' : 'bg-white/5'}`}
         >
@@ -508,6 +547,85 @@ export default function AdminPanel() {
           )}
         </div>
       )}
+      {activeSection === 'extra' && (
+        <div className="space-y-4">
+          <div className="card bg-blue-950/20 border border-blue-600/20">
+            <p className="text-sm text-blue-300">
+              Vul hier de echte antwoorden op de extra vragen in. De topschutter, Belgische topschutter en wereldkampioen leveren punten op.
+              De schiftingsvragen (aantal goals + minuut eerste doelpunt) bepalen de volgorde in het klassement bij een gelijk aantal punten.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="card">
+              <label className="block text-base text-gold font-semibold mb-2">Wereldkampioen (15 punten)</label>
+              <select
+                value={extra.worldChampion}
+                onChange={e => setExtra({ ...extra, worldChampion: e.target.value })}
+                className="w-full bg-black/30 border border-white/20 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-gold"
+              >
+                <option value="">-- Nog niet bekend --</option>
+                {allTeamsList.map(t => (
+                  <option key={t.code} value={t.code}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="card">
+              <label className="block text-base text-gold font-semibold mb-2">Topschutter (10 punten)</label>
+              <input
+                type="text"
+                value={extra.topScorer}
+                onChange={e => setExtra({ ...extra, topScorer: e.target.value })}
+                className="w-full bg-black/30 border border-white/20 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-gold"
+                placeholder="Naam van de speler"
+              />
+            </div>
+
+            <div className="card">
+              <label className="block text-base text-gold font-semibold mb-2">Belgische Topschutter (10 punten)</label>
+              <input
+                type="text"
+                value={extra.belgianTopScorer}
+                onChange={e => setExtra({ ...extra, belgianTopScorer: e.target.value })}
+                className="w-full bg-black/30 border border-white/20 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-gold"
+                placeholder="Naam van de Belgische speler"
+              />
+            </div>
+
+            <div className="card">
+              <label className="block text-base text-gold font-semibold mb-2">Schiftingsvraag 1: Aantal goals topschutter</label>
+              <input
+                type="number"
+                min="0"
+                value={extra.topScorerGoals || ''}
+                onChange={e => setExtra({ ...extra, topScorerGoals: parseInt(e.target.value) || 0 })}
+                className="w-full bg-black/30 border border-white/20 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-gold"
+                placeholder="Aantal doelpunten"
+              />
+            </div>
+
+            <div className="card md:col-span-2">
+              <label className="block text-base text-gold font-semibold mb-2">Schiftingsvraag 2: Minuut eerste doelpunt topschutter</label>
+              <input
+                type="number"
+                min="1"
+                max="120"
+                value={extra.topScorerFirstGoalMin || ''}
+                onChange={e => setExtra({ ...extra, topScorerFirstGoalMin: parseInt(e.target.value) || 0 })}
+                className="w-full bg-black/30 border border-white/20 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-gold"
+                placeholder="Minuut (1-120)"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button onClick={saveExtra} className="btn-primary text-sm">Opslaan</button>
+            {extraStatus && <span className="text-sm text-gray-300">{extraStatus}</span>}
+          </div>
+        </div>
+      )}
+
       {activeSection === 'notify' && (
         <div className="space-y-4">
           <div className="card">

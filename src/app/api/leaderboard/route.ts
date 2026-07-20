@@ -15,6 +15,14 @@ export async function GET() {
   });
 
   const actualResults = await prisma.actualResult.findMany();
+  const actualExtraRow = await prisma.actualExtraResult.findUnique({ where: { id: 'singleton' } });
+  const actualExtra = actualExtraRow ? {
+    topScorer: actualExtraRow.topScorer,
+    belgianTopScorer: actualExtraRow.belgianTopScorer,
+    worldChampion: actualExtraRow.worldChampion,
+    topScorerGoals: actualExtraRow.topScorerGoals,
+    topScorerFirstGoalMin: actualExtraRow.topScorerFirstGoalMin,
+  } : undefined;
 
   const confirmedCountByUser = new Map<string, number>();
   const confirmedPints = await prisma.beerConfirmation.findMany({
@@ -328,10 +336,20 @@ export async function GET() {
     } : undefined;
 
     const jokerMatches = new Set(u.predictions.filter(p => p.jokerUsed).map(p => p.matchNumber));
-    const scoring = calculatePoints(predScores, actualScores, extra, undefined, jokerMatches);
+    const scoring = calculatePoints(predScores, actualScores, extra, actualExtra, jokerMatches);
+
+    // Schiftingsvragen: afstand tot het echte antwoord bepaalt de volgorde bij
+    // gelijke punten. Enkel actief zodra de admin het echte antwoord (>0) heeft
+    // ingevuld; anders 0 voor iedereen zodat het de sortering niet beïnvloedt.
+    const tbGoalsDiff = actualExtra && actualExtra.topScorerGoals > 0
+      ? Math.abs((extra?.topScorerGoals ?? 0) - actualExtra.topScorerGoals) : 0;
+    const tbMinDiff = actualExtra && actualExtra.topScorerFirstGoalMin > 0
+      ? Math.abs((extra?.topScorerFirstGoalMin ?? 0) - actualExtra.topScorerFirstGoalMin) : 0;
 
     return {
       id: u.id,
+      tbGoalsDiff,
+      tbMinDiff,
       name: u.name,
       avatarUrl: u.avatarUrl,
       totalPoints: scoring.totalPoints,
@@ -357,7 +375,19 @@ export async function GET() {
     };
   });
 
-  leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
+  leaderboard.sort((a, b) =>
+    b.totalPoints - a.totalPoints ||
+    a.tbGoalsDiff - b.tbGoalsDiff ||   // schiftingsvraag 1: dichtst bij aantal goals topschutter
+    a.tbMinDiff - b.tbMinDiff ||       // schiftingsvraag 2: dichtst bij minuut eerste goal
+    a.name.localeCompare(b.name)       // laatste redmiddel: stabiele, deterministische volgorde
+  );
 
-  return NextResponse.json({ leaderboard, completedMatchdays: completedDates.length });
+  // Interne tiebreak-velden niet naar de client sturen.
+  const publicLeaderboard = leaderboard.map(entry => {
+    const { tbGoalsDiff, tbMinDiff, ...rest } = entry;
+    void tbGoalsDiff; void tbMinDiff;
+    return rest;
+  });
+
+  return NextResponse.json({ leaderboard: publicLeaderboard, completedMatchdays: completedDates.length });
 }
