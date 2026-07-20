@@ -594,8 +594,9 @@ export default function AdminPanel() {
                 value={extra.topScorer}
                 onChange={e => setExtra({ ...extra, topScorer: e.target.value })}
                 className="w-full bg-black/30 border border-white/20 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-gold"
-                placeholder="Naam van de speler"
+                placeholder="Naam (bij gedeelde topschutter: gescheiden door komma)"
               />
+              <p className="text-xs text-gray-500 mt-1">Meerdere namen mogelijk, gescheiden door een komma.</p>
             </div>
 
             <div className="card">
@@ -605,8 +606,9 @@ export default function AdminPanel() {
                 value={extra.belgianTopScorer}
                 onChange={e => setExtra({ ...extra, belgianTopScorer: e.target.value })}
                 className="w-full bg-black/30 border border-white/20 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-gold"
-                placeholder="Naam van de Belgische speler"
+                placeholder="Naam (bij gedeelde topschutter: gescheiden door komma)"
               />
+              <p className="text-xs text-gray-500 mt-1">Meerdere namen mogelijk, gescheiden door een komma. Een tip is juist als hij met één ervan overeenkomt.</p>
             </div>
 
             <div className="card">

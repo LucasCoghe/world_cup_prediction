@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getUser } from '@/lib/auth';
-import { calculateMatchPoints, isCorrectWinner, normalizeScorerName } from '@/lib/scoring';
+import { calculateMatchPoints, isCorrectWinner, scorerNamesMatch } from '@/lib/scoring';
 import { MatchScore, resolveKnockoutBracket } from '@/lib/standings';
 import { groupMatches, knockoutStructure, teams, getRoundName, TOTAL_GROUP_MATCHES } from '@/lib/tournament';
 
@@ -175,12 +175,12 @@ export async function GET(req: Request) {
     topScorer: buildExtraResult(
       ep?.topScorer || '',
       !!(actualExtra?.topScorer),
-      !!(ep && actualExtra && scorerMatch(ep.topScorer, actualExtra.topScorer)),
+      !!(ep && actualExtra && scorerNamesMatch(ep.topScorer, actualExtra.topScorer)),
     ),
     belgianTopScorer: buildExtraResult(
       ep?.belgianTopScorer || '',
       !!(actualExtra?.belgianTopScorer),
-      !!(ep && actualExtra && scorerMatch(ep.belgianTopScorer, actualExtra.belgianTopScorer)),
+      !!(ep && actualExtra && scorerNamesMatch(ep.belgianTopScorer, actualExtra.belgianTopScorer)),
     ),
   };
 
@@ -217,12 +217,6 @@ export async function GET(req: Request) {
     },
     extra: extraResults,
   });
-}
-
-function scorerMatch(a: string, b: string): boolean {
-  const x = normalizeScorerName(a);
-  const y = normalizeScorerName(b);
-  return x !== '' && x === y;
 }
 
 function buildExtraResult(prediction: string, answered: boolean, correct: boolean) {

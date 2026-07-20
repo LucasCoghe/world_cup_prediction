@@ -34,10 +34,17 @@ export function normalizeScorerName(name: string): string {
   return tokens.length > 0 ? tokens[tokens.length - 1] : '';
 }
 
-function scorerNamesMatch(predName: string, actualName: string): boolean {
-  const a = normalizeScorerName(predName);
-  const b = normalizeScorerName(actualName);
-  return a !== '' && a === b;
+// Vergelijk een voorspelde topschutter met het echte antwoord. Het echte
+// antwoord kan meerdere namen bevatten (bv. een gedeelde topschutter),
+// gescheiden door komma, puntkomma, slash of een nieuwe regel. De voorspelling
+// is juist zodra de achternaam met één van die namen overeenkomt.
+export function scorerNamesMatch(predName: string, actualName: string): boolean {
+  const pred = normalizeScorerName(predName);
+  if (pred === '') return false;
+  return actualName
+    .split(/[,;/\n]+/)
+    .map(n => normalizeScorerName(n))
+    .some(n => n !== '' && n === pred);
 }
 
 function goalDiff(home: number, away: number): number {
