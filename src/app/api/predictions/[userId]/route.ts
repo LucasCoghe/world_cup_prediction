@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { getUser } from '@/lib/auth';
 import { isMatchLocked, groupMatches, knockoutStructure } from '@/lib/tournament';
 import { resolveKnockoutBracket, MatchScore } from '@/lib/standings';
+import { scorerNamesMatch } from '@/lib/scoring';
 import { getEquippedCosmetics } from '@/lib/coins';
 
 export async function GET(
@@ -34,6 +35,18 @@ export async function GET(
   const extra = await prisma.extraPrediction.findUnique({
     where: { userId },
   });
+
+  // Juist/fout per extra vraag, maar enkel voor de vragen waarvan de admin het
+  // echte antwoord al heeft ingevuld (anders null = nog niet bekend).
+  const actualExtra = await prisma.actualExtraResult.findUnique({ where: { id: 'singleton' } });
+  const extraCorrect = extra && actualExtra ? {
+    worldChampion: actualExtra.worldChampion
+      ? (!!extra.worldChampion && extra.worldChampion === actualExtra.worldChampion) : null,
+    topScorer: actualExtra.topScorer
+      ? scorerNamesMatch(extra.topScorer, actualExtra.topScorer) : null,
+    belgianTopScorer: actualExtra.belgianTopScorer
+      ? scorerNamesMatch(extra.belgianTopScorer, actualExtra.belgianTopScorer) : null,
+  } : null;
 
   const actualResults = await prisma.actualResult.findMany();
   const resultMap = new Map(actualResults.map(r => [r.matchNumber, r]));
@@ -81,5 +94,5 @@ export async function GET(
 
   const cosmetics = await getEquippedCosmetics(userId);
 
-  return NextResponse.json({ predictions: matchPredictions, extra, userName: user.name, avatarUrl: user.avatarUrl, cosmetics });
+  return NextResponse.json({ predictions: matchPredictions, extra, extraCorrect, userName: user.name, avatarUrl: user.avatarUrl, cosmetics });
 }

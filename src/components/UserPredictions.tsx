@@ -41,6 +41,25 @@ interface ExtraPrediction {
   topScorerFirstGoalMin: number;
 }
 
+interface ExtraCorrect {
+  worldChampion: boolean | null;
+  topScorer: boolean | null;
+  belgianTopScorer: boolean | null;
+}
+
+// Toont "Juist"/"Fout" zodra de admin het echte antwoord heeft ingevuld
+// (correct === null betekent: nog niet bekend, dus geen badge).
+function Verdict({ correct }: { correct: boolean | null | undefined }) {
+  if (correct === null || correct === undefined) return null;
+  return (
+    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+      correct ? 'bg-green-600/20 text-green-400' : 'bg-red-600/20 text-red-400'
+    }`}>
+      {correct ? 'Juist' : 'Fout'}
+    </span>
+  );
+}
+
 interface Props {
   userId: string;
   onBack: () => void;
@@ -65,6 +84,7 @@ function getPointsForMatch(pred: MatchPrediction): { points: number; label: stri
 export default function UserPredictions({ userId, onBack }: Props) {
   const [predictions, setPredictions] = useState<MatchPrediction[]>([]);
   const [extra, setExtra] = useState<ExtraPrediction | null>(null);
+  const [extraCorrect, setExtraCorrect] = useState<ExtraCorrect | null>(null);
   const [userName, setUserName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [cosmetics, setCosmetics] = useState<{ nameColor: string | null; rowStyle: string | null; title: string | null } | null>(null);
@@ -80,6 +100,7 @@ export default function UserPredictions({ userId, onBack }: Props) {
         } else {
           setPredictions(data.predictions || []);
           setExtra(data.extra || null);
+          setExtraCorrect(data.extraCorrect || null);
           setUserName(data.userName || '');
           setAvatarUrl(data.avatarUrl || null);
           setCosmetics(data.cosmetics || null);
@@ -197,16 +218,34 @@ export default function UserPredictions({ userId, onBack }: Props) {
           <h3 className="text-sm font-semibold text-gold mb-3">Extra voorspellingen</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
             {extra.worldChampion && (
-              <div className="flex justify-between"><span className="text-gray-400">Wereldkampioen</span><span>{extra.worldChampion}</span></div>
+              <div className="flex justify-between items-center gap-2">
+                <span className="text-gray-400">Wereldkampioen</span>
+                <span className="flex items-center gap-2 min-w-0">
+                  <span className="truncate">{teams[extra.worldChampion]?.name ?? extra.worldChampion}</span>
+                  <Verdict correct={extraCorrect?.worldChampion} />
+                </span>
+              </div>
             )}
             {extra.topScorer && (
-              <div className="flex justify-between"><span className="text-gray-400">Topschutter</span><span>{extra.topScorer}</span></div>
+              <div className="flex justify-between items-center gap-2">
+                <span className="text-gray-400">Topschutter</span>
+                <span className="flex items-center gap-2 min-w-0">
+                  <span className="truncate">{extra.topScorer}</span>
+                  <Verdict correct={extraCorrect?.topScorer} />
+                </span>
+              </div>
             )}
             {extra.topScorerGoals > 0 && (
               <div className="flex justify-between"><span className="text-gray-400">Aantal goals topschutter</span><span>{extra.topScorerGoals}</span></div>
             )}
             {extra.belgianTopScorer && (
-              <div className="flex justify-between"><span className="text-gray-400">Belgische topschutter</span><span>{extra.belgianTopScorer}</span></div>
+              <div className="flex justify-between items-center gap-2">
+                <span className="text-gray-400">Belgische topschutter</span>
+                <span className="flex items-center gap-2 min-w-0">
+                  <span className="truncate">{extra.belgianTopScorer}</span>
+                  <Verdict correct={extraCorrect?.belgianTopScorer} />
+                </span>
+              </div>
             )}
             {extra.topScorerFirstGoalMin > 0 && (
               <div className="flex justify-between"><span className="text-gray-400">Eerste goal topschutter (min)</span><span>{extra.topScorerFirstGoalMin}&apos;</span></div>
