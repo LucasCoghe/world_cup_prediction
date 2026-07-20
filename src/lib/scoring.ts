@@ -20,6 +20,26 @@ function getOutcome(home: number, away: number): number {
   return Math.sign(home - away);
 }
 
+// Vergelijk spelersnamen soepel: sommigen vullen voor- en achternaam in,
+// anderen enkel de achternaam. We vergelijken daarom enkel op de achternaam
+// (het laatste woord), zonder rekening te houden met hoofdletters of accenten.
+// Bv. "Kylian Mbappé", "mbappe" en "Mbappé" matchen allemaal.
+export function normalizeScorerName(name: string): string {
+  const cleaned = name
+    .normalize('NFD')                       // splits accenten af (é -> e + combining teken)
+    .replace(/[̀-ͯ]/g, '')        // verwijder de combining accenttekens
+    .toLowerCase()
+    .trim();
+  const tokens = cleaned.split(/\s+/).filter(Boolean);
+  return tokens.length > 0 ? tokens[tokens.length - 1] : '';
+}
+
+function scorerNamesMatch(predName: string, actualName: string): boolean {
+  const a = normalizeScorerName(predName);
+  const b = normalizeScorerName(actualName);
+  return a !== '' && a === b;
+}
+
 function goalDiff(home: number, away: number): number {
   return home - away;
 }
@@ -208,11 +228,11 @@ export function calculatePoints(
       extraPoints += 15;
       breakdown.push({ matchNumber: 0, points: 15, reason: 'Juiste Wereldkampioen' });
     }
-    if (extraPrediction.topScorer && extraPrediction.topScorer === actualExtra.topScorer) {
+    if (scorerNamesMatch(extraPrediction.topScorer, actualExtra.topScorer)) {
       extraPoints += 10;
       breakdown.push({ matchNumber: 0, points: 10, reason: 'Juiste Topschutter' });
     }
-    if (extraPrediction.belgianTopScorer && extraPrediction.belgianTopScorer === actualExtra.belgianTopScorer) {
+    if (scorerNamesMatch(extraPrediction.belgianTopScorer, actualExtra.belgianTopScorer)) {
       extraPoints += 10;
       breakdown.push({ matchNumber: 0, points: 10, reason: 'Juiste Belgische Topschutter' });
     }
