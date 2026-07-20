@@ -6,6 +6,8 @@ import AvatarUploadModal from './AvatarUploadModal';
 import Matches from './Matches';
 import ExtraQuestions from './ExtraQuestions';
 import Leaderboard from './Leaderboard';
+import SeasonStats from './SeasonStats';
+import SeasonReviewModal from './SeasonReviewModal';
 import Schandpaal from './Schandpaal';
 import Rules from './Rules';
 import AdminPanel from './AdminPanel';
@@ -27,6 +29,7 @@ interface Props {
 
 const baseTabs = [
   { id: 'leaderboard', label: 'Klassement' },
+  { id: 'season', label: 'Mijn Seizoen' },
   { id: 'matches', label: 'Matchen' },
   { id: 'schandpaal', label: 'Café' },
   { id: 'simulator', label: 'Simulator' },
@@ -109,6 +112,17 @@ export default function Dashboard({ user, onLogout }: Props) {
 
   useEffect(() => { fetchCoins(); }, [activeTab, fetchCoins]);
 
+  // Deeplink vanuit een push-notificatie: ?tab=season opent meteen het juiste tabblad.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const target = new URLSearchParams(window.location.search).get('tab');
+    if (target && tabs.some(t => t.id === target)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveTab(target);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (activeTab === 'chat') {
       localStorage.setItem(CHAT_SEEN_KEY, new Date().toISOString());
@@ -149,6 +163,7 @@ export default function Dashboard({ user, onLogout }: Props) {
   return (
     <div className={`min-h-screen ${belgianDay ? 'belgian-mode' : ''}`}>
       <PatchNotesModal onNavigate={tabId => setActiveTab(tabId)} />
+      <SeasonReviewModal onNavigate={tabId => setActiveTab(tabId)} />
       <NotificationOnboarding />
       {avatarModalOpen && (
         <AvatarUploadModal
@@ -242,6 +257,7 @@ export default function Dashboard({ user, onLogout }: Props) {
           </div>
         )}
         {activeTab === 'leaderboard' && <Leaderboard currentUserId={user.userId} />}
+        {activeTab === 'season' && <SeasonStats />}
         {activeTab === 'matches' && <Matches predictions={predictions} targetMatchNumber={targetMatchNumber} targetNonce={targetNonce} />}
         {activeTab === 'schandpaal' && <Schandpaal currentUserId={user.userId} />}
         {activeTab === 'simulator' && <BracketSimulator />}

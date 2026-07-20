@@ -31,7 +31,62 @@ export async function POST(req: Request) {
     return await sendToAll(title || 'WK 2026', body || 'Check de app!');
   }
 
+  if (type === 'final') {
+    return await sendFinalStandings(req);
+  }
+
   return NextResponse.json({ error: 'Ongeldig type' }, { status: 400 });
+}
+
+// Nederlandse rangtelwoorden: -ste voor 1, 8 en de tientallen vanaf 20
+// (twintigste, dertigste ...), -de voor de rest (2de, 3de, 10de, 14de ...).
+function dutchOrdinal(n: number): string {
+  const ste = n === 1 || n === 8 || (n >= 20 && n % 10 === 0);
+  return `${n}${ste ? 'ste' : 'de'}`;
+}
+
+// Stuurt elke speler een gepersonaliseerde push met zijn finale plaats en een
+// link naar het persoonlijke eindoverzicht. Bedoeld om te versturen zodra de
+// admin de extra vragen heeft ingevuld en het toernooi is afgelopen.
+async function sendFinalStandings(req: Request): Promise<Response> {
+  const baseUrl = new URL(req.url).origin;
+  const cookieHeader = req.headers.get('cookie') || '';
+  const res = await fetch(`${baseUrl}/api/leaderboard`, { headers: { cookie: cookieHeader } });
+  const data = await res.json();
+  const board: { id: string; totalPoints: number }[] = data.leaderboard || [];
+
+  if (board.length === 0) {
+    return NextResponse.json({ sent: 0, message: 'Geen klassement beschikbaar' });
+  }
+
+  const rankById = new Map<string, number>();
+  board.forEach((e, i) => rankById.set(e.id, i + 1));
+
+  const subs = await prisma.pushSubscription.findMany();
+  let sent = 0;
+  for (const sub of subs) {
+    const rank = rankById.get(sub.userId);
+    if (!rank) continue;
+    const ordinal = dutchOrdinal(rank);
+    try {
+      await webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+        JSON.stringify({
+          title: `Eindstand: ${ordinal} plaats!`,
+          body: `Je eindigde ${ordinal} van de ${board.length}. Check je stats over het hele toernooi!`,
+          url: '/?tab=season',
+        })
+      );
+      sent++;
+    } catch (err: unknown) {
+      const statusCode = (err as { statusCode?: number })?.statusCode;
+      if (statusCode === 410 || statusCode === 404) {
+        await prisma.pushSubscription.delete({ where: { id: sub.id } });
+      }
+    }
+  }
+
+  return NextResponse.json({ sent, players: board.length });
 }
 
 async function sendDeadlineReminders(test = false) {

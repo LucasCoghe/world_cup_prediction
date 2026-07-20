@@ -80,6 +80,22 @@ export default function AdminPanel() {
     setExtraStatus(res.ok ? 'Opgeslagen!' : 'Fout bij opslaan.');
   }
 
+  async function sendFinalStandings() {
+    if (!confirm('Eindstand-notificatie naar ALLE spelers versturen? Iedereen krijgt zijn finale plaats te zien.')) return;
+    setExtraStatus('Notificaties versturen...');
+    try {
+      const res = await fetch('/api/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'final' }),
+      });
+      const data = await res.json();
+      setExtraStatus(res.ok ? `${data.sent || 0} notificatie(s) verstuurd.` : (data.error || 'Fout bij versturen.'));
+    } catch {
+      setExtraStatus('Fout bij versturen.');
+    }
+  }
+
   async function lockAll() {
     if (!confirm('Alle deelnemers vergrendelen? Ze kunnen dan niet meer wijzigen.')) return;
     await fetch('/api/admin/lock', { method: 'PUT' });
@@ -622,6 +638,17 @@ export default function AdminPanel() {
           <div className="flex items-center gap-3">
             <button onClick={saveExtra} className="btn-primary text-sm">Opslaan</button>
             {extraStatus && <span className="text-sm text-gray-300">{extraStatus}</span>}
+          </div>
+
+          <div className="card bg-purple-950/20 border border-purple-600/20 space-y-3">
+            <h3 className="text-sm font-semibold text-gold">Eindstand-notificatie</h3>
+            <p className="text-sm text-gray-400">
+              Stuur elke speler een push met zijn finale plaats (bv. &quot;14de plaats!&quot;) en een link naar zijn persoonlijk eindoverzicht.
+              Doe dit pas nadat je de extra vragen hierboven hebt opgeslagen en alle uitslagen zijn ingevuld.
+            </p>
+            <button onClick={sendFinalStandings} className="btn-primary text-sm">
+              Verstuur eindstand + stats naar iedereen
+            </button>
           </div>
         </div>
       )}
